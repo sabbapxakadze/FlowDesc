@@ -207,7 +207,7 @@ function Viewers({
 
 function TimelineScroll({ enabled, children }: { enabled: boolean; children: ReactNode }) {
   return enabled ? (
-    <ScrollPanel label="Activity timeline" look="edges" fitWindow className="max-h-[32rem]">
+    <ScrollPanel label="Activity timeline" look="edges" fitWindow minFit={448} className="max-h-[40rem]">
       {children}
     </ScrollPanel>
   ) : (
@@ -527,7 +527,7 @@ export function IssueDetail({
       {eventsPending ? (
         <TimelineSkeleton />
       ) : (
-        // On the full page a long timeline scrolls inside its own area (about 32rem) with the comment box fixed
+        // On the full page a long timeline scrolls inside its own area (28 to 40rem tall) with the comment box fixed
         // above it. The side panel already scrolls as a whole, so a second scroll inside it is left out.
         <TimelineScroll enabled={!panel}>
           <ul className="flex flex-col gap-3">

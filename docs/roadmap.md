@@ -2336,7 +2336,7 @@ The original plan for this slice, kept for the record:
      toggle.
    **Scrolling lists DONE 2026-10-04 (owner's design pass).** "Load more" no longer stretches the page. The Issues page fills the
    window and its list scrolls in a raised panel (`ScrollPanel look="raised"`: outline and outer shadow; the owner tried a pressed-in version and did not like it; a short list keeps its own height);
-   a person's Recent activity (capped at 28rem) and the full issue page's comments and activity (capped at 32rem, comment box
+   a person's Recent activity (capped at 28rem) and the full issue page's comments and activity (28 to 40rem tall since 2026-10-11, was capped at 32rem, comment box
    fixed above) scroll with edge shadows and a line (`look="edges"`, E3). The side panel's timeline is left alone (it already
    scrolls as a whole). Found on the way: `PersonHover`'s absolutely positioned card was clipped inside a scrolling list and made a
    short one scrollable, so it is now `position: fixed`. The owner then found no sign that the comments scroll (their bottom

@@ -91,19 +91,20 @@ async function issueWithComments(page: Page, count: number) {
 test("issue page: a long timeline scrolls inside its own area, the comment box stays above it", async ({
   loggedInPage: page,
 }) => {
-  // Why: a thread of dozens of comments stretched the page; the timeline is capped (32rem) and scrolls inside.
+  // Why: a thread of dozens of comments stretched the page; the timeline is capped (40rem) and scrolls inside.
   await issueWithComments(page, 25);
   // A tall window: the properties and description cards above the timeline (ADR 0061) use some of the height.
-  await page.setViewportSize({ width: 1280, height: 1100 });
+  await page.setViewportSize({ width: 1280, height: 1400 });
   await page.goto("/projects/WEB/issues/WEB-1");
   const timeline = panelOf(page, "Activity timeline");
   await expect(timeline.getByText("Comment number 25")).toBeVisible(); // newest first, at the top
   const m = await metrics(page, "Activity timeline");
-  expect(m.client).toBeLessThanOrEqual(32 * 16 + 1);
+  expect(m.client).toBeLessThanOrEqual(40 * 16 + 1);
+  expect(m.client).toBeGreaterThanOrEqual(28 * 16 - 1); // not squeezed to a sliver by the cards above it
   expect(m.scroll).toBeGreaterThan(m.client);
   // The bottom edge is on screen at rest, so the shadow and the scrollbar can show that it scrolls.
   const rest = (await timeline.boundingBox())!;
-  expect(rest.y + rest.height).toBeLessThanOrEqual(1100);
+  expect(rest.y + rest.height).toBeLessThanOrEqual(1400);
 
   const box = (await page.getByRole("textbox", { name: "Comment", exact: true }).boundingBox())!;
   const area = (await timeline.boundingBox())!;
@@ -118,7 +119,7 @@ test("issue page: a short timeline keeps its own height", async ({ loggedInPage:
   await issueWithComments(page, 1);
   await page.goto("/projects/WEB/issues/WEB-1");
   const m = await metrics(page, "Activity timeline");
-  expect(m.client).toBeLessThan(32 * 16);
+  expect(m.client).toBeLessThan(28 * 16);
   expect(m.scroll).toBeLessThanOrEqual(m.client + 1);
 });
 
