@@ -4,9 +4,10 @@ import { Link } from "react-router";
 import type { Attachment, IssueEvent } from "@flowdesk/contracts";
 import { useProjects } from "../../entities/project";
 import { LabelBadge } from "../../entities/label";
-import { PersonName, useMemberNames, useMyRole } from "../../entities/member";
+import { MentionedText, PersonName, useMemberNames, useMyRole } from "../../entities/member";
 import {
   AttachmentList,
+  InlineImage,
   useAttachments,
   useIssue,
   useIssueEvents,
@@ -132,6 +133,23 @@ function Empty({ reading }: { reading: string }) {
       <span aria-hidden="true">&ndash;</span>
       <span className="sr-only">{reading}</span>
     </span>
+  );
+}
+
+/**
+ * The description drawn as the comment reader draws a body (ADR 0063): formatting, @mentions as profile links, and pictures that open the zoom popup.
+ * Old plain-text descriptions read as the plain text they were (line breaks kept). A picture whose file is not in the list (yet) shows as its name.
+ */
+function DescriptionText({ organizationId, body, files }: { organizationId: string; body: string; files: Attachment[] }) {
+  return (
+    <MentionedText
+      organizationId={organizationId}
+      body={body}
+      renderImage={(attachmentId, alt) => {
+        const file = files.find((f) => f.id === attachmentId);
+        return file ? <InlineImage attachment={file} alt={alt} /> : `[${alt || "image"}]`;
+      }}
+    />
   );
 }
 
@@ -455,14 +473,20 @@ export function IssueDetail({
         </p>
       )}
       {panel ? (
-        issue.description && <p className="mb-4 whitespace-pre-wrap [overflow-wrap:anywhere]">{issue.description}</p>
+        issue.description && (
+          <div className="mb-4 [overflow-wrap:anywhere]">
+            <DescriptionText organizationId={organization!.id} body={issue.description} files={attachments ?? []} />
+          </div>
+        )
       ) : (
         <Card className="mb-2 p-4">
           <h2 className="mb-2 text-sm font-semibold">Description</h2>
           {issue.description ? (
             // A very long description is folded (about 15rem) with Show more / Show less, instead of pushing everything below it out of sight.
             <ShowMore>
-              <p className="text-sm leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">{issue.description}</p>
+              <div className="text-sm leading-relaxed [overflow-wrap:anywhere]">
+                <DescriptionText organizationId={organization!.id} body={issue.description} files={attachments ?? []} />
+              </div>
             </ShowMore>
           ) : (
             <p className="text-sm text-[var(--color-text-muted)]">No description.</p>

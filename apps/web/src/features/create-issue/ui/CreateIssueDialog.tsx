@@ -1,10 +1,13 @@
-import { useForm } from "react-hook-form";
+import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createIssueRequestSchema, type CreateIssueRequest } from "@flowdesk/contracts";
 import { issueKeys } from "../../../entities/issue";
-import { Button, Dialog, ErrorText, Field, Input, Textarea } from "../../../shared/ui";
+import { MentionEditor } from "../../../entities/member";
+import { Button, Dialog, ErrorText, Field, Input } from "../../../shared/ui";
 import { createIssue } from "../api/createIssue";
+import { uploadDraftImage } from "../api/uploadDraftImage";
 
 /**
  * The "New issue" popup (ADR 0035): the same modal Edit uses, opened from the button on both the Issues and the Board page.
@@ -26,12 +29,16 @@ export function CreateIssueDialog({
   const queryClient = useQueryClient();
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors, isDirty },
   } = useForm<CreateIssueRequest>({ resolver: zodResolver(createIssueRequestSchema) });
+  // True while a pasted picture is still uploading: adding the issue waits, since the picture is not in the text yet.
+  const [pictureUploading, setPictureUploading] = useState(false);
 
   const mutation = useMutation({
-    mutationFn: (data: CreateIssueRequest) => createIssue(organizationId, projectId, data),
+    mutationFn: (data: CreateIssueRequest) =>
+      createIssue(organizationId, projectId, data),
     onSuccess: () => {
       // issueKeys.list(projectId) is a prefix of the filtered lists AND of the board and backlog keys, so one call refreshes
       // whichever page this was opened from.
@@ -42,19 +49,59 @@ export function CreateIssueDialog({
 
   return (
     <Dialog title="New issue" onClose={onClose} dismissOnBackdrop={!isDirty}>
-      <form onSubmit={handleSubmit((data) => mutation.mutate(data))} className="flex flex-col gap-3">
+      <form
+        onSubmit={handleSubmit((data) => mutation.mutate(data))}
+        className="flex flex-col gap-3"
+      >
         <Field label="Title" error={errors.title?.message}>
           <Input data-autofocus {...register("title")} placeholder="Something to do" />
         </Field>
-        <Field label="Description" error={errors.description?.message}>
-          <Textarea rows={4} {...register("description")} placeholder="Optional" />
-        </Field>
+        {/* Not a <Field>/<label>: a label would wrap the editor's toolbar buttons. The editor names itself. */}
+        <div className="flex flex-col gap-1.5 text-sm font-medium">
+          <span>Description</span>
+          <Controller
+            control={control}
+            name="description"
+            render={({ field }) => (
+              <MentionEditor
+                organizationId={organizationId}
+                value={field.value ?? ""}
+                onChange={field.onChange}
+                ariaLabel="Description"
+                placeholder="Optional"
+                uploadImage={async (file) => {
+                  const stored = await uploadDraftImage(organizationId, projectId, file);
+                  return {
+                    id: stored.id,
+                    url: stored.downloadUrl,
+                    name: stored.filename,
+                  };
+                }}
+                onUploadingChange={setPictureUploading}
+              />
+            )}
+          />
+          {errors.description?.message && (
+            <p className="text-xs font-normal text-[var(--color-text-danger)]">
+              {errors.description.message}
+            </p>
+          )}
+        </div>
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" pending={mutation.isPending} variant="success">
-            {mutation.isPending ? "Adding…" : "Add issue"}
+          <Button
+            type="submit"
+            pending={mutation.isPending}
+            disabled={pictureUploading}
+            variant="success"
+          >
+            {mutation.isPending
+              ? "Adding…"
+              : pictureUploading
+                ? "Uploading picture…"
+                : "Add issue"}
           </Button>
         </div>
         {mutation.isError && <ErrorText>{mutation.error.message}</ErrorText>}

@@ -1,6 +1,6 @@
 # 0063 - Rich issue descriptions: formatting, pictures and mentions
 
-Status: **Accepted, step 1 (server) in progress** - 2026-10-11. Agreed with the owner in conversation. Builds on ADR 0056 (formatted comments), 0062 (pictures in comments) and 0033 (mentions). This is slice 3 of ADR 0062.
+Status: **Accepted, built** - 2026-10-11 (steps 1 to 3). Agreed with the owner in conversation. Builds on ADR 0056 (formatted comments), 0062 (pictures in comments) and 0033 (mentions). This is slice 3 of ADR 0062.
 
 ## Context
 
@@ -21,6 +21,14 @@ An issue's description is a plain text box. Comments have a rich editor (formatt
 1. **Server:** the migration (nullable `issue_id`, `project_id`, the check, the search expression), the project draft endpoint, linking and checks on create and update, mentions and their notifications, cleanup and project delete covering project drafts, API tests.
 2. **Editor:** the description wrapper, the edit popup and the New issue popup, "Uploading picture..." waits, the e2e specs that type into the plain box updated, one browser test with a picture.
 3. **Drawing:** the issue page and side panel, the notification wording, the tour or docs if they mention a plain box.
+
+## As built (2026-10-11)
+
+- **Editor:** `MentionEditor` (entities/member) is the shared rich editor with the people behind `@`; the comment box, the edit popup and the New issue popup use it. In both popups the "Description" label is a plain `<span>`, not a `<label>` (a label would wrap the toolbar buttons and a click on the word would press Bold); the editor names itself with `aria-label`. Save / Add issue wait while a picture uploads ("Uploading picture...").
+- **Drawing:** the issue page card and the side panel draw the description with `MentionedText` (formatting, mentions as profile links, pictures through `InlineImage` and the zoom popup). The "Show more" fold is unchanged.
+- **Wording:** a notification for a description mention reads "mentioned you in the description" (`describeEventFor`).
+- **Tests that changed:** the textarea-only "resize" e2e test was removed; the line-break test types with Shift+Enter; the fold test finds the folded box by the button's `aria-controls`.
+- **Named limits:** the New issue popup's pictures are project drafts until the issue is created (24 hours at most). A description picture is also listed in the issue's Attachments (like a comment's); deleting that attachment breaks the picture. The search index ignores picture tokens and keeps a mention's name. Safari and phone clipboards are untested. Mentions in descriptions notify only on create and on edits that add them.
 
 ## Risks and not yet decided
 

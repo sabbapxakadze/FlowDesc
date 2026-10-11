@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Issue, IssuePriority, IssueStatus } from "@flowdesk/contracts";
-import { issueKeys } from "../../../entities/issue";
-import { memberOptions, useMembers } from "../../../entities/member";
+import { issueKeys, useAttachments } from "../../../entities/issue";
+import { memberOptions, MentionEditor, useMembers } from "../../../entities/member";
 import { ApiError } from "../../../shared/api/client";
 import {
   Button,
@@ -13,10 +13,10 @@ import {
   Input,
   PRIORITY_OPTIONS,
   STATUS_OPTIONS,
-  Textarea,
 } from "../../../shared/ui";
 import { LabelPicker } from "../../edit-issue-labels";
 import { updateIssue } from "../api/updateIssue";
+import { uploadDraftImage } from "../api/uploadDraftImage";
 
 type FormValues = {
   title: string;
@@ -87,10 +87,16 @@ export function EditIssueForm({
     },
   });
   const { data: members } = useMembers(organizationId);
+  // The pictures the description already shows (and any other file of the issue), so the editor can draw them (ADR 0063).
+  const { data: files } = useAttachments(organizationId, projectId, issue.id);
+  // True while a pasted picture is still uploading: Save waits, since the picture is not in the text yet.
+  const [pictureUploading, setPictureUploading] = useState(false);
   // The issue as it was when the popup opened. `issue` keeps following live updates, the form's fields do not, so a save
   // resends the opening values and overwrites whatever someone else changed in the meantime. We only say so (no merge).
   const [openedWith] = useState(issue);
-  const changedMeanwhile = WATCHED_FIELDS.filter(([field]) => valueOf(issue, field) !== valueOf(openedWith, field)).map(([, label]) => label);
+  const changedMeanwhile = WATCHED_FIELDS.filter(
+    ([field]) => valueOf(issue, field) !== valueOf(openedWith, field),
+  ).map(([, label]) => label);
   useEffect(() => {
     onDirtyChange?.(isDirty);
   }, [isDirty, onDirtyChange]);
@@ -107,7 +113,9 @@ export function EditIssueForm({
         // write a "changed priority" line into the activity timeline.
         ...(data.priority !== issue.priority ? { priority: data.priority } : {}),
         // Same rule: only when it changed. An emptied date input is sent as null (remove the due date).
-        ...(data.dueDate !== (issue.dueDate ?? "") ? { dueDate: data.dueDate === "" ? null : data.dueDate } : {}),
+        ...(data.dueDate !== (issue.dueDate ?? "")
+          ? { dueDate: data.dueDate === "" ? null : data.dueDate }
+          : {}),
         // Same rule as priority: only when it changed. "" is sent as null (unassign).
         ...(data.assigneeId !== (issue.assigneeId ?? "")
           ? { assigneeId: data.assigneeId === "" ? null : data.assigneeId }
@@ -148,23 +156,54 @@ export function EditIssueForm({
           role="status"
           className="rounded-[var(--radius-control)] border border-[var(--color-text-warning)] px-3 py-2 text-sm text-[var(--color-text-warning)]"
         >
-          Someone changed this issue while you were editing: <b>{changedMeanwhile.join(", ")}</b>. Saving will overwrite their change.
+          Someone changed this issue while you were editing:{" "}
+          <b>{changedMeanwhile.join(", ")}</b>. Saving will overwrite their change.
         </p>
       )}
       <Field label="Title">
         <Input data-autofocus {...register("title", { required: true })} />
       </Field>
 
-      <Field label="Description">
-        <Textarea rows={4} {...register("description")} />
-      </Field>
+      {/* Not a <label>: it would wrap the editor's toolbar buttons, and a click on the word would press the first one. The editor names itself. */}
+      <div className="flex flex-col gap-1.5 text-sm font-medium">
+        <span>Description</span>
+        <Controller
+          control={control}
+          name="description"
+          render={({ field }) => (
+            <MentionEditor
+              organizationId={organizationId}
+              value={field.value}
+              onChange={field.onChange}
+              ariaLabel="Description"
+              uploadImage={async (file) => {
+                const stored = await uploadDraftImage(
+                  organizationId,
+                  projectId,
+                  issue.id,
+                  file,
+                );
+                return { id: stored.id, url: stored.downloadUrl, name: stored.filename };
+              }}
+              images={files?.map((file) => ({ id: file.id, url: file.downloadUrl }))}
+              onUploadingChange={setPictureUploading}
+            />
+          )}
+        />
+      </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Status">
           <Controller
             control={control}
             name="status"
-            render={({ field }) => <Dropdown value={field.value} onChange={field.onChange} options={STATUS_OPTIONS} />}
+            render={({ field }) => (
+              <Dropdown
+                value={field.value}
+                onChange={field.onChange}
+                options={STATUS_OPTIONS}
+              />
+            )}
           />
         </Field>
 
@@ -172,7 +211,13 @@ export function EditIssueForm({
           <Controller
             control={control}
             name="priority"
-            render={({ field }) => <Dropdown value={field.value} onChange={field.onChange} options={PRIORITY_OPTIONS} />}
+            render={({ field }) => (
+              <Dropdown
+                value={field.value}
+                onChange={field.onChange}
+                options={PRIORITY_OPTIONS}
+              />
+            )}
           />
         </Field>
 
@@ -208,8 +253,17 @@ export function EditIssueForm({
         <Button type="button" variant="secondary" onClick={onDone}>
           Cancel
         </Button>
-        <Button type="submit" pending={mutation.isPending} variant="success">
-          {mutation.isPending ? "Saving…" : "Save"}
+        <Button
+          type="submit"
+          pending={mutation.isPending}
+          disabled={pictureUploading}
+          variant="success"
+        >
+          {mutation.isPending
+            ? "Saving…"
+            : pictureUploading
+              ? "Uploading picture…"
+              : "Save"}
         </Button>
       </div>
 

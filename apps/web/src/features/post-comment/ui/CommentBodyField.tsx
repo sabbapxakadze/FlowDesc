@@ -1,13 +1,10 @@
-import { useMemo } from "react";
-import { mentionDisplayName, type Attachment } from "@flowdesk/contracts";
-import { memberOptions, useMembers } from "../../../entities/member";
-import { RichTextEditor } from "../../../shared/ui";
+import type { Attachment } from "@flowdesk/contracts";
+import { MentionEditor } from "../../../entities/member";
 import { uploadDraftImage } from "../api/uploadDraftImage";
 
 /**
- * The comment text box (ADR 0033 for @mentions, ADR 0056 for formatting): a rich-text editor that holds the STORED body, the Markdown subset the
- * comment card reads, with `@Name` mentions as the token `@[Name](user:<id>)`. It offers the organization's people when `@` is typed. The
- * editor itself is loaded on demand.
+ * The comment text box (ADR 0033 for @mentions, ADR 0056 for formatting, ADR 0062 for pictures): the shared mention editor, with pasted
+ * pictures uploaded as drafts of this issue.
  */
 export function CommentBodyField({
   organizationId,
@@ -35,16 +32,11 @@ export function CommentBodyField({
   ariaLabel: string;
   autoFocus?: boolean;
 }) {
-  const { data: members } = useMembers(organizationId);
-  const candidates = useMemo(
-    () => memberOptions(members).map((option) => ({ id: option.value, name: mentionDisplayName(option.label), icon: option.icon })),
-    [members],
-  );
   return (
-    <RichTextEditor
+    <MentionEditor
+      organizationId={organizationId}
       value={value}
       onChange={onChange}
-      candidates={candidates}
       placeholder={placeholder}
       ariaLabel={ariaLabel}
       autoFocus={autoFocus}

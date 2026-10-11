@@ -10,7 +10,8 @@ import { PRIORITY_LABELS, STATUS_LABELS } from "../../../shared/ui";
  */
 /**
  * The same sentence for one viewer: a comment (or an edit of one) that @mentions THEM reads "mentioned you in a comment"
- * (ADR 0033). Everyone else, and every other event, reads as describeEvent does.
+ * (ADR 0033), a description that does reads "mentioned you in the description" (ADR 0063). Everyone else, and every other event, reads as
+ * describeEvent does.
  */
 export function describeEventFor(event: IssueEvent, viewerId: string | undefined): string {
   if (
@@ -20,6 +21,15 @@ export function describeEventFor(event: IssueEvent, viewerId: string | undefined
     event.payload.mentions.includes(viewerId)
   ) {
     return "mentioned you in a comment";
+  }
+  // A description that @mentions THEM, on a new issue or in an edit that changed the description (ADR 0063).
+  if (
+    viewerId &&
+    (event.type === "issue.created" || (event.type === "issue.updated" && "description" in event.payload)) &&
+    Array.isArray(event.payload.mentions) &&
+    event.payload.mentions.includes(viewerId)
+  ) {
+    return "mentioned you in the description";
   }
   return describeEvent(event);
 }

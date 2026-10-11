@@ -65,7 +65,10 @@ test("the issue page edits in the same popup, and a description keeps its line b
   await page.goto("/projects/WEB/issues/WEB-1");
   await page.getByRole("button", { name: "Edit", exact: true }).click();
   const dialog = dialogOf(page);
-  await dialog.getByLabel("Description").fill("Line one\nLine two");
+  await dialog.getByLabel("Description").click();
+  await page.keyboard.type("Line one");
+  await page.keyboard.press("Shift+Enter"); // a line break inside the paragraph (Enter alone starts a new paragraph)
+  await page.keyboard.type("Line two");
   await dialog.getByRole("button", { name: "Save" }).click();
   await expect(dialog).toHaveCount(0);
   const text = page.getByText("Line one");
@@ -126,21 +129,6 @@ test("saving over a change made elsewhere closes the popup and says the issue wa
   await dialog.getByRole("button", { name: "Save" }).click();
   await expect(dialog).toHaveCount(0);
   await expect(page.getByText(/updated by someone else/)).toBeVisible();
-});
-
-test("the description box can only be resized vertically, between a minimum and a maximum height", async ({
-  loggedInPage: page,
-}) => {
-  // Why: the corner handle used to let the box shrink to nothing or grow without limit (and sideways).
-  await setup(page);
-  await page.goto("/projects/WEB");
-  await row(page, "Alpha").getByRole("button", { name: "Edit" }).click();
-  const box = dialogOf(page).getByLabel("Description");
-  const style = await box.evaluate((el) => {
-    const s = getComputedStyle(el);
-    return { resize: s.resize, min: s.minHeight, max: s.maxHeight };
-  });
-  expect(style).toEqual({ resize: "vertical", min: "72px", max: "256px" });
 });
 
 test("when someone else changes the issue while the popup is open, a banner says what changed and that Save will overwrite it", async ({

@@ -67,12 +67,13 @@ test("a very long description is folded with Show more and Show less; a short on
   await page.goto("/projects/WEB/issues/WEB-1");
   const more = page.getByRole("button", { name: "Show more" });
   await expect(more).toBeVisible();
-  const text = page.getByText("Line number 1 of");
-  const folded = await text.locator("xpath=../..").evaluate((node) => node.clientHeight);
+  // The folded box is the one the button controls (the description is drawn by the comment reader now, so its depth is not something to count).
+  const box = page.locator(`[id="${await more.getAttribute("aria-controls")}"]`);
+  const folded = await box.evaluate((node) => node.clientHeight);
   expect(folded).toBeLessThanOrEqual(241);
   await more.click();
   await expect(page.getByRole("button", { name: "Show less" })).toBeVisible();
-  const open = await text.locator("xpath=../..").evaluate((node) => node.clientHeight);
+  const open = await box.evaluate((node) => node.clientHeight);
   expect(open).toBeGreaterThan(folded * 3);
   await page.getByRole("button", { name: "Show less" }).click();
   await expect(more).toBeVisible();
