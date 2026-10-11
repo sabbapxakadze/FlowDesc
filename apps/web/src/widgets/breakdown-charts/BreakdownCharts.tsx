@@ -1,149 +1,140 @@
-import { useState } from "react";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useBreakdown } from "../../entities/analytics";
-import { AnchoredTooltip, Button, EmptyState, ErrorText, anchoredTooltipProps, Skeleton, STATUS_LABELS } from "../../shared/ui";
-
-type Row = { name: string; count: number };
-
-type TooltipProps = {
-  orientation: "column" | "row";
-  active?: boolean;
-  coordinate?: { x: number; y: number };
-  payload?: ReadonlyArray<{ payload?: Row }>;
-};
-
-// Hand-built from semantic tokens, same reason as the other charts: the
-// library default is a hardcoded white box that ignores dark mode.
-function ChartTooltip({ active, coordinate, orientation, payload }: TooltipProps) {
-  const row = payload?.[0]?.payload;
-  if (!active || !row) return null;
-  return (
-    <AnchoredTooltip coordinate={coordinate} orientation={orientation}>
-        <div className="rounded-[var(--radius-control)] border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-2 text-sm shadow-sm">
-        <p className="text-xs text-[var(--color-text-muted)]">{row.name}</p>
-        <p className="font-medium">
-          {row.count} {row.count === 1 ? "issue" : "issues"}
-        </p>
-      </div>
-    </AnchoredTooltip>
-  );
-}
-
-const AXIS_TICK = { fill: "var(--color-chart-axis)", fontSize: 12 };
+import { useLabels } from "../../entities/label";
+import { ChartCard, EmptyState, ErrorText, Skeleton, STATUS_LABELS } from "../../shared/ui";
 
 /**
- * One single-series bar chart with a text summary and a table view. `rows`
- * lays the bars out horizontally (label names are long); columns otherwise.
- * One chart color for both breakdowns: the names sit on the axis, so color
- * would add no information (and the status tokens are too light on white to
- * work as graphics — see ADR 0012).
+ * Where the work is right now (ADR 0012: the present comes from the tables, not from events), as two cards: the status split of every issue, and the
+ * open issues by label (ADR 0064). Both are lists of plain rows with their numbers printed, so neither needs a "view as table": the rows are the table.
  */
-function BarSection({
-  title,
-  data,
-  layout,
-  summary,
-  columnHeader,
-}: {
-  title: string;
-  data: Row[];
-  layout: "columns" | "rows";
-  summary: string;
-  columnHeader: string;
-}) {
-  const [showTable, setShowTable] = useState(false);
-  const height = layout === "rows" ? Math.max(160, data.length * 36 + 32) : 200;
 
-  return (
-    <section>
-      <h3 className="mb-2 font-medium">{title}</h3>
-      <div role="img" aria-label={summary} style={{ height }} className="w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          {layout === "columns" ? (
-            <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
-              <CartesianGrid vertical={false} stroke="var(--color-chart-grid)" />
-              <XAxis dataKey="name" tick={AXIS_TICK} tickLine={false} axisLine={{ stroke: "var(--color-chart-grid)" }} interval={0} />
-              <YAxis allowDecimals={false} tick={AXIS_TICK} tickLine={false} axisLine={false} />
-              <Tooltip content={<ChartTooltip orientation="column" />} cursor={{ fill: "var(--color-chart-grid)", opacity: 0.5 }} {...anchoredTooltipProps} />
-              <Bar dataKey="count" fill="var(--color-chart-primary)" radius={[4, 4, 0, 0]} maxBarSize={48} isAnimationActive={false} />
-            </BarChart>
-          ) : (
-            <BarChart data={data} layout="vertical" margin={{ top: 4, right: 16, bottom: 0, left: 0 }}>
-              <CartesianGrid horizontal={false} stroke="var(--color-chart-grid)" />
-              <XAxis type="number" allowDecimals={false} tick={AXIS_TICK} tickLine={false} axisLine={{ stroke: "var(--color-chart-grid)" }} />
-              <YAxis type="category" dataKey="name" width={96} tick={AXIS_TICK} tickLine={false} axisLine={false} interval={0} />
-              <Tooltip content={<ChartTooltip orientation="row" />} cursor={{ fill: "var(--color-chart-grid)", opacity: 0.5 }} {...anchoredTooltipProps} />
-              <Bar dataKey="count" fill="var(--color-chart-primary)" radius={[0, 4, 4, 0]} maxBarSize={24} isAnimationActive={false} />
-            </BarChart>
-          )}
-        </ResponsiveContainer>
-      </div>
-      <p className="mt-1 text-sm text-[var(--color-text-muted)]">{summary}</p>
-      <Button type="button" variant="link" className="mt-1" onClick={() => setShowTable((open) => !open)}>
-        {showTable ? "Hide table" : "View as table"}
-      </Button>
-      {showTable && (
-        <table className="mt-2 w-full max-w-xs text-left text-sm">
-          <thead>
-            <tr className="text-[var(--color-text-muted)]">
-              <th className="py-1 font-medium">{columnHeader}</th>
-              <th className="py-1 font-medium">Issues</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((row) => (
-              <tr key={row.name} className="border-t border-[var(--color-border-default)]">
-                <td className="py-1">{row.name}</td>
-                <td className="py-1">{row.count}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </section>
-  );
-}
+// Done first, then in progress, then to do: a bar that fills up as work finishes. The colors are the status tokens, which dark mode redefines.
+const STATUS_ORDER = [
+  { status: "done", token: "var(--color-status-done)" },
+  { status: "in_progress", token: "var(--color-status-in-progress)" },
+  { status: "todo", token: "var(--color-status-todo)" },
+] as const;
 
-/**
- * A snapshot of where the work is right now (ADR 0012), not a history: it
- * reads current status and labels. Two gaps are shown rather than hidden —
- * open issues with no label, and labels past the top 10 — and the copy says
- * outright that label counts are not additive.
- */
-export function BreakdownCharts({ organizationId, projectId }: { organizationId: string; projectId: string }) {
+/** One bar split by status. A status with no issues takes no room (and no legend row is hidden: all three are listed). */
+export function StatusBreakdown({ organizationId, projectId }: { organizationId: string; projectId: string }) {
   const { data, isPending, isError, error } = useBreakdown(organizationId, projectId);
+  const title = "Where the work is";
 
-  if (isPending) return <Skeleton className="h-64 w-full" />;
-  if (isError) return <ErrorText>Failed to load breakdown: {error.message}</ErrorText>;
+  if (isPending) {
+    return (
+      <ChartCard title={title} subtitle="Every issue, right now">
+        <Skeleton className="h-48 w-full" />
+      </ChartCard>
+    );
+  }
+  if (isError) {
+    return (
+      <ChartCard title={title} subtitle="Every issue, right now">
+        <ErrorText>Failed to load the breakdown: {error.message}</ErrorText>
+      </ChartCard>
+    );
+  }
+  if (data.total === 0) {
+    return (
+      <ChartCard title={title} subtitle="Every issue, right now">
+        <EmptyState>No issues in this project yet.</EmptyState>
+      </ChartCard>
+    );
+  }
 
-  if (data.total === 0) return <EmptyState>No issues in this project yet.</EmptyState>;
-
-  const statusRows: Row[] = data.byStatus.map((row) => ({ name: STATUS_LABELS[row.status], count: row.count }));
-  const statusSummary = `Issues by status: ${statusRows.map((r) => `${r.name} ${r.count}`).join(", ")}; ${data.total} in total.`;
-  const labelRows: Row[] = data.byLabel.map((row) => ({ name: row.name, count: row.count }));
-  const labelSummary =
-    labelRows.length === 0
-      ? "No open issue carries a label."
-      : `Open issues by label: ${labelRows.map((r) => `${r.name} ${r.count}`).join(", ")}.`;
+  const countOf = (status: string) => data.byStatus.find((row) => row.status === status)?.count ?? 0;
+  const rows = STATUS_ORDER.map((entry) => ({ ...entry, count: countOf(entry.status) }));
+  const openShare = Math.round((data.openTotal / data.total) * 100);
 
   return (
-    <div className="grid gap-8 md:grid-cols-2">
-      <BarSection title="By status" data={statusRows} layout="columns" summary={statusSummary} columnHeader="Status" />
-      <div>
-        {labelRows.length === 0 ? (
-          <>
-            <h3 className="mb-2 font-medium">Open issues by label</h3>
-            <EmptyState>No open issue carries a label.</EmptyState>
-          </>
-        ) : (
-          <BarSection title="Open issues by label" data={labelRows} layout="rows" summary={labelSummary} columnHeader="Label" />
-        )}
-        <div className="mt-2 flex flex-col gap-0.5 text-sm text-[var(--color-text-muted)]">
-          <p>An issue with two labels is counted under both, so these can add up to more than {data.openTotal}.</p>
-          {data.unlabeled > 0 && <p>{data.unlabeled} open issues have no label.</p>}
-          {data.hiddenLabels > 0 && <p>{data.hiddenLabels} more labels not shown.</p>}
-        </div>
+    <ChartCard title={title} subtitle={`All ${data.total} issues, right now`}>
+      <div aria-hidden="true" className="mt-6 flex h-4 gap-0.5">
+        {rows
+          .filter((row) => row.count > 0)
+          .map((row) => (
+            <div key={row.status} style={{ flexGrow: row.count, backgroundColor: row.token }} className="min-w-1 rounded-full" />
+          ))}
       </div>
-    </div>
+      <ul className="mt-4 flex flex-col gap-2.5 text-sm">
+        {rows.map((row) => (
+          <li key={row.status} className="flex items-center gap-2.5">
+            <i aria-hidden="true" className="h-2.5 w-2.5 rounded-xs" style={{ backgroundColor: row.token }} />
+            {STATUS_LABELS[row.status]}
+            <span className="ml-auto text-[var(--color-text-muted)]">
+              <b className="mr-1 font-semibold text-[var(--color-text-default)]">{row.count}</b>
+              {Math.round((row.count / data.total) * 100)}%
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-5 text-xs text-[var(--color-text-muted)]">
+        Open work is {data.openTotal} of {data.total} issues: {openShare}% of the project.
+      </p>
+    </ChartCard>
+  );
+}
+
+/**
+ * Open issues by label, as a list: the label's own color as a dot and as the bar (the owner's choice, ADR 0064; ADR 0012 had kept user-chosen colors out
+ * of the charts because they ignore the semantic palette and dark mode), its name and the count. Color never carries the label alone: the name and the
+ * number are printed. A label without a known color falls back to the chart color. Two gaps are shown rather than hidden: open issues with no label,
+ * and labels past the top 10. The copy says outright that label counts are not additive.
+ */
+export function LabelBreakdown({ organizationId, projectId }: { organizationId: string; projectId: string }) {
+  const { data, isPending, isError, error } = useBreakdown(organizationId, projectId);
+  const labels = useLabels(organizationId);
+  const title = "Open issues by label";
+  const subtitle = "An issue with two labels counts under both";
+
+  if (isPending) {
+    return (
+      <ChartCard title={title} subtitle={subtitle}>
+        <Skeleton className="h-48 w-full" />
+      </ChartCard>
+    );
+  }
+  if (isError) {
+    return (
+      <ChartCard title={title} subtitle={subtitle}>
+        <ErrorText>Failed to load the breakdown: {error.message}</ErrorText>
+      </ChartCard>
+    );
+  }
+
+  const colorOf = (labelId: string) => labels.data?.find((label) => label.id === labelId)?.color;
+  const max = Math.max(1, ...data.byLabel.map((row) => row.count));
+
+  return (
+    <ChartCard title={title} subtitle={subtitle}>
+      {data.byLabel.length === 0 ? (
+        <EmptyState>No open issue carries a label.</EmptyState>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {data.byLabel.map((row) => (
+            <li key={row.labelId} className="flex items-center gap-2 text-sm">
+              <i
+                aria-hidden="true"
+                className="h-2.5 w-2.5 shrink-0 rounded-full"
+                style={{ backgroundColor: colorOf(row.labelId) ?? "var(--color-chart-quiet)" }}
+              />
+              <span className="w-32 shrink-0 truncate" title={row.name}>
+                {row.name}
+              </span>
+              <span aria-hidden="true" className="h-2.5 flex-1 overflow-hidden rounded-full bg-[var(--color-chart-quiet)]/35">
+                <span
+                  className="block h-full rounded-full"
+                  style={{ width: `${Math.max((row.count / max) * 100, 4)}%`, backgroundColor: colorOf(row.labelId) ?? "var(--color-chart-primary)" }}
+                />
+              </span>
+              <b className="w-5 shrink-0 text-right font-semibold">{row.count}</b>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="mt-3 flex flex-col gap-0.5 text-xs text-[var(--color-text-muted)]">
+        <p>These can add up to more than {data.openTotal}, the number of open issues.</p>
+        {data.unlabeled > 0 && <p>{data.unlabeled} open issues have no label.</p>}
+        {data.hiddenLabels > 0 && <p>{data.hiddenLabels} more labels not shown.</p>}
+      </div>
+    </ChartCard>
   );
 }

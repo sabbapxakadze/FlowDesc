@@ -2,8 +2,9 @@ import { useSearchParams } from "react-router";
 import { useVelocity } from "../../entities/analytics";
 import { useCurrentProject } from "../../entities/project";
 import { useAuth } from "../../shared/auth/useAuth";
-import { Card, Dropdown, Page, PageHeader } from "../../shared/ui";
-import { BreakdownCharts } from "../../widgets/breakdown-charts";
+import { Dropdown, Page, PageHeader, SegmentedControl } from "../../shared/ui";
+import { AnalyticsSummary } from "../../widgets/analytics-summary";
+import { LabelBreakdown, StatusBreakdown } from "../../widgets/breakdown-charts";
 import { CycleTimeChart } from "../../widgets/cycle-time-chart";
 import { ThroughputChart } from "../../widgets/throughput-chart";
 import { VelocityChart } from "../../widgets/velocity-chart";
@@ -31,10 +32,16 @@ function parseChoice(raw: string | null, allowed: readonly number[], fallback: n
   return allowed.includes(value) ? value : fallback;
 }
 
+/**
+ * The project's analytics (ADR 0064): four headline numbers, then the charts. The period is a short row of choices in the header (it was a dropdown),
+ * the velocity range stays a dropdown because its choices depend on how many sprints exist. Throughput and the status split share the first row,
+ * cycle time, velocity and labels the second; on a narrow window everything stacks.
+ */
 export function ProjectAnalyticsPage() {
   const { organization } = useAuth();
   const project = useCurrentProject();
   const projectId = project.id;
+  const organizationId = organization!.id;
   const [searchParams, setSearchParams] = useSearchParams();
 
   const weeks = parseChoice(searchParams.get("weeks"), WEEKS_CHOICES, DEFAULT_WEEKS);
@@ -42,11 +49,7 @@ export function ProjectAnalyticsPage() {
 
   // Asks for the largest window once just to learn how many completed sprints
   // exist; the velocity widget then fetches its own (smaller) window.
-  const { data: allVelocity } = useVelocity(
-    organization!.id,
-    projectId,
-    SPRINT_CHOICES[SPRINT_CHOICES.length - 1]!,
-  );
+  const { data: allVelocity } = useVelocity(organizationId, projectId, SPRINT_CHOICES[SPRINT_CHOICES.length - 1]!);
   const sprintChoices = visibleSprintChoices(allVelocity?.data.length);
   // A hand-edited or stale ?sprints= that is no longer offered snaps to the
   // nearest offered choice that still covers it.
@@ -65,65 +68,50 @@ export function ProjectAnalyticsPage() {
     });
   }
 
-  return (
-    <Page width="wide">
-      <PageHeader eyebrow={project.name} title="Analytics" />
-
-      <div className="mb-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+  const controls = (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pb-2 text-sm">
+      <SegmentedControl
+        label="Period for throughput and cycle time"
+        value={String(weeks)}
+        onChange={(value) => setRange("weeks", Number(value), DEFAULT_WEEKS)}
+        options={WEEKS_CHOICES.map((choice) => ({ value: String(choice), label: `${choice} weeks` }))}
+      />
+      {sprintChoices.length > 1 && (
         <label className="flex items-center gap-2">
-          <span className="text-[var(--color-text-muted)]">Period</span>
+          <span className="text-[var(--color-text-muted)]">Velocity</span>
           <Dropdown
-            aria-label="Period for throughput and cycle time"
+            aria-label="Number of sprints for velocity"
             className="w-auto"
-            value={String(weeks)}
-            onChange={(value) => setRange("weeks", Number(value), DEFAULT_WEEKS)}
-            options={WEEKS_CHOICES.map((choice) => ({ value: String(choice), label: `Last ${choice} weeks` }))}
+            value={String(sprints)}
+            onChange={(value) => setRange("sprints", Number(value), DEFAULT_SPRINTS)}
+            options={sprintChoices.map((choice) => ({ value: String(choice), label: `Last ${choice} sprints` }))}
           />
         </label>
-        {sprintChoices.length > 1 && (
-          <label className="flex items-center gap-2">
-            <span className="text-[var(--color-text-muted)]">Velocity</span>
-            <Dropdown
-              aria-label="Number of sprints for velocity"
-              className="w-auto"
-              value={String(sprints)}
-              onChange={(value) => setRange("sprints", Number(value), DEFAULT_SPRINTS)}
-              options={sprintChoices.map((choice) => ({ value: String(choice), label: `Last ${choice} sprints` }))}
-            />
-          </label>
-        )}
-      </div>
+      )}
+    </div>
+  );
 
-      <div className="flex flex-col gap-4">
-        <Card>
-          <h2 className="mb-2 text-lg font-semibold">Throughput</h2>
-          <p className="mb-3 text-sm text-[var(--color-text-muted)]">Issues completed per week.</p>
-          <ThroughputChart organizationId={organization!.id} projectId={project.id} weeks={weeks} />
-        </Card>
+  return (
+    <Page width="wide">
+      <PageHeader eyebrow={project.name} title="Analytics" aside={controls} />
 
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Card>
-            <h2 className="mb-2 text-lg font-semibold">Cycle time</h2>
-            <p className="mb-3 text-sm text-[var(--color-text-muted)]">
-              How long finished issues took, from first in progress to done.
-            </p>
-            <CycleTimeChart organizationId={organization!.id} projectId={project.id} weeks={weeks} />
-          </Card>
+      <div className="mt-4 flex flex-col gap-4">
+        <AnalyticsSummary organizationId={organizationId} projectId={projectId} weeks={weeks} sprints={sprints} />
 
-          <Card>
-            <h2 className="mb-2 text-lg font-semibold">Sprint velocity</h2>
-            <p className="mb-3 text-sm text-[var(--color-text-muted)]">
-              Issues completed in each recent sprint, as of the day it closed.
-            </p>
-            <VelocityChart organizationId={organization!.id} projectId={project.id} sprints={sprints} />
-          </Card>
+        <div className="grid gap-4 lg:grid-cols-12">
+          <div className="lg:col-span-8">
+            <ThroughputChart organizationId={organizationId} projectId={projectId} weeks={weeks} />
+          </div>
+          <div className="lg:col-span-4">
+            <StatusBreakdown organizationId={organizationId} projectId={projectId} />
+          </div>
         </div>
 
-        <Card>
-          <h2 className="mb-2 text-lg font-semibold">Where the work is</h2>
-          <p className="mb-3 text-sm text-[var(--color-text-muted)]">A snapshot of the project right now, not a history.</p>
-          <BreakdownCharts organizationId={organization!.id} projectId={project.id} />
-        </Card>
+        <div className="grid gap-4 lg:grid-cols-3">
+          <CycleTimeChart organizationId={organizationId} projectId={projectId} weeks={weeks} />
+          <VelocityChart organizationId={organizationId} projectId={projectId} sprints={sprints} />
+          <LabelBreakdown organizationId={organizationId} projectId={projectId} />
+        </div>
       </div>
     </Page>
   );

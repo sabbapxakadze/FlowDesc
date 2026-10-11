@@ -64,3 +64,5 @@ near the bottom, as wide as its widest option, Esc closes only the list. Forms u
 
 `PersonHover`'s card is also held inside the window (its left edge is pulled back when the name is near the right edge), so a picture at the right end of a row
 (the assignee circle on a card) never opens off screen.
+
+`ChartCard` is the card one chart lives in (title, subtitle, optional legend; `LegendItem` is a legend entry). `SegmentedControl` is a short row of exclusive choices on native radio inputs (arrow keys and "2 of 4" come from the browser). Both were added for the analytics page (ADR 0064).

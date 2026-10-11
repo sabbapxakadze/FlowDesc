@@ -86,6 +86,11 @@
   --color-chart-primary: var(--color-accent-700);
   --color-chart-grid: var(--color-neutral-200);
   --color-chart-axis: var(--color-neutral-600);
+  /* The quiet mark beside a strong one (committed next to completed) and the empty part of a track. */
+  --color-chart-quiet: var(--color-neutral-300);
+  /* The chosen segment of a SegmentedControl. */
+  --color-bg-segment-active: var(--color-accent-700);
+  --color-text-on-segment-active: var(--color-white);
 
   /* Navigation shell (Phase 3.6 slice 2b). The sidebar is dark in light mode
      on purpose: it frames the page instead of blending into it. */
@@ -166,6 +171,9 @@
     --color-chart-primary: var(--color-accent-400);
     --color-chart-grid: var(--color-neutral-750);
     --color-chart-axis: var(--color-neutral-400);
+    --color-chart-quiet: var(--color-neutral-600);
+    --color-bg-segment-active: var(--color-accent-400);
+    --color-text-on-segment-active: var(--color-neutral-950);
 
     --color-bg-sidebar: var(--color-neutral-950);
     --color-text-sidebar: var(--color-neutral-400);
@@ -225,6 +233,9 @@
   --color-chart-primary: var(--color-accent-400);
   --color-chart-grid: var(--color-neutral-750);
   --color-chart-axis: var(--color-neutral-400);
+  --color-chart-quiet: var(--color-neutral-600);
+  --color-bg-segment-active: var(--color-accent-400);
+  --color-text-on-segment-active: var(--color-neutral-950);
 
   --color-bg-sidebar: var(--color-neutral-950);
   --color-text-sidebar: var(--color-neutral-400);

@@ -1,1 +1,1 @@
-export { BreakdownCharts } from "./BreakdownCharts";
+export { LabelBreakdown, StatusBreakdown } from "./BreakdownCharts";

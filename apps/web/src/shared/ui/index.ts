@@ -12,6 +12,8 @@ export type { MentionCandidate } from "./rich-text/types";
 export { RichTextEditor, type RichTextEditorProps } from "./RichTextEditor";
 export { Field, FieldRowAction } from "./Field";
 export { Card } from "./Card";
+export { ChartCard, LegendItem } from "./ChartCard";
+export { SegmentedControl } from "./SegmentedControl";
 export { ErrorText } from "./ErrorText";
 export { Skeleton } from "./Skeleton";
 export { EmptyState } from "./EmptyState";

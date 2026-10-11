@@ -42,6 +42,8 @@ stored, in `issues.status` and `issue_labels`.
   which is why the copy calls it out.
 - A very long tail of labels is cut at 10 and acknowledged, not paged.
 
+> **Amended by ADR 0064 (2026-10-12):** the label list now shows the label's own color as the dot and the bar (a few label colors are slightly under 3:1 on the dark card; the name and count are always printed), and the status colors are used for a segmented bar; their contrast was measured and is at or above 3:1.
+
 ## Alternatives rejected
 
 - **Derive current status from events:** correct only if the replay is
