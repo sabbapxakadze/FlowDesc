@@ -225,6 +225,13 @@
       "when": 1791725625206,
       "tag": "0031_adorable_blazing_skull",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1791727263696,
+      "tag": "0032_worthless_rogue",
+      "breakpoints": true
     }
   ]
 }

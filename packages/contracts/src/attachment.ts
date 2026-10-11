@@ -59,3 +59,20 @@ export const attachmentResponseSchema = z.object({
 });
 
 export type AttachmentResponse = z.infer<typeof attachmentResponseSchema>;
+
+/**
+ * A picture pasted into the New issue popup before the issue exists (ADR 0063): a draft that belongs to the project, so there is no issue id
+ * yet. Creating the issue links it.
+ */
+export const draftImageSchema = z.object({
+  id: z.uuid(),
+  filename: z.string(),
+  mimeType: z.string(),
+  downloadUrl: z.string(),
+});
+
+export const draftImageResponseSchema = z.object({
+  data: draftImageSchema,
+});
+
+export type DraftImage = z.infer<typeof draftImageSchema>;

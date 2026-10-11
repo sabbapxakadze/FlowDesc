@@ -4,6 +4,7 @@ import {
   assignIssueSprintRequestSchema,
   attachLabelRequestSchema,
   attachmentResponseSchema,
+  draftImageResponseSchema,
   createCommentRequestSchema,
   createCommentResponseSchema,
   createIssueRequestSchema,
@@ -550,6 +551,29 @@ export async function uploadAttachment(req: Request, res: Response) {
   }
 
   const body = attachmentResponseSchema.parse({ data: toAttachmentWireFormat(result.attachment) });
+  res.status(201).json(body);
+}
+
+/** A picture pasted into the New issue popup, before the issue exists (ADR 0063). multer has already validated the file, as for the other upload. */
+export async function uploadProjectDraftImage(req: Request, res: Response) {
+  if (!req.ctx?.projectId) {
+    throw new Error("uploadProjectDraftImage requires requireProject to have run first");
+  }
+  if (!req.file) {
+    throw new AppError("validation_error", 400, "No file was uploaded.");
+  }
+  const result = await issuesService.uploadProjectDraftImage({
+    projectId: req.ctx.projectId,
+    uploaderId: req.ctx.userId,
+    filename: req.file.originalname,
+    mimeType: req.file.mimetype,
+    buffer: req.file.buffer,
+  });
+  if (result.status === "not_image") {
+    throw new AppError("draft_not_image", 400, "Only images (PNG, JPEG, GIF or WebP) can be pasted here.");
+  }
+  const { id, filename, mimeType } = result.attachment;
+  const body = draftImageResponseSchema.parse({ data: toAttachmentWireFormat({ id, filename, mimeType, createdAt: result.attachment.createdAt }) });
   res.status(201).json(body);
 }
 

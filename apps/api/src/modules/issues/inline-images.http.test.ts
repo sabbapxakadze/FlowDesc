@@ -4,7 +4,12 @@ import { eq, sql } from "drizzle-orm";
 import { app } from "../../app.js";
 import { db } from "../../db/client.js";
 import { clearTestUploads, resetDatabase } from "../../db/test-utils.js";
-import { attachments, notifications, organizationMembers, users } from "../../db/schema/index.js";
+import {
+  attachments,
+  notifications,
+  organizationMembers,
+  users,
+} from "../../db/schema/index.js";
 import { signAccessToken } from "../auth/tokens.js";
 
 /**
@@ -14,25 +19,52 @@ import { signAccessToken } from "../auth/tokens.js";
 async function setup() {
   await request(app)
     .post("/api/v1/auth/register")
-    .send({ email: "owner@example.com", password: "password123", name: "Owner User", organizationName: "Org A" })
+    .send({
+      email: "owner@example.com",
+      password: "password123",
+      name: "Owner User",
+      organizationName: "Org A",
+    })
     .expect(201);
-  const login = await request(app).post("/api/v1/auth/login").send({ email: "owner@example.com", password: "password123" }).expect(200);
+  const login = await request(app)
+    .post("/api/v1/auth/login")
+    .send({ email: "owner@example.com", password: "password123" })
+    .expect(200);
   const token = login.body.accessToken as string;
   const organizationId = login.body.organization.id as string;
   const projectId = (
-    await request(app).post(`/api/v1/organizations/${organizationId}/projects`).set("Authorization", `Bearer ${token}`).send({ name: "Project", key: "AAA" }).expect(201)
+    await request(app)
+      .post(`/api/v1/organizations/${organizationId}/projects`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ name: "Project", key: "AAA" })
+      .expect(201)
   ).body.data.id as string;
   const newIssue = async (title: string) =>
     `/api/v1/organizations/${organizationId}/projects/${projectId}/issues/${
-      (await request(app).post(`/api/v1/organizations/${organizationId}/projects/${projectId}/issues`).set("Authorization", `Bearer ${token}`).send({ title }).expect(201)).body.data.id as string
+      (
+        await request(app)
+          .post(`/api/v1/organizations/${organizationId}/projects/${projectId}/issues`)
+          .set("Authorization", `Bearer ${token}`)
+          .send({ title })
+          .expect(201)
+      ).body.data.id as string
     }`;
   return { token, organizationId, newIssue };
 }
 
 async function addMember(organizationId: string) {
-  const [user] = await db.insert(users).values({ email: "member@example.com", passwordHash: "not-a-real-hash", name: "Member One" }).returning();
+  const [user] = await db
+    .insert(users)
+    .values({
+      email: "member@example.com",
+      passwordHash: "not-a-real-hash",
+      name: "Member One",
+    })
+    .returning();
   if (!user) throw new Error("setup failed");
-  await db.insert(organizationMembers).values({ organizationId, userId: user.id, role: "member" });
+  await db
+    .insert(organizationMembers)
+    .values({ organizationId, userId: user.id, role: "member" });
   return signAccessToken(user.id);
 }
 
@@ -50,7 +82,10 @@ function pasteDraft(base: string, token: string, contentType = "image/png") {
 const ref = (id: string) => `![shot.png](attachment:${id})`;
 
 function comment(base: string, token: string, body: string) {
-  return request(app).post(`${base}/comments`).set("Authorization", `Bearer ${token}`).send({ body });
+  return request(app)
+    .post(`${base}/comments`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ body });
 }
 
 describe("pictures pasted into comments (HTTP, ADR 0062)", () => {
@@ -64,16 +99,26 @@ describe("pictures pasted into comments (HTTP, ADR 0062)", () => {
     const { token, organizationId, newIssue } = await setup();
     const base = await newIssue("Has a draft");
     const memberToken = await addMember(organizationId);
-    await comment(base, memberToken, "I am a participant who could be notified").expect(201);
+    await comment(base, memberToken, "I am a participant who could be notified").expect(
+      201,
+    );
     const notificationsBefore = (await db.select().from(notifications)).length;
 
     const res = await pasteDraft(base, token).expect(201);
     expect(res.body.data.id).toBeTruthy();
 
-    const events = (await request(app).get(`${base}/events`).set("Authorization", `Bearer ${token}`).expect(200)).body.data as Array<{ type: string }>;
+    const events = (
+      await request(app)
+        .get(`${base}/events`)
+        .set("Authorization", `Bearer ${token}`)
+        .expect(200)
+    ).body.data as Array<{ type: string }>;
     expect(events.some((e) => e.type === "issue.attachment_added")).toBe(false);
     expect((await db.select().from(notifications)).length).toBe(notificationsBefore);
-    const files = await request(app).get(`${base}/attachments`).set("Authorization", `Bearer ${token}`).expect(200);
+    const files = await request(app)
+      .get(`${base}/attachments`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
     expect(files.body.data).toEqual([]);
   });
 
@@ -96,7 +141,10 @@ describe("pictures pasted into comments (HTTP, ADR 0062)", () => {
     const [row] = await db.select().from(attachments).where(eq(attachments.id, first));
     expect(row?.draft).toBe(false);
     expect(row?.commentId).toBe(commentId);
-    const files = await request(app).get(`${base}/attachments`).set("Authorization", `Bearer ${token}`).expect(200);
+    const files = await request(app)
+      .get(`${base}/attachments`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
     expect(files.body.data.map((f: { id: string }) => f.id)).toEqual([first]);
 
     const second = (await pasteDraft(base, token).expect(201)).body.data.id as string;
@@ -117,9 +165,14 @@ describe("pictures pasted into comments (HTTP, ADR 0062)", () => {
     const other = await newIssue("Another issue");
     const memberToken = await addMember(organizationId);
     const mine = (await pasteDraft(other, token).expect(201)).body.data.id as string; // on another issue
-    const theirs = (await pasteDraft(base, memberToken).expect(201)).body.data.id as string; // someone else's draft
+    const theirs = (await pasteDraft(base, memberToken).expect(201)).body.data
+      .id as string; // someone else's draft
     const pdf = (
-      await request(app).post(`${base}/attachments`).set("Authorization", `Bearer ${token}`).attach("file", PNG, { filename: "a.pdf", contentType: "application/pdf" }).expect(201)
+      await request(app)
+        .post(`${base}/attachments`)
+        .set("Authorization", `Bearer ${token}`)
+        .attach("file", PNG, { filename: "a.pdf", contentType: "application/pdf" })
+        .expect(201)
     ).body.data.id as string; // a real file, but not a draft and not an image
     const unknown = "00000000-0000-4000-8000-000000000000";
 
@@ -127,7 +180,12 @@ describe("pictures pasted into comments (HTTP, ADR 0062)", () => {
       const res = await comment(base, token, ref(id)).expect(400);
       expect(res.body.error.code).toBe("invalid_inline_image");
     }
-    const timeline = (await request(app).get(`${base}/events`).set("Authorization", `Bearer ${token}`).expect(200)).body.data as Array<{ type: string }>;
+    const timeline = (
+      await request(app)
+        .get(`${base}/events`)
+        .set("Authorization", `Bearer ${token}`)
+        .expect(200)
+    ).body.data as Array<{ type: string }>;
     expect(timeline.some((e) => e.type === "issue.commented")).toBe(false);
   });
 
@@ -136,7 +194,8 @@ describe("pictures pasted into comments (HTTP, ADR 0062)", () => {
     const { token, newIssue } = await setup();
     const base = await newIssue("Many");
     const ids: string[] = [];
-    for (let i = 0; i < 11; i++) ids.push((await pasteDraft(base, token).expect(201)).body.data.id as string);
+    for (let i = 0; i < 11; i++)
+      ids.push((await pasteDraft(base, token).expect(201)).body.data.id as string);
     const res = await comment(base, token, ids.map(ref).join("\n")).expect(400);
     expect(res.body.error.code).toBe("too_many_inline_images");
     await comment(base, token, ids.slice(0, 10).map(ref).join("\n")).expect(201);
@@ -148,11 +207,17 @@ describe("pictures pasted into comments (HTTP, ADR 0062)", () => {
     const base = await newIssue("Cleanup");
     const old = (await pasteDraft(base, token).expect(201)).body.data.id as string;
     const young = (await pasteDraft(base, token).expect(201)).body.data.id as string;
-    await db.execute(sql`UPDATE attachments SET created_at = now() - interval '25 hours' WHERE id = ${old}`);
+    await db.execute(
+      sql`UPDATE attachments SET created_at = now() - interval '25 hours' WHERE id = ${old}`,
+    );
 
     await pasteDraft(base, token).expect(201);
 
-    expect(await db.select().from(attachments).where(eq(attachments.id, old))).toHaveLength(0);
-    expect(await db.select().from(attachments).where(eq(attachments.id, young))).toHaveLength(1);
+    expect(
+      await db.select().from(attachments).where(eq(attachments.id, old)),
+    ).toHaveLength(0);
+    expect(
+      await db.select().from(attachments).where(eq(attachments.id, young)),
+    ).toHaveLength(1);
   });
 });

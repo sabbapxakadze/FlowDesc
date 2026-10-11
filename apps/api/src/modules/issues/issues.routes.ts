@@ -265,6 +265,18 @@ issuesRouter.post(
   issuesController.uploadAttachment,
 );
 
+// A picture pasted into the New issue popup, before the issue exists (ADR 0063): a draft of the project. Same guards as every upload.
+issuesRouter.post(
+  "/organizations/:organizationId/projects/:projectId/draft-images",
+  requireAuth,
+  requireOrgMembership,
+  requireProject,
+  requirePermission("manage_issue"),
+  denyInDemo("Uploading files"),
+  parseAttachmentUpload,
+  issuesController.uploadProjectDraftImage,
+);
+
 issuesRouter.delete(
   "/organizations/:organizationId/projects/:projectId/issues/:issueId/attachments/:attachmentId",
   requireAuth,

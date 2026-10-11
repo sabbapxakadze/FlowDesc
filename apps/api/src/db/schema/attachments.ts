@@ -1,6 +1,8 @@
-import { pgTable, uuid, varchar, integer, timestamp, index, boolean } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, integer, timestamp, index, boolean, check } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { comments } from "./comments.js";
 import { issues } from "./issues.js";
+import { projects } from "./projects.js";
 import { users } from "./users.js";
 
 /**
@@ -15,9 +17,10 @@ export const attachments = pgTable(
   "attachments",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    issueId: uuid("issue_id")
-      .notNull()
-      .references(() => issues.id, { onDelete: "cascade" }),
+    // Null only for a draft picture pasted into the New issue popup before the issue exists (ADR 0063): it belongs to the project until
+    // creating the issue links it. Every other file has an issue.
+    issueId: uuid("issue_id").references(() => issues.id, { onDelete: "cascade" }),
+    projectId: uuid("project_id").references(() => projects.id, { onDelete: "cascade" }),
     uploaderId: uuid("uploader_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
@@ -39,5 +42,7 @@ export const attachments = pgTable(
   (table) => [
     index("attachments_issue_id_idx").on(table.issueId),
     index("attachments_comment_id_idx").on(table.commentId),
+    index("attachments_project_id_idx").on(table.projectId),
+    check("attachments_owner_check", sql`${table.issueId} IS NOT NULL OR ${table.projectId} IS NOT NULL`),
   ],
 );

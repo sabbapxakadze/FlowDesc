@@ -102,7 +102,9 @@ export const issues = pgTable(
     // above a description-only match in ts_rank. See Phase 7 slice 1's
     // plan and the new search() repository function.
     searchVector: tsvectorType("search_vector").generatedAlwaysAs(
-      sql`setweight(to_tsvector('english', coalesce(title, '')), 'A') || setweight(to_tsvector('english', coalesce(description, '')), 'B')`,
+      // The description is Markdown with picture and mention tokens (ADR 0063): the picture token is dropped and a mention token reduced to the name, so
+      // searching "attachment" or an id finds nothing by accident. Bracket classes instead of backslashes keep the pattern the same in SQL and in this string.
+      sql`setweight(to_tsvector('english', coalesce(title, '')), 'A') || setweight(to_tsvector('english', regexp_replace(regexp_replace(coalesce(description, ''), '![[][^]]*[]][(]attachment:[0-9a-fA-F-]{36}[)]', ' ', 'g'), '@[[]([^]]*)[]][(]user:[0-9a-fA-F-]{36}[)]', '\\1', 'g')), 'B')`,
     ),
   },
   (table) => [

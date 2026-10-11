@@ -1,4 +1,4 @@
-import { and, eq, max, sql } from "drizzle-orm";
+import { and, eq, isNull, max, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { attachments, issueEvents, issues, projects, sprints } from "../../db/schema/index.js";
 import * as auditRepository from "../audit/audit.repository.js";
@@ -98,11 +98,17 @@ export async function remove(input: { organizationId: string; projectId: string;
     if (!project) return { status: "not_found" };
 
     const inProject = and(eq(issues.organizationId, input.organizationId), eq(issues.projectId, input.projectId));
-    const files = await tx
+    const issueFiles = await tx
       .select({ storageKey: attachments.storageKey })
       .from(attachments)
       .innerJoin(issues, eq(attachments.issueId, issues.id))
       .where(inProject);
+    // Draft pictures pasted into the New issue popup that no issue owns yet (ADR 0063) go with the project too.
+    const draftFiles = await tx
+      .select({ storageKey: attachments.storageKey })
+      .from(attachments)
+      .where(and(eq(attachments.projectId, input.projectId), isNull(attachments.issueId)));
+    const files = [...issueFiles, ...draftFiles];
     const actors = await tx
       .selectDistinct({ userId: issueEvents.actorId })
       .from(issueEvents)

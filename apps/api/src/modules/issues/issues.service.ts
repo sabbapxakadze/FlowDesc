@@ -67,9 +67,53 @@ export async function createIssue(input: {
   reporterId: string;
 }) {
   await assertDemoHasRoomForIssue(input.organizationId); // a demo copy is capped (ADR 0044)
-  const issue = await issuesRepository.create(input);
+  const pictures = await checkedDescriptionImages({
+    projectId: input.projectId,
+    issueId: null,
+    actorId: input.reporterId,
+    description: input.description,
+    previousDescription: null,
+  });
+  const { issue, notifiedUserIds } = await issuesRepository.createWithNotified({
+    ...input,
+    mentionedUserIds: await mentionedMembers(input.organizationId, input.description ?? ""),
+    inlineImageIds: pictures,
+  });
   broadcastIssueChanged(input.projectId, issue.id);
+  broadcastNotifications(notifiedUserIds);
   return issue;
+}
+
+/**
+ * The pictures an issue description shows (`![name](attachment:<id>)`), checked (ADR 0063). The ids come from text the client sent, so each must be an
+ * image file this description may use: one the description ALREADY showed (anyone editing may keep what is there) or the writer's own draft (of this
+ * issue, or of this project when the issue is being created). Another person's file, an unknown id or a non-image is a 400 and nothing is saved. At
+ * most 10. Returns the ids of the drafts that must be linked (the ones not already the issue's).
+ */
+async function checkedDescriptionImages(input: {
+  projectId: string;
+  issueId: string | null;
+  actorId: string;
+  description: string | null;
+  previousDescription: string | null;
+}): Promise<string[]> {
+  const ids = inlineImageIds(input.description ?? "");
+  if (ids.length === 0) return [];
+  if (ids.length > MAX_INLINE_IMAGES) {
+    throw new AppError("too_many_inline_images", 400, `A description can show at most ${MAX_INLINE_IMAGES} pictures.`);
+  }
+  const kept = inlineImageIds(input.previousDescription ?? "");
+  const files = new Map((await issuesRepository.findFilesForDescription(input.projectId, input.issueId, ids)).map((file) => [file.id, file]));
+  const toLink: string[] = [];
+  for (const id of ids) {
+    const file = files.get(id);
+    const usable = file && ((kept.includes(id) && !file.draft) || (file.draft && file.uploaderId === input.actorId));
+    if (!file || !usable || !INLINE_IMAGE_TYPES.includes(file.mimeType)) {
+      throw new AppError("invalid_inline_image", 400, "A picture in this description is not one you uploaded for it.");
+    }
+    if (file.draft) toLink.push(id);
+  }
+  return toLink;
 }
 
 export async function updateIssue(input: {
@@ -92,6 +136,24 @@ export async function updateIssue(input: {
   // client, so it is checked here on every assignment. The member's name is kept
   // in the event payload: the timeline should say who it was then.
   let eventExtras: Record<string, unknown> | undefined;
+  // A changed description: its pictures are checked and its newly @mentioned members found (ADR 0063). The previous text comes from a read here;
+  // if someone changed the issue since, the version check in update() answers conflict and none of this is used.
+  let inlineImages: string[] = [];
+  let newMentionUserIds: string[] = [];
+  if (input.changes.description !== undefined) {
+    const current = await issuesRepository.findById(input.organizationId, input.projectId, input.issueId);
+    if (current) {
+      inlineImages = await checkedDescriptionImages({
+        projectId: input.projectId,
+        issueId: input.issueId,
+        actorId: input.actorId,
+        description: input.changes.description,
+        previousDescription: current.description,
+      });
+      const before = mentionedUserIds(current.description ?? "");
+      newMentionUserIds = (await mentionedMembers(input.organizationId, input.changes.description ?? "")).filter((id) => !before.includes(id));
+    }
+  }
   if (input.changes.assigneeId !== undefined) {
     if (input.changes.assigneeId === null) {
       eventExtras = { assigneeName: null };
@@ -102,7 +164,7 @@ export async function updateIssue(input: {
     }
   }
 
-  const result = await issuesRepository.update({ ...input, eventExtras });
+  const result = await issuesRepository.update({ ...input, eventExtras, newMentionUserIds, inlineImageIds: inlineImages });
   if (result.status === "updated") {
     broadcastIssueChanged(input.projectId, input.issueId);
     broadcastNotifications(result.notifiedUserIds);
@@ -438,6 +500,34 @@ export async function uploadAttachment(input: {
   // A comment's file arrives after the comment itself: tell open pages to
   // refetch so it shows up without a reload.
   if (input.commentId) broadcastIssueCommented(input.issueId);
+  return { status: "uploaded", attachment } as const;
+}
+
+/**
+ * A picture pasted into the New issue popup (ADR 0063): saved as a draft of the project, since the issue does not exist yet. Images only. Silent: no
+ * event, no notification. Creating the issue links it; one never used is deleted after 24 hours with the other drafts.
+ */
+export async function uploadProjectDraftImage(input: {
+  projectId: string;
+  uploaderId: string;
+  filename: string;
+  mimeType: string;
+  buffer: Buffer;
+}) {
+  storage.assertUploadsEnabled();
+  if (!INLINE_IMAGE_TYPES.includes(input.mimeType)) return { status: "not_image" } as const;
+  await removeExpiredDrafts();
+  const id = randomUUID();
+  const storageKey = await storage.saveFile(id, input.buffer);
+  const attachment = await issuesRepository.addProjectDraft({
+    id,
+    projectId: input.projectId,
+    uploaderId: input.uploaderId,
+    filename: input.filename,
+    mimeType: input.mimeType,
+    sizeBytes: input.buffer.length,
+    storageKey,
+  });
   return { status: "uploaded", attachment } as const;
 }
 

@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNull, lt, ne, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, lt, ne, or, sql, type SQL } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
   attachments,
@@ -481,6 +481,23 @@ export async function create(input: {
   description: string | null;
   reporterId: string;
 }) {
+  return (await createWithNotified(input)).issue;
+}
+
+/**
+ * create(), plus the people the description's @mentions told (ADR 0063) and the draft pictures it shows, linked in the same transaction. The mentioned
+ * and the pictures are already checked by the service. Split from create() so the many callers that only want the issue stay as they were.
+ */
+export async function createWithNotified(input: {
+  organizationId: string;
+  projectId: string;
+  title: string;
+  description: string | null;
+  reporterId: string;
+  mentionedUserIds?: string[];
+  /** Draft pictures of this project the description shows: they become this issue's files. */
+  inlineImageIds?: string[];
+}) {
   return db.transaction(async (tx) => {
     const [updated] = await tx
       .update(projects)
@@ -509,21 +526,28 @@ export async function create(input: {
       .returning();
     if (!issue) throw new Error("Failed to create issue");
 
-    // Participants are "every actor from this issue's past events" —
-    // for the very first event, that set is always empty (nobody but
-    // the reporter has acted yet, and they're excluded as the current
-    // actor). writeIssueEvent's return is provably always [] here, so
-    // there's nothing to bubble up — create() keeps its original bare-
-    // issue return shape rather than wrapping it for a broadcast that
-    // could never have a recipient.
-    await writeIssueEvent(tx, {
+    await linkDescriptionImages(tx, {
       issueId: issue.id,
-      actorId: input.reporterId,
-      type: "issue.created",
-      payload: { title: issue.title },
+      projectId: input.projectId,
+      uploaderId: input.reporterId,
+      ids: input.inlineImageIds ?? [],
     });
 
-    return issue;
+    // Participants are "every actor from this issue's past events" — for the very first event that set is empty, so without mentions nobody is told.
+    // The people the description @mentions are (ADR 0063).
+    const mentioned = input.mentionedUserIds ?? [];
+    const notifiedUserIds = await writeIssueEvent(
+      tx,
+      {
+        issueId: issue.id,
+        actorId: input.reporterId,
+        type: "issue.created",
+        payload: mentioned.length > 0 ? { title: issue.title, mentions: mentioned } : { title: issue.title },
+      },
+      { alsoNotifyUserIds: mentioned },
+    );
+
+    return { issue, notifiedUserIds };
   });
 }
 
@@ -564,6 +588,10 @@ export async function update(input: {
   // e.g. the assignee's name at the time (a name can change later; the
   // timeline should keep saying what was true then, like label names do).
   eventExtras?: Record<string, unknown>;
+  /** Members a CHANGED description newly @mentions (not mentioned by the old text): only they are told (ADR 0063). */
+  newMentionUserIds?: string[];
+  /** Draft pictures a CHANGED description shows (already checked by the service): they become this issue's files. */
+  inlineImageIds?: string[];
   actorId: string;
 }): Promise<
   | { status: "updated"; issue: typeof issues.$inferSelect; notifiedUserIds: string[] }
@@ -614,19 +642,35 @@ export async function update(input: {
       .returning();
 
     if (updated) {
+      // The pictures and mentions only matter when the description really changed.
+      const descriptionChanged = "description" in changed;
+      if (descriptionChanged) {
+        await linkDescriptionImages(tx, {
+          issueId: updated.id,
+          projectId: input.projectId,
+          uploaderId: input.actorId,
+          ids: input.inlineImageIds ?? [],
+        });
+      }
+      const newMentions = descriptionChanged ? (input.newMentionUserIds ?? []) : [];
       const notifiedUserIds = await writeIssueEvent(
         tx,
         {
           issueId: updated.id,
           actorId: input.actorId,
           type: "issue.updated",
-          // The assignee's name only travels with a real assignee change.
-          payload: { ...changed, ...("assigneeId" in changed ? input.eventExtras : {}) },
+          // The assignee's name only travels with a real assignee change; `mentions` lists the people this edit's description newly mentions.
+          payload: {
+            ...changed,
+            ...("assigneeId" in changed ? input.eventExtras : {}),
+            ...(newMentions.length > 0 ? { mentions: newMentions } : {}),
+          },
         },
         {
           // Whoever held the issue until now is told it moved on (ADR 0021): they
           // may never have acted on it, so the participant rule would miss them.
-          alsoNotifyUserIds: "assigneeId" in changed && before.assigneeId ? [before.assigneeId] : [],
+          // The newly mentioned are told on top of the usual people (ADR 0063).
+          alsoNotifyUserIds: [...("assigneeId" in changed && before.assigneeId ? [before.assigneeId] : []), ...newMentions],
         },
       );
       return { status: "updated", issue: updated, notifiedUserIds };
@@ -913,6 +957,58 @@ async function linkInlineImages(tx: Tx, input: { issueId: string; commentId: str
     )
     .returning({ id: attachments.id });
   if (linked.length !== input.ids.length) throw new Error("A picture changed while the comment was being saved");
+}
+
+/**
+ * Links the draft pictures a description shows to the issue (ADR 0063): they become ordinary files of the issue. The WHERE repeats the service's
+ * checks (the writer's own draft, of this issue or of this project before the issue existed); a count short of the ids rolls the whole change back.
+ */
+async function linkDescriptionImages(tx: Tx, input: { issueId: string; projectId: string; uploaderId: string; ids: string[] }) {
+  if (input.ids.length === 0) return;
+  const linked = await tx
+    .update(attachments)
+    .set({ draft: false, issueId: input.issueId })
+    .where(
+      and(
+        inArray(attachments.id, input.ids),
+        eq(attachments.uploaderId, input.uploaderId),
+        eq(attachments.draft, true),
+        or(eq(attachments.issueId, input.issueId), and(isNull(attachments.issueId), eq(attachments.projectId, input.projectId))),
+      ),
+    )
+    .returning({ id: attachments.id });
+  if (linked.length !== input.ids.length) throw new Error("A picture changed while the description was being saved");
+}
+
+/**
+ * The files with these ids that a description of this issue (or, when `issueId` is null, of a new issue in this project) could show: files of the
+ * issue, and project drafts that have no issue yet. The project and issue ids come from the already-checked request context, so this is tenant-scoped
+ * by them (attachments has no organization column).
+ */
+export async function findFilesForDescription(projectId: string, issueId: string | null, ids: string[]) {
+  if (ids.length === 0) return [];
+  const here = issueId
+    ? or(eq(attachments.issueId, issueId), and(isNull(attachments.issueId), eq(attachments.projectId, projectId)))
+    : and(isNull(attachments.issueId), eq(attachments.projectId, projectId));
+  return db
+    .select({ id: attachments.id, uploaderId: attachments.uploaderId, mimeType: attachments.mimeType, draft: attachments.draft })
+    .from(attachments)
+    .where(and(inArray(attachments.id, ids), here));
+}
+
+/** A draft picture for a new issue (ADR 0063): belongs to the project until the issue is created. Silent: no event, no notification. */
+export async function addProjectDraft(input: {
+  id: string;
+  projectId: string;
+  uploaderId: string;
+  filename: string;
+  mimeType: string;
+  sizeBytes: number;
+  storageKey: string;
+}) {
+  const [row] = await db.insert(attachments).values({ ...input, issueId: null, draft: true }).returning();
+  if (!row) throw new Error("Failed to create draft picture");
+  return row;
 }
 
 /** The files with these ids on this issue (and so this organization), for the service's checks before it links pictures to a comment. */
