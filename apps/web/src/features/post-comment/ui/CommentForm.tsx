@@ -44,6 +44,7 @@ export function CommentForm({
   const inputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [fileErrors, setFileErrors] = useState<string[]>([]);
+  const [imageUploading, setImageUploading] = useState(false);
 
   const mutation = useMutation({
     mutationFn: async ({ body, chosen }: { body: string; chosen: File[] }) => {
@@ -99,7 +100,16 @@ export function CommentForm({
         name="body"
         rules={{ required: true }}
         render={({ field }) => (
-          <CommentBodyField organizationId={organizationId} value={field.value} onChange={field.onChange} placeholder="Add a comment…" ariaLabel="Comment" />
+          <CommentBodyField
+            organizationId={organizationId}
+            projectId={projectId}
+            issueId={issueId}
+            value={field.value}
+            onChange={field.onChange}
+            onUploadingChange={setImageUploading}
+            placeholder="Add a comment…"
+            ariaLabel="Comment"
+          />
         )}
       />
       {files.length > 0 && (
@@ -124,8 +134,9 @@ export function CommentForm({
         </ul>
       )}
       <div className="flex items-center gap-2">
-        <Button type="submit" size="sm" pending={mutation.isPending}>
-          {mutation.isPending ? "Posting…" : "Comment"}
+        {/* A picture still uploading is not in the text yet: posting now would leave it out. */}
+        <Button type="submit" size="sm" pending={mutation.isPending} disabled={imageUploading}>
+          {mutation.isPending ? "Posting…" : imageUploading ? "Uploading picture…" : "Comment"}
         </Button>
         <Button
           type="button"

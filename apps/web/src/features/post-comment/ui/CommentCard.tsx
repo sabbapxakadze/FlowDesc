@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FileText, Pencil, Trash2 } from "lucide-react";
-import type { Attachment, IssueEvent } from "@flowdesk/contracts";
-import { AttachmentLink, AttachmentThumbnail, issueKeys, previewKind } from "../../../entities/issue";
+import { inlineImageIds, type Attachment, type IssueEvent } from "@flowdesk/contracts";
+import { AttachmentLink, AttachmentThumbnail, InlineImage, issueKeys, previewKind } from "../../../entities/issue";
 import { MentionedText, PersonName } from "../../../entities/member";
 import { Button, ErrorText, IconButton, Time } from "../../../shared/ui";
 import { formatFileSize } from "../../../shared/ui/lib/formatFileSize";
@@ -70,6 +70,7 @@ export function CommentCard({
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(payload.body);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
 
   function refresh() {
     void queryClient.invalidateQueries({ queryKey: issueKeys.events(issueId) });
@@ -100,6 +101,10 @@ export function CommentCard({
       </div>
     );
   }
+
+  // A picture shown inside the text is not repeated in the strip of thumbnails under it (ADR 0062).
+  const shownInText = inlineImageIds(payload.body);
+  const strip = files.filter((file) => !shownInText.includes(file.id));
 
   const showActions =
     !isEditing && !confirmingDelete && (payload.canEdit || payload.canDelete);
@@ -145,13 +150,23 @@ export function CommentCard({
       <div className="px-4 py-3">
         {isEditing ? (
           <div className="motion-rise-in flex flex-col gap-2">
-            <CommentBodyField organizationId={organizationId} value={draft} onChange={setDraft} ariaLabel="Edit comment" autoFocus />
+            <CommentBodyField
+              organizationId={organizationId}
+              projectId={projectId}
+              issueId={issueId}
+              images={files}
+              onUploadingChange={setImageUploading}
+              value={draft}
+              onChange={setDraft}
+              ariaLabel="Edit comment"
+              autoFocus
+            />
             <div className="flex gap-2">
               <Button
                 size="sm"
                 variant="success"
                 disabled={
-                  editMutation.isPending || !draft.trim() || draft === payload.body
+                  editMutation.isPending || imageUploading || !draft.trim() || draft === payload.body
                 }
                 onClick={() => editMutation.mutate()}
               >
@@ -173,13 +188,20 @@ export function CommentCard({
           </div>
         ) : (
           <div className="text-sm break-words">
-            <MentionedText organizationId={organizationId} body={payload.body} />
+            <MentionedText
+              organizationId={organizationId}
+              body={payload.body}
+              renderImage={(attachmentId, alt) => {
+                const file = files.find((f) => f.id === attachmentId);
+                return file ? <InlineImage attachment={file} alt={alt} /> : `[${alt || "image"}]`;
+              }}
+            />
           </div>
         )}
 
-        {files.length > 0 && (
+        {strip.length > 0 && (
           <div className="mt-3 flex flex-wrap items-start gap-2">
-            {files.map((file) =>
+            {strip.map((file) =>
               previewKind(file.mimeType) ? (
                 <AttachmentThumbnail key={file.id} attachment={file} />
               ) : (

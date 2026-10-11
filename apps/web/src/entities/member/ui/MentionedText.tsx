@@ -11,7 +11,16 @@ import { PersonName } from "./PersonName";
  * and links with a checked address, so nothing a writer types can inject markup. Links open in a new tab and say so to the browser
  * (`noopener noreferrer`), and tell search engines not to count them (`nofollow ugc`).
  */
-export function MentionedText({ organizationId, body }: { organizationId: string; body: string }) {
+export function MentionedText({
+  organizationId,
+  body,
+  renderImage,
+}: {
+  organizationId: string;
+  body: string;
+  /** Draws a picture in the text (ADR 0062) from its file's id and name. Supplied by the caller, who knows the files; without it a picture shows as its name. */
+  renderImage?: (attachmentId: string, alt: string) => ReactNode;
+}) {
   const draw = (nodes: Inline[]): ReactNode =>
     nodes.map((node, index) => {
       switch (node.type) {
@@ -38,8 +47,7 @@ export function MentionedText({ organizationId, body }: { organizationId: string
             </a>
           );
         case "image":
-          // Drawn as the picture itself in the editor slice (ADR 0062); until then the reader's node is shown as its name.
-          return <span key={index}>[{node.alt || "image"}]</span>;
+          return <span key={index}>{renderImage ? renderImage(node.attachmentId, node.alt) : `[${node.alt || "image"}]`}</span>;
         case "mention":
           return (
             <span key={index} className="font-medium">
@@ -52,6 +60,11 @@ export function MentionedText({ organizationId, body }: { organizationId: string
   return (
     <div className="space-y-2">
       {parseCommentMarkdown(body).map((block, index) => {
+        if (block.type === "image") {
+          return (
+            <div key={index}>{renderImage ? renderImage(block.attachmentId, block.alt) : `[${block.alt || "image"}]`}</div>
+          );
+        }
         if (block.type === "paragraph") {
           return (
             <p key={index} className="whitespace-pre-wrap">

@@ -1,6 +1,6 @@
-# 0062 - Pasting images into comments (slice 1 built)
+# 0062 - Pasting images into comments (slices 1 and 2 built)
 
-Status: **Accepted, slice 1 built** - 2026-10-11. Agreed with the owner in conversation. Slice 1 (server and format) is built; slices 2 and 3 are not. Builds on ADR 0056 (formatted comments), 0023 (attachment previews) and 0053 (object storage).
+Status: **Accepted, slice 1 built** - 2026-10-11. Agreed with the owner in conversation. Slices 1 (server and format) and 2 (the editor) are built; slice 3 is not. Builds on ADR 0056 (formatted comments), 0023 (attachment previews) and 0053 (object storage).
 
 ## Context
 
@@ -40,6 +40,14 @@ For an image that sits INSIDE the text, the file must exist before the comment i
 - `parseCommentMarkdown` has an `image` node only for `![name](attachment:<uuid>)`; `inlineImageIds(body)` lists the ids from the same reader, so what is linked is exactly what is drawn. Until slice 2 the web app draws the node as `[name]`.
 - Create and edit check each id (real file on this issue, same uploader, an image type, a draft or already this comment's, at most 10): `invalid_inline_image` / `too_many_inline_images`, both 400, nothing saved. The repository then links them in the comment's own transaction, with the same conditions repeated in the UPDATE.
 - Named limit: a picture removed from the text on edit stays attached to the issue (as decided in 7). A draft deleted by cleanup while its text is still being written would be refused at posting (`invalid_inline_image`).
+
+## Slice 2 as built
+
+- `RichTextEditor` takes `uploadImage`, `images` and `onUploadingChange` (domain-free); the comment feature supplies the upload (`uploadDraftImage`). A paste or drop of image files inserts an `inlineImage` node at once from the local file (dimmed while uploading) and swaps it for the stored file when the upload ends; the form's button waits ("Uploading picture...").
+- Deviation from decision 5: a picture that is refused (type, 10 MB, more than 10) or whose upload fails never gets a placeholder; a short dismissible message under the box says why. There is no inline error placeholder to remove.
+- Comments draw a picture with `InlineImage` (entities/issue; click opens the zoom popup, an expired link is refetched); the popup is portalled to the page body because a `<dialog>` cannot sit inside the comment's paragraph (found by the browser test's log). Pictures shown in the text are left out of the thumbnail strip. Editing a comment shows its pictures.
+- Owner's rule, added after the first build: a picture is a block of its own and text never shares its line. The editor node is a block; a paste or drop goes after the line the cursor is on (an empty line is used up by it) and the cursor moves to the line after it. The reader splits a stored line that mixes text and a picture into paragraph, picture, paragraph, so an older body still follows the rule.
+- Not done: Ctrl+Z on a placeholder is plain editor undo (not tested); Safari and phone clipboards are not tested; pasting page content that contains images is ignored.
 
 ## Tests (lean, no pixel checks)
 

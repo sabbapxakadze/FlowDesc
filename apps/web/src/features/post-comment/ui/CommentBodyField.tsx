@@ -1,7 +1,8 @@
 import { useMemo } from "react";
-import { mentionDisplayName } from "@flowdesk/contracts";
+import { mentionDisplayName, type Attachment } from "@flowdesk/contracts";
 import { memberOptions, useMembers } from "../../../entities/member";
 import { RichTextEditor } from "../../../shared/ui";
+import { uploadDraftImage } from "../api/uploadDraftImage";
 
 /**
  * The comment text box (ADR 0033 for @mentions, ADR 0056 for formatting): a rich-text editor that holds the STORED body, the Markdown subset the
@@ -10,6 +11,10 @@ import { RichTextEditor } from "../../../shared/ui";
  */
 export function CommentBodyField({
   organizationId,
+  projectId,
+  issueId,
+  images,
+  onUploadingChange,
   value,
   onChange,
   placeholder,
@@ -17,6 +22,12 @@ export function CommentBodyField({
   autoFocus,
 }: {
   organizationId: string;
+  projectId: string;
+  issueId: string;
+  /** Pictures already stored for this comment, so editing it can show them. */
+  images?: Attachment[];
+  /** True while a pasted picture is still uploading: the form waits before posting. */
+  onUploadingChange?: (uploading: boolean) => void;
   /** The stored body. */
   value: string;
   onChange: (body: string) => void;
@@ -37,6 +48,12 @@ export function CommentBodyField({
       placeholder={placeholder}
       ariaLabel={ariaLabel}
       autoFocus={autoFocus}
+      uploadImage={async (file) => {
+        const stored = await uploadDraftImage(organizationId, projectId, issueId, file);
+        return { id: stored.id, url: stored.downloadUrl, name: stored.filename };
+      }}
+      images={images?.map((image) => ({ id: image.id, url: image.downloadUrl }))}
+      onUploadingChange={onUploadingChange}
     />
   );
 }

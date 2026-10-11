@@ -13,7 +13,7 @@ import { mentionTokenAt } from "./mentions.js";
  * numbered lists (one level), paragraphs, line breaks, and a backslash to write a marker literally. Not supported, on purpose: headings, quotes,
  * tables, nested lists, bare-address auto-links.
  *
- * Images (ADR 0062) are the one exception to "no images", and only in the form `![name](attachment:<uuid>)`: a picture that is a file of our own,
+ * Images (ADR 0062) are the one exception to "no images", always a block of their own, and only in the form `![name](attachment:<uuid>)`: a picture that is a file of our own,
  * named by its id. An image with any other address (`https://...`, `data:...`, a path) is not an image here; it stays the text and link it was. So
  * the reader still cannot be made to load anything from outside. Whether the id is a real file the writer may use is the server's check, not this one.
  */
@@ -26,7 +26,11 @@ export type Inline =
   | { type: "image"; attachmentId: string; alt: string }
   | { type: "break" };
 
-export type Block = { type: "paragraph"; children: Inline[] } | { type: "list"; ordered: boolean; items: Inline[][] };
+/** A picture is a block of its own (ADR 0062): text never shares its line, so a line that mixes the two is split around it. */
+export type Block =
+  | { type: "paragraph"; children: Inline[] }
+  | { type: "list"; ordered: boolean; items: Inline[][] }
+  | { type: "image"; attachmentId: string; alt: string };
 
 /** Characters a backslash can make literal. */
 const ESCAPABLE = "\\`*_{}[]()#+-.!~|<>";
@@ -49,7 +53,12 @@ function findClose(s: string, marker: "**" | "~~" | "*" | "_", from: number): nu
   for (let k = s.indexOf(marker, from); k !== -1; k = s.indexOf(marker, k + 1)) {
     if (s[k - 1] === "\\") continue; // an escaped marker
     const content = s.slice(from, k);
-    if (content.length === 0 || isSpace(content[0]) || isSpace(content[content.length - 1])) continue;
+    if (
+      content.length === 0 ||
+      isSpace(content[0]) ||
+      isSpace(content[content.length - 1])
+    )
+      continue;
     const after = s[k + marker.length];
     if (marker === "**" || marker === "~~") {
       if (after === marker[0]) continue; // take the END of a run of markers, so ***x*** closes the bold last
@@ -66,22 +75,36 @@ function findClose(s: string, marker: "**" | "~~" | "*" | "_", from: number): nu
   return -1;
 }
 
-const ATTACHMENT_REF = /^attachment:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
+const ATTACHMENT_REF =
+  /^attachment:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
 
 /** The most pictures one comment may hold (ADR 0062). */
 export const MAX_INLINE_IMAGES = 10;
 
-/** `![name](attachment:<uuid>)` starting at the `!` at `i`: the end and the node, or undefined when it is not exactly that. */
-function readImage(s: string, i: number): { end: number; node: Inline } | undefined {
-  if (s[i + 1] !== "[") return undefined;
+/**
+ * `![name](attachment:<uuid>)` starting at the `!` at `i`: where it ends, the file's id (lower case) and the name, or undefined when it is not
+ * exactly that. Shared with the editor, so the editor and the reader can never disagree about what a picture is.
+ */
+export function inlineImageTokenAt(
+  s: string,
+  i: number,
+): { end: number; attachmentId: string; alt: string } | undefined {
+  if (s[i] !== "!" || s[i + 1] !== "[") return undefined;
   const closeLabel = s.indexOf("]", i + 2);
   if (closeLabel === -1 || s[closeLabel + 1] !== "(") return undefined;
   const closeUrl = s.indexOf(")", closeLabel + 2);
   if (closeUrl === -1) return undefined;
   const ref = ATTACHMENT_REF.exec(s.slice(closeLabel + 2, closeUrl));
   if (!ref) return undefined;
-  const alt = s.slice(i + 2, closeLabel).replace(/\\(.)/g, (whole, ch: string) => (ESCAPABLE.includes(ch) ? ch : whole));
-  return { end: closeUrl + 1, node: { type: "image", attachmentId: (ref[1] as string).toLowerCase(), alt } };
+  const alt = s
+    .slice(i + 2, closeLabel)
+    .replace(/\\(.)/g, (whole, ch: string) => (ESCAPABLE.includes(ch) ? ch : whole));
+  return { end: closeUrl + 1, attachmentId: (ref[1] as string).toLowerCase(), alt };
+}
+
+/** The token written for a picture. The name cannot hold `[`, `]`, `\` or a line break (they would end the token early), so they become spaces. */
+export function inlineImageToken(attachmentId: string, name: string): string {
+  return `![${name.replace(/[[\]\\\r\n]/g, " ")}](attachment:${attachmentId})`;
 }
 
 /** `[label](address)` starting at `i`: the end and the node, or undefined when it is not a link with a safe address. */
@@ -92,7 +115,10 @@ function readLink(s: string, i: number): { end: number; node: Inline } | undefin
   if (closeUrl === -1) return undefined;
   const href = s.slice(closeLabel + 2, closeUrl);
   if (!isSafeLinkUrl(href)) return undefined;
-  return { end: closeUrl + 1, node: { type: "link", href, children: parseInline(s.slice(i + 1, closeLabel)) } };
+  return {
+    end: closeUrl + 1,
+    node: { type: "link", href, children: parseInline(s.slice(i + 1, closeLabel)) },
+  };
 }
 
 /** One line of text into inline nodes. Anything that does not complete a construct stays as the text it was. */
@@ -130,10 +156,10 @@ function parseInline(s: string): Inline[] {
       }
     }
     if (c === "!") {
-      const image = readImage(s, i);
+      const image = inlineImageTokenAt(s, i);
       if (image) {
         flush();
-        out.push(image.node);
+        out.push({ type: "image", attachmentId: image.attachmentId, alt: image.alt });
         i = image.end;
         continue;
       }
@@ -147,9 +173,18 @@ function parseInline(s: string): Inline[] {
         continue;
       }
     }
-    const marker = s.startsWith("**", i) ? "**" : s.startsWith("~~", i) ? "~~" : c === "*" ? "*" : c === "_" ? "_" : undefined;
+    const marker = s.startsWith("**", i)
+      ? "**"
+      : s.startsWith("~~", i)
+        ? "~~"
+        : c === "*"
+          ? "*"
+          : c === "_"
+            ? "_"
+            : undefined;
     // A single _ opens italic only at a word edge and not inside a run of underscores (__init__).
-    const underscoreCannotOpen = marker === "_" && (isWordChar(s[i - 1]) || s[i - 1] === "_" || s[i + 1] === "_");
+    const underscoreCannotOpen =
+      marker === "_" && (isWordChar(s[i - 1]) || s[i - 1] === "_" || s[i + 1] === "_");
     if (marker && !underscoreCannotOpen) {
       const start = i + marker.length;
       if (!isSpace(s[start])) {
@@ -157,7 +192,10 @@ function parseInline(s: string): Inline[] {
         if (close !== -1) {
           flush();
           const children = parseInline(s.slice(start, close));
-          out.push({ type: marker === "**" ? "bold" : marker === "~~" ? "strike" : "italic", children });
+          out.push({
+            type: marker === "**" ? "bold" : marker === "~~" ? "strike" : "italic",
+            children,
+          });
           i = close + marker.length;
           continue;
         }
@@ -171,6 +209,37 @@ function parseInline(s: string): Inline[] {
   }
   flush();
   return out;
+}
+
+const isBlank = (node: Inline) =>
+  node.type === "break" || (node.type === "text" && node.text.trim() === "");
+
+/** A paragraph's nodes into blocks: each picture on its own, the text before and after it as paragraphs (nothing but spaces or breaks is dropped). */
+function splitAtImages(children: Inline[]): Block[] {
+  const blocks: Block[] = [];
+  let run: Inline[] = [];
+  const flush = () => {
+    while (run.length > 0 && run[0] && run[0].type === "break") run.shift();
+    while (run.length > 0 && run[run.length - 1]?.type === "break") run.pop();
+    // The space that sat between the text and the picture goes with the split.
+    const first = run[0];
+    if (first?.type === "text") run[0] = { type: "text", text: first.text.trimStart() };
+    const last = run[run.length - 1];
+    if (last?.type === "text") run[run.length - 1] = { type: "text", text: last.text.trimEnd() };
+    if (run.some((node) => !isBlank(node)))
+      blocks.push({ type: "paragraph", children: run });
+    run = [];
+  };
+  for (const node of children) {
+    if (node.type === "image") {
+      flush();
+      blocks.push({ type: "image", attachmentId: node.attachmentId, alt: node.alt });
+    } else {
+      run.push(node);
+    }
+  }
+  flush();
+  return blocks;
 }
 
 const BULLET = /^\s{0,3}[-*+]\s+(\S.*)$/;
@@ -189,11 +258,16 @@ export function parseCommentMarkdown(body: string): Block[] {
       if (index > 0) children.push({ type: "break" });
       children.push(...parseInline(line));
     });
-    blocks.push({ type: "paragraph", children });
+    blocks.push(...splitAtImages(children));
     paragraph = [];
   };
   const endList = () => {
-    if (list) blocks.push({ type: "list", ordered: list.ordered, items: list.items.map(parseInline) });
+    if (list)
+      blocks.push({
+        type: "list",
+        ordered: list.ordered,
+        items: list.items.map(parseInline),
+      });
     list = undefined;
   };
 
@@ -235,6 +309,8 @@ export function inlineImageIds(body: string): string[] {
   };
   for (const block of parseCommentMarkdown(body)) {
     if (block.type === "paragraph") walk(block.children);
+    else if (block.type === "image")
+      walk([{ type: "image", attachmentId: block.attachmentId, alt: block.alt }]);
     else block.items.forEach(walk);
   }
   return ids;

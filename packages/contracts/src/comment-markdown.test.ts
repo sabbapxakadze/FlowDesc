@@ -194,10 +194,15 @@ describe("pictures (ADR 0062)", () => {
 
   it("reads ![name](attachment:<id>) as a picture, and lists each id once", () => {
     // Why: this is the whole format; the server links exactly the ids this returns, so reading and listing must agree.
-    expect(parseCommentMarkdown(`See ![shot.png](attachment:${ID})`)).toEqual([
-      para(text("See "), { type: "image", attachmentId: ID, alt: "shot.png" }),
-    ]);
+    expect(parseCommentMarkdown(`![shot.png](attachment:${ID})`)).toEqual([{ type: "image", attachmentId: ID, alt: "shot.png" }]);
     expect(inlineImageIds(`![a](attachment:${ID}) and again ![b](attachment:${ID.toUpperCase()})`)).toEqual([ID]);
+  });
+
+  it("puts a picture on its own line: text on the same line is split off before and after it", () => {
+    // Why: owner's rule (2026-10-11): text and a picture never share a line, even in a comment that was stored with them together.
+    const image = { type: "image", attachmentId: ID, alt: "a" };
+    expect(parseCommentMarkdown(`See ![a](attachment:${ID}) here`)).toEqual([para(text("See")), image, para(text("here"))]);
+    expect(parseCommentMarkdown(`one\n![a](attachment:${ID})\ntwo`)).toEqual([para(text("one")), image, para(text("two"))]);
   });
 
   it("never makes a picture from any other address, so nothing can be loaded from outside", () => {

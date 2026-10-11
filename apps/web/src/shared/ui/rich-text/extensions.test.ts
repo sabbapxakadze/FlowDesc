@@ -26,7 +26,15 @@ function make(markdown = ""): Editor {
 
 /** Presses a key combination on the editor, the way the browser delivers it. */
 function press(editor: Editor, key: string, modifiers: { shift?: boolean } = {}) {
-  editor.view.dom.dispatchEvent(new KeyboardEvent("keydown", { key, ctrlKey: true, shiftKey: modifiers.shift ?? false, bubbles: true, cancelable: true }));
+  editor.view.dom.dispatchEvent(
+    new KeyboardEvent("keydown", {
+      key,
+      ctrlKey: true,
+      shiftKey: modifiers.shift ?? false,
+      bubbles: true,
+      cancelable: true,
+    }),
+  );
 }
 
 afterEach(() => {
@@ -82,8 +90,18 @@ describe("Markdown in and out", () => {
     // Why: the old text box stored line breaks as typed. Opening such a comment in the editor and saving must not glue its lines together.
     const editor = make("one\ntwo\n\nthree");
     const [first, second] = parseCommentMarkdown(editor.getMarkdown());
-    expect(first).toEqual({ type: "paragraph", children: [{ type: "text", text: "one" }, { type: "break" }, { type: "text", text: "two" }] });
-    expect(second).toEqual({ type: "paragraph", children: [{ type: "text", text: "three" }] });
+    expect(first).toEqual({
+      type: "paragraph",
+      children: [
+        { type: "text", text: "one" },
+        { type: "break" },
+        { type: "text", text: "two" },
+      ],
+    });
+    expect(second).toEqual({
+      type: "paragraph",
+      children: [{ type: "text", text: "three" }],
+    });
   });
 
   it("an empty editor, or one emptied by the writer, is an empty string", () => {
@@ -103,11 +121,16 @@ describe("Markdown in and out", () => {
   it("whatever the editor writes, the comment card's reader reads back as the same text", () => {
     // Why: the two halves are separate code (a library here, our own reader there). Literal stars, underscores and brackets must survive the trip.
     const editor = make("");
-    editor.commands.insertContent("2 * 3 * 4, snake_case_name, [not a link], a\\b, 1. not a list");
+    editor.commands.insertContent(
+      "2 * 3 * 4, snake_case_name, [not a link], a\\b, 1. not a list",
+    );
     const written = editor.getMarkdown();
     const [block] = parseCommentMarkdown(written);
     expect(block?.type).toBe("paragraph");
-    const text = block?.type === "paragraph" ? block.children.map((c) => (c.type === "text" ? c.text : `<${c.type}>`)).join("") : "";
+    const text =
+      block?.type === "paragraph"
+        ? block.children.map((c) => (c.type === "text" ? c.text : `<${c.type}>`)).join("")
+        : "";
     expect(text).toBe("2 * 3 * 4, snake_case_name, [not a link], a\\b, 1. not a list");
   });
 });
@@ -115,10 +138,26 @@ describe("Markdown in and out", () => {
 describe("only the allowed formatting can exist", () => {
   it("turns headings, quotes, code blocks, images and rules into plain text or nothing, never into those nodes", () => {
     // Why: the card cannot draw them (ADR 0056), so the editor must not be able to make them, by typing, by pasting or by loading an old body.
-    const editor = make("# Title\n\n> quoted\n\n```\ncode block\n```\n\n![alt](https://example.com/x.png)\n\n---");
+    const editor = make(
+      "# Title\n\n> quoted\n\n```\ncode block\n```\n\n![alt](https://example.com/x.png)\n\n---",
+    );
     const types = new Set<string>();
     editor.state.doc.descendants((node) => void types.add(node.type.name));
-    expect([...types].every((t) => ["doc", "paragraph", "text", "hardBreak", "bulletList", "orderedList", "listItem", "mention"].includes(t)), [...types].join()).toBe(true);
+    expect(
+      [...types].every((t) =>
+        [
+          "doc",
+          "paragraph",
+          "text",
+          "hardBreak",
+          "bulletList",
+          "orderedList",
+          "listItem",
+          "mention",
+        ].includes(t),
+      ),
+      [...types].join(),
+    ).toBe(true);
   });
 
   it("never makes a link with an unsafe address, whether loaded or set by a command", () => {
@@ -136,8 +175,12 @@ describe("only the allowed formatting can exist", () => {
   });
 
   it("a link with a title, or an unsafe address, loads as the text it was (the card reads neither as a link)", () => {
-    expect(JSON.stringify(make('[a](https://example.com "title")').getJSON())).not.toContain('"type":"link"');
-    expect(make("[bad](javascript:alert(1))").getMarkdown()).toContain("javascript:alert(1)");
+    expect(
+      JSON.stringify(make('[a](https://example.com "title")').getJSON()),
+    ).not.toContain('"type":"link"');
+    expect(make("[bad](javascript:alert(1))").getMarkdown()).toContain(
+      "javascript:alert(1)",
+    );
   });
 
   it("keeps HTML typed into the editor as text, not as markup", () => {
@@ -180,5 +223,50 @@ describe("the shortcuts do what the toolbar says", () => {
     expect(linkShortcutPressed).toBe(0);
     press(editor, "k", { shift: true });
     expect(linkShortcutPressed).toBe(1);
+  });
+});
+
+describe("pictures (ADR 0062)", () => {
+  const image = `![shot.png](attachment:${UUID})`;
+
+  it("reads and writes a stored picture byte for byte, and the comment card's reader agrees it is a picture", () => {
+    // Why: a comment opened for editing and saved unchanged must keep its pictures, and the editor must hold exactly what the reader draws.
+    const md = `Look
+
+${image}
+
+here`;
+    const editor = make(md);
+    expect(JSON.stringify(editor.getJSON())).toContain('"type":"inlineImage"');
+    expect(editor.getMarkdown()).toBe(md);
+    expect(JSON.stringify(parseCommentMarkdown(md))).toContain('"type":"image"');
+  });
+
+  it("a picture written on the same line as text is moved onto its own line", () => {
+    // Why: owner's rule: text and a picture never share a line, even for a body stored that way.
+    expect(
+      make(`Look ${image} here`)
+        .getMarkdown()
+        .split("\n\n")
+        .map((part) => part.trim()),
+    ).toEqual(["Look", image, "here"]);
+  });
+
+  it("writes nothing for a picture that is still uploading, so a half-finished picture is never stored", () => {
+    // Why: only a ready picture has an id the server can link; a placeholder in the stored text would be refused at posting.
+    const editor = make("before ");
+    editor.commands.insertContent({
+      type: "inlineImage",
+      attrs: { alt: "x.png", src: "blob:x", status: "uploading", uploadId: "u1" },
+    });
+    expect(editor.getMarkdown()).not.toContain("attachment:");
+    expect(editor.getMarkdown()).not.toContain("blob:");
+  });
+
+  it("does not make a picture from an outside address", () => {
+    // Why: same rule as the reader: only our own files, never a link to elsewhere.
+    expect(JSON.stringify(make("![x](https://evil.test/x.png)").getJSON())).not.toContain(
+      "inlineImage",
+    );
   });
 });
