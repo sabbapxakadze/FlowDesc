@@ -6,7 +6,13 @@ import { LABEL_COLORS } from "../lib/labelColors";
  * accepts), `onChange` gets the new one. The chosen preset shows a tick; a colour that is not a preset leaves them all unticked, and the
  * native picker shows it.
  */
-export function LabelColorPicker({ value, onChange }: { value: string; onChange: (color: string) => void }) {
+export function LabelColorPicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (color: string) => void;
+}) {
   const current = value.toLowerCase();
   return (
     <div className="flex flex-wrap items-center gap-1.5">
@@ -17,7 +23,11 @@ export function LabelColorPicker({ value, onChange }: { value: string; onChange:
         onChange={(event) => onChange(event.target.value)}
         className="h-8 w-10 cursor-pointer rounded-[var(--radius-control)] border border-[var(--color-border-input)] bg-transparent p-0.5"
       />
-      <div role="group" aria-label="Colour presets" className="flex flex-wrap items-center gap-1">
+      <div
+        role="group"
+        aria-label="Colour presets"
+        className="flex flex-wrap items-center gap-1"
+      >
         {LABEL_COLORS.map((color) => (
           <button
             key={color.hex}
