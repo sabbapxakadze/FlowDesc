@@ -125,6 +125,16 @@ export function IssueFrame({
   );
 }
 
+/** An empty value in the properties card: a muted dash for the eye, and the words for a screen reader ("No priority", "Unassigned", ...). */
+function Empty({ reading }: { reading: string }) {
+  return (
+    <span className="text-[var(--color-text-muted)]">
+      <span aria-hidden="true">&ndash;</span>
+      <span className="sr-only">{reading}</span>
+    </span>
+  );
+}
+
 /** One labelled value of the full page's properties card. */
 function Property({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -400,17 +410,17 @@ export function IssueDetail({
               <StatusBadge status={issue.status} />
             </Property>
             <Property label="Priority">
-              <PriorityBadge priority={issue.priority} />
+              {issue.priority === "none" ? <Empty reading="No priority" /> : <PriorityBadge priority={issue.priority} />}
             </Property>
             <Property label="Assignee">
               {nameOf(issue.assigneeId) ? (
                 <PersonName organizationId={organization!.id} userId={issue.assigneeId!} name={nameOf(issue.assigneeId)!} withAvatar />
               ) : (
-                <span className="text-[var(--color-text-muted)]">Unassigned</span>
+                <Empty reading="Unassigned" />
               )}
             </Property>
             <Property label="Due">
-              {issue.dueDate ? <DueDate dueDate={issue.dueDate} done={issue.status === "done"} /> : <span className="text-[var(--color-text-muted)]">No due date</span>}
+              {issue.dueDate ? <DueDate dueDate={issue.dueDate} done={issue.status === "done"} /> : <Empty reading="No due date" />}
             </Property>
             <Property label="Labels">
               {issueLabels && issueLabels.length > 0 ? (
@@ -420,7 +430,7 @@ export function IssueDetail({
                   ))}
                 </div>
               ) : (
-                <span className="text-[var(--color-text-muted)]">None</span>
+                <Empty reading="No labels" />
               )}
             </Property>
             <Property label="Reporter">

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isSafeLinkUrl, parseCommentMarkdown, type Block, type Inline } from "./comment-markdown.js";
+import { inlineImageIds, isSafeLinkUrl, parseCommentMarkdown, type Block, type Inline } from "./comment-markdown.js";
 
 /**
  * The reader of formatted comments (ADR 0056). Two kinds of check: that the formatting people write comes out right, and, more important,
@@ -186,5 +186,31 @@ describe("nothing a writer types becomes markup", () => {
       for (let i = 0; i < length; i++) body += alphabet[next() % alphabet.length];
       expect(() => parseCommentMarkdown(body), JSON.stringify(body)).not.toThrow();
     }
+  });
+});
+
+describe("pictures (ADR 0062)", () => {
+  const ID = "0b9c1c3e-6f5a-4c2d-9a1b-2f3e4d5c6b7a";
+
+  it("reads ![name](attachment:<id>) as a picture, and lists each id once", () => {
+    // Why: this is the whole format; the server links exactly the ids this returns, so reading and listing must agree.
+    expect(parseCommentMarkdown(`See ![shot.png](attachment:${ID})`)).toEqual([
+      para(text("See "), { type: "image", attachmentId: ID, alt: "shot.png" }),
+    ]);
+    expect(inlineImageIds(`![a](attachment:${ID}) and again ![b](attachment:${ID.toUpperCase()})`)).toEqual([ID]);
+  });
+
+  it("never makes a picture from any other address, so nothing can be loaded from outside", () => {
+    // Why: the safety rule of ADR 0056 (no external requests from a comment) must survive adding images.
+    for (const address of ["https://evil.test/x.png", "http://evil.test/x.png", "data:image/png;base64,AAAA", "javascript:alert(1)", "/uploads/x.png", "attachment:not-an-id", `attachment:${ID}/extra`]) {
+      const blocks = parseCommentMarkdown(`![x](${address})`);
+      expect(JSON.stringify(blocks), address).not.toContain('"image"');
+      expect(inlineImageIds(`![x](${address})`), address).toEqual([]);
+    }
+  });
+
+  it("does not count a picture written inside code", () => {
+    // Why: what is drawn is what is linked; `code` is shown as typed.
+    expect(inlineImageIds("`![x](attachment:" + ID + ")`")).toEqual([]);
   });
 });

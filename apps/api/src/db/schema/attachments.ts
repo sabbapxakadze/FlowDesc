@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, integer, timestamp, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, integer, timestamp, index, boolean } from "drizzle-orm/pg-core";
 import { comments } from "./comments.js";
 import { issues } from "./issues.js";
 import { users } from "./users.js";
@@ -31,6 +31,9 @@ export const attachments = pgTable(
     // attachment either way: the issue's Attachments list shows comment files
     // too, never the other way round (a direct upload has no comment).
     commentId: uuid("comment_id").references(() => comments.id, { onDelete: "set null" }),
+    // A picture pasted into the comment box that is not posted yet (ADR 0062): no event, no notification, not listed with the issue's
+    // files. Posting the comment that shows it links it (comment_id set, draft false); one never posted is deleted after 24 hours.
+    draft: boolean("draft").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { mentionedUserIds, type IssuePriority, type IssueStatus } from "@flowdesk/contracts";
+import { inlineImageIds, MAX_INLINE_IMAGES, mentionedUserIds, type IssuePriority, type IssueStatus } from "@flowdesk/contracts";
 import { AppError } from "../../shared/errors.js";
 import { hasPermission, type Role } from "../../shared/permissions.js";
 import {
@@ -8,6 +8,7 @@ import {
   broadcastIssueDeleted,
   broadcastNotificationCreated,
 } from "../../realtime/socket-server.js";
+import { logger } from "../../lib/logger.js";
 import * as storage from "../../lib/storage.js";
 import * as issuesRepository from "./issues.repository.js";
 import * as organizationsRepository from "../organizations/organizations.repository.js";
@@ -170,12 +171,50 @@ async function mentionedMembers(organizationId: string, body: string): Promise<s
   return found;
 }
 
+/** What can be shown inside a comment's text (ADR 0062). SVG is not here: it can carry script. Other files keep "Attach files". */
+const INLINE_IMAGE_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"];
+
+/**
+ * The pictures a comment body shows (`![name](attachment:<id>)`), checked (ADR 0062). The ids come from text the client sent, so each must be a
+ * real image file on THIS issue, uploaded by the person writing, and either still a draft or already on this very comment. Anything else
+ * (another issue's file, someone else's draft, an unknown id, a PDF) is a 400 and nothing is saved. At most 10 pictures. Returns the ids.
+ */
+async function checkedInlineImages(input: {
+  organizationId: string;
+  issueId: string;
+  uploaderId: string;
+  commentId?: string;
+  body: string;
+}): Promise<string[]> {
+  const ids = inlineImageIds(input.body);
+  if (ids.length === 0) return ids;
+  if (ids.length > MAX_INLINE_IMAGES) {
+    throw new AppError("too_many_inline_images", 400, `A comment can show at most ${MAX_INLINE_IMAGES} pictures.`);
+  }
+  const files = new Map((await issuesRepository.findAttachmentsByIds(input.organizationId, input.issueId, ids)).map((file) => [file.id, file]));
+  for (const id of ids) {
+    const file = files.get(id);
+    const usable = file && file.uploaderId === input.uploaderId && (file.draft || (input.commentId !== undefined && file.commentId === input.commentId));
+    if (!file || !usable || !INLINE_IMAGE_TYPES.includes(file.mimeType)) {
+      throw new AppError("invalid_inline_image", 400, "A picture in this comment is not one you uploaded for it.");
+    }
+  }
+  return ids;
+}
+
 export async function addComment(input: { organizationId: string; issueId: string; authorId: string; body: string }) {
+  const inlineImages = await checkedInlineImages({
+    organizationId: input.organizationId,
+    issueId: input.issueId,
+    uploaderId: input.authorId,
+    body: input.body,
+  });
   const { comment, notifiedUserIds } = await issuesRepository.addComment({
     issueId: input.issueId,
     authorId: input.authorId,
     body: input.body,
     mentionedUserIds: await mentionedMembers(input.organizationId, input.body),
+    inlineImageIds: inlineImages,
   });
   broadcastIssueCommented(input.issueId);
   broadcastNotifications(notifiedUserIds);
@@ -243,6 +282,13 @@ export async function editComment(input: {
   if (!comment) return { status: "not_found" } as const;
   if (comment.authorId !== input.actorId) return { status: "forbidden" } as const;
 
+  const inlineImages = await checkedInlineImages({
+    organizationId: input.organizationId,
+    issueId: input.issueId,
+    uploaderId: input.actorId,
+    commentId: input.commentId,
+    body: input.body,
+  });
   // Only people this edit ADDS are told: those mentioned now and not in the text it replaces (ADR 0033).
   const before = mentionedUserIds(comment.body);
   const newMentionUserIds = (await mentionedMembers(input.organizationId, input.body)).filter((id) => !before.includes(id));
@@ -252,6 +298,7 @@ export async function editComment(input: {
     actorId: input.actorId,
     body: input.body,
     newMentionUserIds,
+    inlineImageIds: inlineImages,
   });
   broadcastIssueCommented(input.issueId);
   broadcastNotifications(notifiedUserIds);
@@ -358,8 +405,12 @@ export async function uploadAttachment(input: {
   buffer: Buffer;
   /** Attach the file to this comment (must be the uploader's own, on this issue). */
   commentId?: string;
+  /** A picture pasted into a comment box, not posted yet (ADR 0062). Images only; never together with a commentId. */
+  draft?: boolean;
 }) {
   storage.assertUploadsEnabled();
+  if (input.draft && !INLINE_IMAGE_TYPES.includes(input.mimeType)) return { status: "draft_not_image" } as const;
+  if (input.draft) await removeExpiredDrafts();
   // Validated BEFORE anything is written to disk, so a rejected comment id
   // never leaves an orphan file behind.
   if (input.commentId) {
@@ -380,6 +431,7 @@ export async function uploadAttachment(input: {
     sizeBytes: input.buffer.length,
     storageKey,
     commentId: input.commentId ?? null,
+    draft: input.draft,
   });
 
   broadcastNotifications(notifiedUserIds);
@@ -387,6 +439,22 @@ export async function uploadAttachment(input: {
   // refetch so it shows up without a reload.
   if (input.commentId) broadcastIssueCommented(input.issueId);
   return { status: "uploaded", attachment } as const;
+}
+
+/** Drafts nobody posted within this long are deleted (ADR 0062). */
+const DRAFT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Deletes drafts older than 24 hours, rows and files. Runs on the next draft upload (there is no job runner yet), like the demo cleanup. A failure
+ * is logged and never fails the upload that happened to trigger it.
+ */
+async function removeExpiredDrafts(): Promise<void> {
+  try {
+    const storageKeys = await issuesRepository.deleteExpiredDrafts(new Date(Date.now() - DRAFT_MAX_AGE_MS));
+    for (const storageKey of storageKeys) await storage.deleteFile(storageKey);
+  } catch (error) {
+    logger.warn({ err: error }, "Could not delete expired draft pictures");
+  }
 }
 
 export async function deleteAttachment(input: {

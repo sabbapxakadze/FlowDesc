@@ -860,13 +860,21 @@ export async function detachLabel(input: {
  * timeline never has to join back to comments to render a "commented"
  * line) — see the Phase 3 slice 4 plan's "Decisions" section.
  */
-export async function addComment(input: { issueId: string; authorId: string; body: string; mentionedUserIds?: string[] }) {
+export async function addComment(input: {
+  issueId: string;
+  authorId: string;
+  body: string;
+  mentionedUserIds?: string[];
+  /** Pictures the body shows (already checked by the service): linked to the comment in this same transaction (ADR 0062). */
+  inlineImageIds?: string[];
+}) {
   return db.transaction(async (tx) => {
     const [comment] = await tx
       .insert(comments)
       .values({ issueId: input.issueId, authorId: input.authorId, body: input.body })
       .returning();
     if (!comment) throw new Error("Failed to create comment");
+    await linkInlineImages(tx, { issueId: input.issueId, commentId: comment.id, uploaderId: input.authorId, ids: input.inlineImageIds ?? [] });
 
     const mentioned = input.mentionedUserIds ?? [];
     // The mentioned are told on top of the usual participants and assignee (one notification each, UNION dedups).
@@ -883,6 +891,44 @@ export async function addComment(input: { issueId: string; authorId: string; bod
 
     return { comment, notifiedUserIds };
   });
+}
+
+/**
+ * Links the pictures a comment shows to it (ADR 0062): a draft becomes an ordinary comment file, one already on this comment stays. The WHERE
+ * repeats the service's checks (same issue, same uploader, a draft or already this comment's), so a file that changed in between, or a
+ * wrong id, matches nothing; a count short of the ids is an error and rolls the comment back.
+ */
+async function linkInlineImages(tx: Tx, input: { issueId: string; commentId: string; uploaderId: string; ids: string[] }) {
+  if (input.ids.length === 0) return;
+  const linked = await tx
+    .update(attachments)
+    .set({ draft: false, commentId: input.commentId })
+    .where(
+      and(
+        inArray(attachments.id, input.ids),
+        eq(attachments.issueId, input.issueId),
+        eq(attachments.uploaderId, input.uploaderId),
+        sql`(${attachments.draft} OR ${attachments.commentId} = ${input.commentId})`,
+      ),
+    )
+    .returning({ id: attachments.id });
+  if (linked.length !== input.ids.length) throw new Error("A picture changed while the comment was being saved");
+}
+
+/** The files with these ids on this issue (and so this organization), for the service's checks before it links pictures to a comment. */
+export async function findAttachmentsByIds(organizationId: string, issueId: string, ids: string[]) {
+  if (ids.length === 0) return [];
+  return db
+    .select({
+      id: attachments.id,
+      uploaderId: attachments.uploaderId,
+      mimeType: attachments.mimeType,
+      draft: attachments.draft,
+      commentId: attachments.commentId,
+    })
+    .from(attachments)
+    .innerJoin(issues, eq(attachments.issueId, issues.id))
+    .where(and(inArray(attachments.id, ids), eq(attachments.issueId, issueId), eq(issues.organizationId, organizationId)));
 }
 
 /**
@@ -913,6 +959,8 @@ export async function updateComment(input: {
   body: string;
   /** Members newly @mentioned by this edit (not by the old text). Only they are told (ADR 0033). */
   newMentionUserIds?: string[];
+  /** Pictures the new body shows (already checked by the service). */
+  inlineImageIds?: string[];
 }) {
   return db.transaction(async (tx) => {
     const [comment] = await tx
@@ -923,6 +971,7 @@ export async function updateComment(input: {
       .where(and(eq(comments.id, input.commentId), eq(comments.issueId, input.issueId)))
       .returning();
     if (!comment) throw new Error("Failed to update comment");
+    await linkInlineImages(tx, { issueId: input.issueId, commentId: comment.id, uploaderId: input.actorId, ids: input.inlineImageIds ?? [] });
 
     const newMentions = input.newMentionUserIds ?? [];
     const notifiedUserIds = await writeIssueEvent(
@@ -1228,6 +1277,8 @@ export async function addAttachment(input: {
   storageKey: string;
   /** Set when the file belongs to a comment (validated by the service first). */
   commentId?: string | null;
+  /** A picture pasted into a comment box and not posted yet (ADR 0062): no event, no notification. */
+  draft?: boolean;
 }) {
   return db.transaction(async (tx) => {
     const [attachment] = await tx
@@ -1241,6 +1292,7 @@ export async function addAttachment(input: {
         sizeBytes: input.sizeBytes,
         storageKey: input.storageKey,
         commentId: input.commentId ?? null,
+        draft: input.draft ?? false,
       })
       .returning();
     if (!attachment) throw new Error("Failed to create attachment");
@@ -1254,7 +1306,7 @@ export async function addAttachment(input: {
 
     // A comment's file is part of that comment, which already notified and is
     // already on the timeline: no separate event, no separate notification.
-    const notifiedUserIds = input.commentId
+    const notifiedUserIds = input.commentId || input.draft
       ? []
       : await writeIssueEvent(tx, {
           issueId: input.issueId,
@@ -1290,7 +1342,8 @@ export async function listAttachmentsForIssue(organizationId: string, issueId: s
     .from(attachments)
     .innerJoin(users, eq(attachments.uploaderId, users.id))
     .innerJoin(issues, eq(attachments.issueId, issues.id))
-    .where(and(eq(attachments.issueId, issueId), eq(issues.organizationId, organizationId)))
+    // A draft (a picture pasted and not yet posted, ADR 0062) is not part of the issue's files.
+    .where(and(eq(attachments.issueId, issueId), eq(issues.organizationId, organizationId), eq(attachments.draft, false)))
     .orderBy(asc(attachments.createdAt));
 }
 
@@ -1303,6 +1356,18 @@ export async function listAttachmentsForIssue(organizationId: string, issueId: s
 export async function findAttachmentForDownload(attachmentId: string) {
   const [attachment] = await db.select().from(attachments).where(eq(attachments.id, attachmentId));
   return attachment;
+}
+
+/**
+ * Deletes the drafts (pictures pasted and never posted, ADR 0062) created before `olderThan`, across all issues, and returns their storage keys
+ * so the caller can remove the files. No tenant scoping on purpose: it touches only rows that were never part of anything.
+ */
+export async function deleteExpiredDrafts(olderThan: Date): Promise<string[]> {
+  const rows = await db
+    .delete(attachments)
+    .where(and(eq(attachments.draft, true), lt(attachments.createdAt, olderThan)))
+    .returning({ storageKey: attachments.storageKey });
+  return rows.map((row) => row.storageKey);
 }
 
 /**
@@ -1320,7 +1385,7 @@ export async function deleteAttachment(input: {
 }): Promise<{ status: "deleted"; storageKey: string; notifiedUserIds: string[] } | { status: "not_found" }> {
   return db.transaction(async (tx) => {
     const [attachment] = await tx
-      .select({ id: attachments.id, storageKey: attachments.storageKey, filename: attachments.filename })
+      .select({ id: attachments.id, storageKey: attachments.storageKey, filename: attachments.filename, draft: attachments.draft })
       .from(attachments)
       .innerJoin(issues, eq(attachments.issueId, issues.id))
       .where(
@@ -1334,6 +1399,8 @@ export async function deleteAttachment(input: {
 
     await tx.delete(attachments).where(eq(attachments.id, attachment.id));
 
+    // A draft was never announced, so taking it back is not announced either.
+    if (attachment.draft) return { status: "deleted", storageKey: attachment.storageKey, notifiedUserIds: [] };
     const notifiedUserIds = await writeIssueEvent(tx, {
       issueId: input.issueId,
       actorId: input.actorId,

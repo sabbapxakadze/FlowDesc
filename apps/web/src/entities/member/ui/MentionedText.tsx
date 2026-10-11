@@ -37,6 +37,9 @@ export function MentionedText({ organizationId, body }: { organizationId: string
               {draw(node.children)}
             </a>
           );
+        case "image":
+          // Drawn as the picture itself in the editor slice (ADR 0062); until then the reader's node is shown as its name.
+          return <span key={index}>[{node.alt || "image"}]</span>;
         case "mention":
           return (
             <span key={index} className="font-medium">

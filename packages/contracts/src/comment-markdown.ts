@@ -11,7 +11,11 @@ import { mentionTokenAt } from "./mentions.js";
  *
  * Supported: **bold**, *italic* or _italic_ (underscores only at word edges), ~~strikethrough~~, `code`, [label](https://address), bulleted and
  * numbered lists (one level), paragraphs, line breaks, and a backslash to write a marker literally. Not supported, on purpose: headings, quotes,
- * images, tables, nested lists, bare-address auto-links.
+ * tables, nested lists, bare-address auto-links.
+ *
+ * Images (ADR 0062) are the one exception to "no images", and only in the form `![name](attachment:<uuid>)`: a picture that is a file of our own,
+ * named by its id. An image with any other address (`https://...`, `data:...`, a path) is not an image here; it stays the text and link it was. So
+ * the reader still cannot be made to load anything from outside. Whether the id is a real file the writer may use is the server's check, not this one.
  */
 export type Inline =
   | { type: "text"; text: string }
@@ -19,6 +23,7 @@ export type Inline =
   | { type: "bold" | "italic" | "strike"; children: Inline[] }
   | { type: "code"; text: string }
   | { type: "link"; href: string; children: Inline[] }
+  | { type: "image"; attachmentId: string; alt: string }
   | { type: "break" };
 
 export type Block = { type: "paragraph"; children: Inline[] } | { type: "list"; ordered: boolean; items: Inline[][] };
@@ -59,6 +64,24 @@ function findClose(s: string, marker: "**" | "~~" | "*" | "_", from: number): nu
     return k;
   }
   return -1;
+}
+
+const ATTACHMENT_REF = /^attachment:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
+
+/** The most pictures one comment may hold (ADR 0062). */
+export const MAX_INLINE_IMAGES = 10;
+
+/** `![name](attachment:<uuid>)` starting at the `!` at `i`: the end and the node, or undefined when it is not exactly that. */
+function readImage(s: string, i: number): { end: number; node: Inline } | undefined {
+  if (s[i + 1] !== "[") return undefined;
+  const closeLabel = s.indexOf("]", i + 2);
+  if (closeLabel === -1 || s[closeLabel + 1] !== "(") return undefined;
+  const closeUrl = s.indexOf(")", closeLabel + 2);
+  if (closeUrl === -1) return undefined;
+  const ref = ATTACHMENT_REF.exec(s.slice(closeLabel + 2, closeUrl));
+  if (!ref) return undefined;
+  const alt = s.slice(i + 2, closeLabel).replace(/\\(.)/g, (whole, ch: string) => (ESCAPABLE.includes(ch) ? ch : whole));
+  return { end: closeUrl + 1, node: { type: "image", attachmentId: (ref[1] as string).toLowerCase(), alt } };
 }
 
 /** `[label](address)` starting at `i`: the end and the node, or undefined when it is not a link with a safe address. */
@@ -103,6 +126,15 @@ function parseInline(s: string): Inline[] {
         flush();
         out.push({ type: "mention", userId: mention.userId, name: mention.name });
         i = mention.end;
+        continue;
+      }
+    }
+    if (c === "!") {
+      const image = readImage(s, i);
+      if (image) {
+        flush();
+        out.push(image.node);
+        i = image.end;
         continue;
       }
     }
@@ -189,4 +221,21 @@ export function parseCommentMarkdown(body: string): Block[] {
   endParagraph();
   endList();
   return blocks;
+}
+
+/** The ids of the pictures a body shows, each once, in order of first appearance. Read with the same reader, so it can never disagree with what is drawn. */
+export function inlineImageIds(body: string): string[] {
+  const ids: string[] = [];
+  const walk = (nodes: Inline[]) => {
+    for (const node of nodes) {
+      if (node.type === "image") {
+        if (!ids.includes(node.attachmentId)) ids.push(node.attachmentId);
+      } else if ("children" in node) walk(node.children);
+    }
+  };
+  for (const block of parseCommentMarkdown(body)) {
+    if (block.type === "paragraph") walk(block.children);
+    else block.items.forEach(walk);
+  }
+  return ids;
 }

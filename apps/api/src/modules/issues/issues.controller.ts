@@ -525,6 +525,12 @@ export async function uploadAttachment(req: Request, res: Response) {
     commentId = parsedCommentId.data;
   }
 
+  // Another optional text field: "true" means a picture pasted into a comment box and not posted yet (ADR 0062).
+  const draft = req.body?.draft === "true";
+  if (draft && commentId) {
+    throw new AppError("validation_error", 400, "A draft picture cannot also belong to a comment.");
+  }
+
   const result = await issuesService.uploadAttachment({
     organizationId: req.ctx.organizationId,
     issueId: req.ctx.issueId,
@@ -533,7 +539,11 @@ export async function uploadAttachment(req: Request, res: Response) {
     mimeType: req.file.mimetype,
     buffer: req.file.buffer,
     commentId,
+    draft,
   });
+  if (result.status === "draft_not_image") {
+    throw new AppError("draft_not_image", 400, "Only images (PNG, JPEG, GIF or WebP) can be pasted into a comment.");
+  }
   if (result.status === "comment_not_found") throw new AppError("comment_not_found", 404, "Comment not found.");
   if (result.status === "comment_forbidden") {
     throw new AppError("comment_forbidden", 403, "You can only attach files to your own comments.");

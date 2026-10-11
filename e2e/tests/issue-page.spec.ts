@@ -27,19 +27,22 @@ test("the page shows a properties card with the issue's values, and the descript
   await expect(properties).toContainText("High");
   await expect(properties).toContainText("E2E User"); // assignee and reporter
   await expect(properties).toContainText("Jan 15, 2030");
-  await expect(properties).toContainText("None"); // no labels
+  await expect(properties).toContainText("No labels"); // none yet (spoken; the eye sees a dash)
   await expect(page.getByRole("heading", { level: 2, name: "Description" })).toBeVisible();
   await expect(page.getByText("It shifts the heading down.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Edit" })).toBeVisible();
 });
 
-test("an unassigned issue with no description and no due date says so, in the card", async ({ loggedInPage: page }) => {
+test("an issue with nothing set shows a dash in each empty cell, and says what is empty in words for a screen reader", async ({ loggedInPage: page }) => {
   // Why: empty values must read as empty, not as a missing piece of the page.
   await createIssueViaApi(page.request, { projectName: "Website", projectKey: "WEB", titles: ["Bare issue"] });
   await page.goto("/projects/WEB/issues/WEB-1");
   const properties = page.getByRole("main").locator("dl");
+  await expect(properties).toContainText("No priority");
   await expect(properties).toContainText("Unassigned");
   await expect(properties).toContainText("No due date");
+  await expect(properties).toContainText("No labels");
+  await expect(properties.getByText("–", { exact: true })).toHaveCount(4); // priority, assignee, due, labels: a dash each
   await expect(page.getByText("No description.")).toBeVisible();
 });
 
