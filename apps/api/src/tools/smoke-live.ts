@@ -1,7 +1,7 @@
 import { pathToFileURL } from "node:url";
 
 /**
- * A read-only check of a running FlowDesc (ADR 0055): `node apps/api/src/tools/smoke-live.ts https://flowdesk-yotg.onrender.com`.
+ * A read-only check of a running FlowDesc (ADR 0055): `node apps/api/src/tools/smoke-live.ts https://flowdesc.app`.
  * It only sends GET requests, creates nothing and logs in as nobody, so it is safe against the live site. It checks that the site is up,
  * serves the app, keeps its private endpoints private, does not hand out files like `.env`, and sends its security headers. It does NOT
  * touch the database (the health check does not), so a database outage is not detected by it.

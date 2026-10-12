@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /invite
+Disallow: /reset-password
+Disallow: /verify-email
+Disallow: /confirm-email-change
+
+Sitemap: https://flowdesc.app/sitemap.xml

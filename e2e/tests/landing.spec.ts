@@ -193,3 +193,23 @@ test("the page has a tab icon, and every file it names (and the email logo) is s
     expect(res.headers()["content-type"], href).toMatch(/^image\//);
   }
 });
+
+test("the page says how it looks when shared, and the files for search engines and the share picture are served", async ({ page, request }) => {
+  // Why: these tags and files are invisible on the page, so nothing else notices if they go missing or point at the wrong address. A shared link
+  // would silently lose its picture, and search engines would lose the sitemap.
+  await page.goto("/");
+  const meta = (selector: string) => page.locator(selector).first().getAttribute("content");
+  expect(await meta('meta[property="og:title"]')).toContain("FlowDesc");
+  expect(await meta('meta[property="og:image"]')).toBe("https://flowdesc.app/og-image.png");
+  expect(await meta('meta[name="twitter:card"]')).toBe("summary_large_image");
+  expect((await meta('meta[name="description"]'))?.length ?? 0).toBeGreaterThan(50);
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://flowdesc.app/");
+
+  const image = await request.get("/og-image.png");
+  expect(image.status()).toBe(200);
+  expect(image.headers()["content-type"]).toMatch(/^image\/png/);
+  const robots = await request.get("/robots.txt");
+  expect(await robots.text()).toContain("Sitemap: https://flowdesc.app/sitemap.xml");
+  const sitemap = await request.get("/sitemap.xml");
+  expect(await sitemap.text()).toContain("<loc>https://flowdesc.app/</loc>");
+});
