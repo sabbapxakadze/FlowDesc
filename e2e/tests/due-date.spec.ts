@@ -46,7 +46,8 @@ test("set a past date in the editor: Overdue on the list, in the filter and in t
 
   // Saving again without touching the date writes no second "due date" line.
   await card("Late thing").getByRole("button", { name: "Edit" }).click();
-  await editor(page).locator(`textarea[name="description"]`).fill("Now with a description");
+  await editor(page).getByLabel("Description").click(); // a rich editor now, not a textarea
+  await page.keyboard.type("Now with a description");
   await page.getByRole("button", { name: "Save" }).click();
   await page.goto(`/projects/${projectId}/issues/${issueIds[0]}`);
   await expect(page.getByText("set the due date to")).toHaveCount(1);

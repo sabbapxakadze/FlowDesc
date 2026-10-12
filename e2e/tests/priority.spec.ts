@@ -36,7 +36,8 @@ test("set a priority, see it on the card, filter by it, and see it in the activi
   // Edit again without touching priority: the activity must still show only one priority change.
   await card("Urgent thing").getByRole("button", { name: "Edit" }).click();
   const editForm = editor(page).locator("form");
-  await editForm.locator(`textarea[name="description"]`).fill("Now with a description");
+  await editForm.getByLabel("Description").click(); // a rich editor now, not a textarea
+  await page.keyboard.type("Now with a description");
   await page.getByRole("button", { name: "Save" }).click();
   await expect(page.getByText("Now with a description")).toHaveCount(0); // list cards do not show it
 

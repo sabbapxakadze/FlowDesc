@@ -60,6 +60,6 @@ test("done issues are hidden in the backlog until Show done is on", async ({ log
   const backlog = page.getByRole("group", { name: "Backlog" });
   await expect(backlog.getByText("Open one")).toBeVisible();
   await expect(backlog.getByText("Finished one")).toHaveCount(0);
-  await page.getByRole("switch", { name: /Show done/ }).check();
+  await page.getByText(/Show done/).click(); // the switch's own checkbox is visually hidden; its label is the click target
   await expect(backlog.getByText("Finished one")).toBeVisible();
 });

@@ -108,10 +108,10 @@ test("rename a sprint from the sprints page", async ({ loggedInPage: page }) => 
   await page.getByRole("menuitem", { name: "Rename" }).click();
   await page.locator(`input[aria-label="Sprint name"]`).fill("Launch sprint");
   await page.getByRole("button", { name: "Save" }).click();
-  await expect(page.getByText("Launch sprint")).toBeVisible();
+  await expect(page.getByText("Launch sprint", { exact: true })).toBeVisible();
   await expect(page.getByText("Sprint 1")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Start" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Start sprint" })).toBeVisible(); // the card's own button; the empty lane offers another
 
   await page.reload();
-  await expect(page.getByText("Launch sprint")).toBeVisible();
+  await expect(page.getByText("Launch sprint", { exact: true })).toBeVisible();
 });

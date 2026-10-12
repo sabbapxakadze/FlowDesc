@@ -31,7 +31,7 @@ test("a rename in one tab shows up in another person's open tab without reloadin
   await expect(
     sidebarB.getByRole("link", { name: "Website", exact: true }),
   ).toBeVisible();
-  await expect(pageB.getByText("Sprint 1")).toBeVisible();
+  await expect(pageB.getByText("Sprint 1", { exact: true })).toBeVisible();
 
   await pageA.goto(`/projects/${projectId}/settings`);
   await pageA.getByLabel("Project name").fill("Marketing site");
@@ -47,7 +47,7 @@ test("a rename in one tab shows up in another person's open tab without reloadin
   await pageA.getByRole("menuitem", { name: "Rename" }).click();
   await pageA.locator(`input[aria-label="Sprint name"]`).fill("Launch sprint");
   await pageA.getByRole("button", { name: "Save" }).click();
-  await expect(pageB.getByText("Launch sprint")).toBeVisible();
+  await expect(pageB.getByText("Launch sprint", { exact: true })).toBeVisible();
   await expect(pageB.getByText("Sprint 1")).toHaveCount(0);
 
   // Label rename: B moves to the Labels page first, then A renames it.

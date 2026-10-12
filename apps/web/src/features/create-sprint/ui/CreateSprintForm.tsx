@@ -44,19 +44,19 @@ export function CreateSprintForm({
       <p className="text-sm text-[var(--color-text-muted)]">
         A sprint is a short, fixed stretch of work. A new one starts as Planned: you start it yourself when the team is ready.
       </p>
-      <Field label="Sprint name" error={errors.name?.message}>
+      <Field label="Sprint name" error={errors.name?.message} reserveErrorSpace>
         <Input data-autofocus {...register("name")} placeholder="Sprint 1" />
       </Field>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Field label="Start date (optional)" error={errors.startDate?.message}>
+        <Field label="Start date (optional)" error={errors.startDate?.message} reserveErrorSpace>
           <Input type="date" {...register("startDate", { setValueAs: (v: string) => (v === "" ? undefined : v) })} />
         </Field>
-        <Field label="End date (optional)" error={errors.endDate?.message}>
+        <Field label="End date (optional)" error={errors.endDate?.message} reserveErrorSpace>
           <Input type="date" {...register("endDate", { setValueAs: (v: string) => (v === "" ? undefined : v) })} />
         </Field>
       </div>
-      <p className="-mt-1 text-xs text-[var(--color-text-muted)]">
+      <p className="text-xs text-[var(--color-text-muted)]">
         Dates are only for your reference. A sprint never starts or ends on its own: you start it and you complete it.
       </p>
 

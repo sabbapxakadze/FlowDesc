@@ -72,14 +72,20 @@ test("a card dropped between two cards of the active sprint lands exactly there,
   const card = (name: string) => lane(page, "Backlog").getByRole("listitem").filter({ hasText: name });
 
   // Into the empty sprint: One, then Two after it.
-  await drag(page, middle((await card("One").boundingBox())!), middle((await sprintLane.boundingBox())!));
+  // The lane now opens with the sprint summary, so its middle can be over a card: drop in the empty space near the bottom.
+  const nearBottom = async () => {
+    const box = (await sprintLane.boundingBox())!;
+    return { x: box.x + box.width / 2, y: box.y + box.height - 12 };
+  };
+  await drag(page, middle((await card("One").boundingBox())!), await nearBottom());
   await expect.poll(() => titles(page, "Active sprint")).toEqual(["One"]);
-  await drag(page, middle((await card("Two").boundingBox())!), middle((await sprintLane.boundingBox())!));
+  await drag(page, middle((await card("Two").boundingBox())!), await nearBottom());
   await expect.poll(() => titles(page, "Active sprint")).toEqual(["One", "Two"]);
 
   // Three between One and Two.
-  const sprintOne = (await sprintLane.getByRole("listitem").filter({ hasText: "One" }).boundingBox())!;
-  await drag(page, middle((await card("Three").boundingBox())!), { x: sprintOne.x + sprintOne.width / 2, y: sprintOne.y + sprintOne.height - 4 });
+  // Onto the top part of Two: that always means "just before Two", which is between One and Two.
+  const sprintTwo = (await sprintLane.getByRole("listitem").filter({ hasText: "Two" }).boundingBox())!;
+  await drag(page, middle((await card("Three").boundingBox())!), { x: sprintTwo.x + sprintTwo.width / 2, y: sprintTwo.y + 6 });
   await expect.poll(() => titles(page, "Active sprint")).toEqual(["One", "Three", "Two"]);
   await expect.poll(() => titles(page, "Backlog")).toEqual(["Four"]);
 
