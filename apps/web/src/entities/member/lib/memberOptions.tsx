@@ -1,4 +1,4 @@
-import type { OrganizationMember } from "@flowdesk/contracts";
+import type { OrganizationMember } from "@flowdesc/contracts";
 import { Avatar, type DropdownOption } from "../../../shared/ui";
 
 /** People as dropdown options: their photo (or initials) before the name. Extra rows ("Unassigned") go first. */

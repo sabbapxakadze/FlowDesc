@@ -1,4 +1,4 @@
-import type { IssuePriority } from "@flowdesk/contracts";
+import type { IssuePriority } from "@flowdesc/contracts";
 
 export const PRIORITY_LABELS: Record<IssuePriority, string> = {
   none: "No priority",

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { tourPendingResponseSchema } from "@flowdesk/contracts";
+import { tourPendingResponseSchema } from "@flowdesc/contracts";
 import { apiGet } from "../../../shared/api/client";
 import { profileKeys } from "./queryKeys";
 

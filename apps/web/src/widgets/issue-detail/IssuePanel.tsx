@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Project } from "@flowdesk/contracts";
+import type { Project } from "@flowdesc/contracts";
 import { SidePanel, useExitPresence } from "../../shared/ui";
 import { IssueByKey } from "./IssueByKey";
 import { useIssuePanel } from "./useIssuePanel";

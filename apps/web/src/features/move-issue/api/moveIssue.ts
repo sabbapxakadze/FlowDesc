@@ -1,4 +1,4 @@
-import { updateIssueResponseSchema, type MoveIssueRequest } from "@flowdesk/contracts";
+import { updateIssueResponseSchema, type MoveIssueRequest } from "@flowdesc/contracts";
 import { apiPatch } from "../../../shared/api/client";
 
 // Response reuses updateIssueResponseSchema — see the contract's own

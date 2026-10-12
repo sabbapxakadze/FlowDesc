@@ -1,4 +1,4 @@
-import type { Invitation } from "@flowdesk/contracts";
+import type { Invitation } from "@flowdesc/contracts";
 import { ROLE_LABELS } from "../../../entities/member";
 import { ResendInvitation } from "../../../features/invite-member";
 import { Button, cn, Time, useRowMotionProps, type RowState } from "../../../shared/ui";

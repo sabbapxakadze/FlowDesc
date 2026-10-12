@@ -13,7 +13,7 @@ import {
 } from "../../db/schema/index.js";
 import * as auditRepository from "../audit/audit.repository.js";
 import * as notificationsRepository from "../notifications/notifications.repository.js";
-import { issuePrioritySchema, type IssuePriority, type IssueStatus } from "@flowdesk/contracts";
+import { issuePrioritySchema, type IssuePriority, type IssueStatus } from "@flowdesc/contracts";
 
 type IssueRow = typeof issues.$inferSelect;
 

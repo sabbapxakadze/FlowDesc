@@ -1,4 +1,4 @@
-import type { IssueEvent } from "@flowdesk/contracts";
+import type { IssueEvent } from "@flowdesc/contracts";
 import { PRIORITY_LABELS, STATUS_LABELS } from "../../../shared/ui";
 
 /**

@@ -1,4 +1,4 @@
-import { listSprintsResponseSchema } from "@flowdesk/contracts";
+import { listSprintsResponseSchema } from "@flowdesc/contracts";
 import { apiGet } from "../../../shared/api/client";
 
 export function fetchSprints(organizationId: string, projectId: string) {

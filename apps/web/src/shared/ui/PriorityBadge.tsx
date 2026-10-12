@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronUp, ChevronsUp, Minus, type LucideIcon } from "lucide-react";
-import type { IssuePriority } from "@flowdesk/contracts";
+import type { IssuePriority } from "@flowdesc/contracts";
 import { PRIORITY_LABELS } from "./priorityLabels";
 
 const ICONS: Record<Exclude<IssuePriority, "none">, LucideIcon> = {

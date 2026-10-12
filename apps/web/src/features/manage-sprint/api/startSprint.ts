@@ -1,4 +1,4 @@
-import { sprintResponseSchema, type StartSprintRequest } from "@flowdesk/contracts";
+import { sprintResponseSchema, type StartSprintRequest } from "@flowdesc/contracts";
 import { apiPatch } from "../../../shared/api/client";
 
 export function startSprint(organizationId: string, projectId: string, sprintId: string, input: StartSprintRequest) {

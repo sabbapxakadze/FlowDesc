@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import type { z } from "zod";
-import type { updateProfileRequestSchema } from "@flowdesk/contracts";
+import type { updateProfileRequestSchema } from "@flowdesc/contracts";
 import { processAvatar } from "../../lib/image.js";
 import { avatarStorageKey, avatarUrlFor } from "../../lib/avatar-url.js";
 import { assertUploadsEnabled, deleteFile, saveFile } from "../../lib/storage.js";

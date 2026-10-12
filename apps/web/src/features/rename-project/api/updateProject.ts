@@ -1,7 +1,7 @@
 import {
   updateProjectResponseSchema,
   type UpdateProjectRequest,
-} from "@flowdesk/contracts";
+} from "@flowdesc/contracts";
 import { apiPatch } from "../../../shared/api/client";
 
 export function updateProject(

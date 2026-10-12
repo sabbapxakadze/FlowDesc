@@ -17,7 +17,7 @@ import { prefersReducedMotion } from "../lib/motion";
 
 export type Theme = "system" | "light" | "dark";
 
-const KEY = "flowdesk-theme";
+const KEY = "flowdesc-theme";
 const listeners = new Set<() => void>();
 
 function readSaved(): Theme {

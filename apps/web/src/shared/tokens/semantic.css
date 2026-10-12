@@ -3,7 +3,7 @@
  * the palette: every token points at a primitive scale, so changing the
  * look means changing which scale (or shade) a token points at, never
  * touching a component. Current direction (0013): neutral gray,
- * FlowDesk's slate-teal accent (`--color-accent-*`, primitives.css), and
+ * FlowDesc's slate-teal accent (`--color-accent-*`, primitives.css), and
  * a fixed 3-colour status system. To try another palette, repoint the
  * neutral tokens (e.g. `neutral` over to `gray`, `slate`, `zinc` or `stone`)
  * and/or edit the accent ramp in primitives.css; then re-run the contrast

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { Label } from "@flowdesk/contracts";
+import type { Label } from "@flowdesc/contracts";
 import { LabelBadge } from "../../../entities/label";
 import { useTimezone } from "../../../shared/lib/timezone";
 import { useRowMotionProps, type RowState } from "../../../shared/ui";

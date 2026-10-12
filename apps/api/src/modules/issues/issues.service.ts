@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { inlineImageIds, MAX_INLINE_IMAGES, mentionedUserIds, type IssuePriority, type IssueStatus } from "@flowdesk/contracts";
+import { inlineImageIds, MAX_INLINE_IMAGES, mentionedUserIds, type IssuePriority, type IssueStatus } from "@flowdesc/contracts";
 import { AppError } from "../../shared/errors.js";
 import { hasPermission, type Role } from "../../shared/permissions.js";
 import {

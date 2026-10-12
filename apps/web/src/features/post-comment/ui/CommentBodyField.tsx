@@ -1,4 +1,4 @@
-import type { Attachment } from "@flowdesk/contracts";
+import type { Attachment } from "@flowdesc/contracts";
 import { MentionEditor } from "../../../entities/member";
 import { uploadDraftImage } from "../api/uploadDraftImage";
 

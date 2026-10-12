@@ -34,7 +34,7 @@ async function fakeSite(tweaks: Tweaks = {}): Promise<string> {
     if (tweaks.csp !== false) headers["Content-Security-Policy"] = "default-src 'self';object-src 'none'";
     if (tweaks.xPoweredBy) headers["X-Powered-By"] = "Express";
     res.writeHead(200, headers);
-    res.end(url === "/.env" && tweaks.envLeak ? "DATABASE_URL=postgres://secret" : "<!doctype html><title>FlowDesk</title>");
+    res.end(url === "/.env" && tweaks.envLeak ? "DATABASE_URL=postgres://secret" : "<!doctype html><title>FlowDesc</title>");
   });
   await new Promise<void>((resolve) => server!.listen(0, "127.0.0.1", resolve));
   return `http://127.0.0.1:${(server!.address() as AddressInfo).port}`;

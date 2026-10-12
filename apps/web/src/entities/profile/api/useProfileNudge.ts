@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { profileNudgeResponseSchema } from "@flowdesk/contracts";
+import { profileNudgeResponseSchema } from "@flowdesc/contracts";
 import { apiGet } from "../../../shared/api/client";
 import { profileKeys } from "./queryKeys";
 

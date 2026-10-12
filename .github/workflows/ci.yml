@@ -72,7 +72,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @flowdesk/contracts build # the API imports the built contracts
+      - run: pnpm --filter @flowdesc/contracts build # the API imports the built contracts
       - run: pnpm test # the test setup migrates the database itself
 
   build-and-smoke:
@@ -139,7 +139,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm --filter @flowdesk/contracts build
+      - run: pnpm --filter @flowdesc/contracts build
       - run: pnpm db:migrate # a fresh database per shard: the tests reset the data, not the schema
         env:
           DATABASE_URL: postgresql://flowdesk:flowdesk@localhost:5432/flowdesk_test

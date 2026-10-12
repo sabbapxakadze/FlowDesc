@@ -4,7 +4,7 @@ import {
   startOAuthResponseSchema,
   type OAuthProviderName,
   type StartOAuthRequest,
-} from "@flowdesk/contracts";
+} from "@flowdesc/contracts";
 import { apiGet, apiPost } from "../../../shared/api/client";
 import { markOAuthTrip } from "../../../shared/auth/oauth-trip";
 

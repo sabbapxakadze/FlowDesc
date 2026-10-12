@@ -14,7 +14,7 @@ export function LoginPage() {
       <OAuthButtons />
       <LoginForm />
       <p className="mt-6 text-sm text-[var(--color-text-muted)]">
-        New to FlowDesk?{" "}
+        New to FlowDesc?{" "}
         <Link to="/register" className={buttonVariants({ variant: "link" })}>
           Create an account
         </Link>

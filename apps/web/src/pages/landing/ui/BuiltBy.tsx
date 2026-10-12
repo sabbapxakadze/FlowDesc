@@ -14,7 +14,7 @@ export function BuiltBy() {
           Built by Saba Pkhakadze
         </h2>
         <p className="mx-auto mt-4 max-w-xl text-base text-[var(--color-text-muted)] sm:text-lg">
-          FlowDesk is built end to end by one person. Questions or feedback? Get in touch.
+          FlowDesc is built end to end by one person. Questions or feedback? Get in touch.
         </p>
         <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-8">
           <a href={`mailto:${EMAIL}`} className={cn(buttonVariants({ variant: "link" }), "inline-flex items-center gap-2 text-base")}>

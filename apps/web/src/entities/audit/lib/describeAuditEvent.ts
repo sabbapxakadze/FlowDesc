@@ -1,4 +1,4 @@
-import type { AuditEvent } from "@flowdesk/contracts";
+import type { AuditEvent } from "@flowdesc/contracts";
 
 const str = (value: unknown): string => (typeof value === "string" ? value : "");
 const num = (value: unknown): number => (typeof value === "number" ? value : 0);

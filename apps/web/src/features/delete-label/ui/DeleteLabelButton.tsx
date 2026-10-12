@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { Label } from "@flowdesk/contracts";
+import type { Label } from "@flowdesc/contracts";
 import { issueKeys } from "../../../entities/issue";
 import { labelKeys } from "../../../entities/label";
 import { ConfirmDelete } from "../../../shared/ui";

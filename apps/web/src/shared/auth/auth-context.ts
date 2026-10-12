@@ -1,5 +1,5 @@
 import { createContext } from "react";
-import type { AuthSession } from "@flowdesk/contracts";
+import type { AuthSession } from "@flowdesc/contracts";
 
 export type AuthUser = AuthSession["user"];
 export type AuthOrganization = AuthSession["organization"];

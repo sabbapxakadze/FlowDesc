@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { listProjectSummariesResponseSchema } from "@flowdesk/contracts";
+import { listProjectSummariesResponseSchema } from "@flowdesc/contracts";
 import { apiGet } from "../../../shared/api/client";
 import { projectKeys } from "./queryKeys";
 

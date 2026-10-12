@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { IssueListItem } from "@flowdesk/contracts";
+import type { IssueListItem } from "@flowdesc/contracts";
 import { Card, DueDate, PriorityBadge, cn } from "../../../shared/ui";
 
 /**

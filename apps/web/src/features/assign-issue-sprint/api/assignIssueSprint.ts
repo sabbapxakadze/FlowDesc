@@ -1,4 +1,4 @@
-import { updateIssueResponseSchema, type AssignIssueSprintRequest } from "@flowdesk/contracts";
+import { updateIssueResponseSchema, type AssignIssueSprintRequest } from "@flowdesc/contracts";
 import { apiPatch } from "../../../shared/api/client";
 
 export function assignIssueSprint(

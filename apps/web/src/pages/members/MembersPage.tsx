@@ -1,4 +1,4 @@
-import type { OrganizationMember } from "@flowdesk/contracts";
+import type { OrganizationMember } from "@flowdesc/contracts";
 import { useInvitations, useRevokeInvitation } from "../../entities/invitation";
 import { useMembers, useMyRole } from "../../entities/member";
 import { InviteMemberForm } from "../../features/invite-member";

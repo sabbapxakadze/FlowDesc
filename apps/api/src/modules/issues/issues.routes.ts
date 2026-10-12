@@ -1,6 +1,6 @@
 import { Router, type Router as RouterType, type NextFunction, type Request, type Response } from "express";
 import multer, { MulterError } from "multer";
-import { ALLOWED_ATTACHMENT_MIME_TYPES, MAX_ATTACHMENT_SIZE_BYTES } from "@flowdesk/contracts";
+import { ALLOWED_ATTACHMENT_MIME_TYPES, MAX_ATTACHMENT_SIZE_BYTES } from "@flowdesc/contracts";
 import { requireAuth } from "../../middleware/require-auth.js";
 import { requireOrgMembership } from "../../middleware/require-org-membership.js";
 import { requireProject } from "../../middleware/require-project.js";

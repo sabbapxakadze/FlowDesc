@@ -4,7 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import {
   requestPasswordResetRequestSchema,
   type RequestPasswordResetRequest,
-} from "@flowdesk/contracts";
+} from "@flowdesc/contracts";
 import { Button, ErrorText, Field, Input } from "../../../shared/ui";
 import { requestPasswordReset } from "../api/requestPasswordReset";
 

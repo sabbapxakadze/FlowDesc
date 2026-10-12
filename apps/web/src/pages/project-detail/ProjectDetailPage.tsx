@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router";
-import type { IssuePriority, IssueStatus } from "@flowdesk/contracts";
+import type { IssuePriority, IssueStatus } from "@flowdesc/contracts";
 import { useCurrentProject } from "../../entities/project";
 import { IssuePanel, useIssuePanel } from "../../widgets/issue-detail";
 import { ProjectViewTabs } from "../../widgets/project-view-tabs";

@@ -39,7 +39,7 @@ export class ApiError extends Error {
  * incidental plumbing for a health check.
  *
  * Every call is validated against the same Zod schema the API used to build
- * its response, from @flowdesk/contracts. If the two ever drift, this
+ * its response, from @flowdesc/contracts. If the two ever drift, this
  * throws instead of handing the rest of the app a shape it doesn't
  * actually have.
  */

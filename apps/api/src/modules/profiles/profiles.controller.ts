@@ -7,7 +7,7 @@ import {
   tourPendingResponseSchema,
   profileResponseSchema,
   updateProfileRequestSchema,
-} from "@flowdesk/contracts";
+} from "@flowdesc/contracts";
 import { readFileStream } from "../../lib/storage.js";
 import { AppError } from "../../shared/errors.js";
 import * as profilesService from "./profiles.service.js";

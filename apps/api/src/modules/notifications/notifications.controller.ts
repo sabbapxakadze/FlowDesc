@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { z } from "zod";
-import { listNotificationsResponseSchema, unreadCountResponseSchema } from "@flowdesk/contracts";
+import { listNotificationsResponseSchema, unreadCountResponseSchema } from "@flowdesc/contracts";
 import { AppError } from "../../shared/errors.js";
 import * as notificationsService from "./notifications.service.js";
 

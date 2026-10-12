@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { Project } from "@flowdesk/contracts";
+import type { Project } from "@flowdesc/contracts";
 import { projectKeys } from "../../../entities/project";
 import { Button, ErrorText, Field, Input } from "../../../shared/ui";
 import { deleteProject } from "../api/deleteProject";

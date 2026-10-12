@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import type { Project } from "@flowdesk/contracts";
+import type { Project } from "@flowdesc/contracts";
 import { useIssue, useIssueByNumber } from "../../entities/issue";
 import { ApiError } from "../../shared/api/client";
 import { useAuth } from "../../shared/auth/useAuth";

@@ -1,11 +1,11 @@
-# FlowDesk — Project Instructions
+# FlowDesc — Project Instructions
 
 > Read this file fully before doing anything. It is the contract for how this
 > project is built. If a request conflicts with it, say so before proceeding.
 
 ## What this is
 
-FlowDesk is a collaborative project-management platform for small engineering
+FlowDesc is a collaborative project-management platform for small engineering
 teams (organizations → projects → issues → comments/labels/assignees → sprints).
 
 It is built as a **real SaaS product**, not a CRUD demo, and it is above all a
@@ -135,7 +135,7 @@ The Projects page (ADR 0059) is a grid of cards with their numbers (done bar, op
 The Issues list is one surface of two-line rows under a column header (ADR 0036), stacking by its own width (also beside the side panel); board and sprint cards stay cards.
 The board and sprint cards (and the drag preview) have a colored priority edge, the assignee at the top right and a labels/priority footer (ADR 0037); dragging is unchanged.
 The access token is renewed silently (on a rejected request, and on returning to a tab) and an inactive person is warned and then signed out after 30 minutes (ADR 0038); nobody should see "Invalid or expired access token".
-A demo organization with five people and about 76 issues of realistic data is built by `pnpm db:seed:demo` (log in as `demo@flowdesk.test`, password `Demo123!@#`; `--reset` rebuilds it; ADR 0039).
+A demo organization with five people and about 76 issues of realistic data is built by `pnpm db:seed:demo` (log in as `demo@flowdesc.test`, password `Demo123!@#`; `--reset` rebuilds it; ADR 0039).
 A "Tutorial" row in the sidebar starts a guided tour of the app (our own small engine in `shared/tour`, steps in `features/app-tour`, parts named by `data-tour` attributes; ADR 0040).
 The tour also starts by itself on a person's first visit to the app (ADR 0052: `users.tour_seen_at`, `FirstTour` in `AppShell`; existing accounts were marked seen by the migration; e2e fixtures mark their own users). Logging out and returning from Google or GitHub cross-fade (ADR 0029 amended).
 The public auth pages are a frosted-glass card over soft blurred shapes with a Log in / Create account switch, and every password field has a show/hide button (`shared/ui/PasswordInput`; ADR 0041). Sign-in with Google and GitHub (ADR 0042) is built and optional: a provider's button shows only when its credentials are in `apps/api/.env`; such accounts have no password until they add one on `/account`, where Sign-in methods connects and disconnects providers (never the last way in).
@@ -149,7 +149,7 @@ Long lists scroll inside their own area instead of stretching the page (`shared/
 page, edge shadows on a person's activity and an issue's timeline).
 Production mode (ADR 0046, Phase 9 slice 9.1): with `SERVE_WEB=true` the API process serves the built web app (`apps/web/build`, from `pnpm build`) on one address, `TRUST_PROXY=3` behind Render's proxy chain (measured, ADR 0051; not 1), `RUN_MIGRATIONS=true` brings the schema up to date at start, SIGTERM stops it cleanly, and a strict Content-Security-Policy (scripts by hash, no eval) is sent; the plan for hosting on Render + Neon + R2 is the top of Phase 9 in `docs/roadmap.md` (ADR 0045).
 A refresh token that was spent less than 10 seconds ago, in a family that is still alive, is answered again instead of revoking the family (ADR 0048; found by the first CI run: a cancelled refresh logged the person out). CI is `.github/workflows/ci.yml` (ADR 0047): four jobs, the browser suite in 4 shards each with its own Postgres.
-The app is LIVE (2026-10-08, ADR 0049): https://flowdesk-yotg.onrender.com on Render free + Neon free, created by hand in the dashboard (`render.yaml` records the settings), emails off until a domain exists. The first deploy settings (ADR 0049): `render.yaml` (one free Render web service, Frankfurt), `APP_URL` falls back to Render's `RENDER_EXTERNAL_URL`, `STORAGE_DRIVER=disabled` refuses uploads until real storage (9.5), and the database pool is capped and logs a dropped idle connection instead of crashing.
+The app is LIVE (2026-10-08, ADR 0049): https://flowdesc.app (custom domain bought on Cloudflare 2026-10-12, DNS only; ADR 0066; the Render address flowdesk-yotg.onrender.com still works) on Render free + Neon free, created by hand in the dashboard (`render.yaml` records the settings), emails off until a domain exists. The first deploy settings (ADR 0049): `render.yaml` (one free Render web service, Frankfurt), `APP_URL` falls back to Render's `RENDER_EXTERNAL_URL`, `STORAGE_DRIVER=disabled` refuses uploads until real storage (9.5), and the database pool is capped and logs a dropped idle connection instead of crashing.
 Files can live in an S3-compatible bucket (ADR 0053, `STORAGE_DRIVER=s3` plus five `S3_*` values; Neon Object Storage; a disk store stays for development and tests; on in production since 2026-10-09; the owner checked photo, attachment, video seeking and a redeploy).
 The live site is watched (ADR 0055): a read-only smoke tool (`node apps/api/src/tools/smoke-live.ts <address>`), a daily uptime workflow using it, a weekly encrypted database backup workflow (`docs/backups.md`), and optional server-side Sentry (`SENTRY_DSN`); a README now exists.
 Comments are formatted (ADR 0056): the body is a small subset of Markdown in the same field, drawn by the shared reader `parseCommentMarkdown`, and written with a TipTap editor (`shared/ui/RichTextEditor`, loaded on demand; toolbar and shortcuts, link Ctrl+Shift+K) in the comment box and in editing a comment; issue descriptions still use the plain text box. Built 2026-10-10 and left to CI for the final full run.

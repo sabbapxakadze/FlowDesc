@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { IssueEvent } from "@flowdesk/contracts";
+import type { IssueEvent } from "@flowdesc/contracts";
 import { describeEventFor } from "./describeEvent";
 
 const ME = "11111111-1111-4111-8111-111111111111";

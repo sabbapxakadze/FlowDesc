@@ -1,4 +1,4 @@
-import type { IssuePriority, IssueStatus } from "@flowdesk/contracts";
+import type { IssuePriority, IssueStatus } from "@flowdesc/contracts";
 import { projectKeys } from "../../project";
 
 export type IssueListFilters = {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import type { AuthSession } from "@flowdesk/contracts";
+import type { AuthSession } from "@flowdesc/contracts";
 import { apiPostVoid } from "../api/client";
 import { setStoredAccessToken } from "./token-store";
 import { AuthContext, type AuthOrganization, type AuthUser, type SessionEndReason } from "./auth-context";

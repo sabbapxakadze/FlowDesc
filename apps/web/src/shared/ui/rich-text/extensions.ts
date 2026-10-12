@@ -19,7 +19,7 @@ import {
   isSafeLinkUrl,
   mentionTokenAt,
   mentionToken,
-} from "@flowdesk/contracts";
+} from "@flowdesc/contracts";
 
 /**
  * The editor's building blocks for formatted comments (ADR 0056). Only what comments allow is listed, so a heading, a quote or a code block

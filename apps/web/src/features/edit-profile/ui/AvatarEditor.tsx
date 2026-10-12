@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { AVATAR_MAX_BYTES, AVATAR_MIME_TYPES } from "@flowdesk/contracts";
+import { AVATAR_MAX_BYTES, AVATAR_MIME_TYPES } from "@flowdesc/contracts";
 import { Avatar, Button, ErrorText } from "../../../shared/ui";
 import { useRemoveAvatar, useUploadAvatar } from "../api/profileMutations";
 

@@ -1,5 +1,5 @@
 import { Router, type Router as RouterType } from "express";
-import { healthResponseSchema } from "@flowdesk/contracts";
+import { healthResponseSchema } from "@flowdesc/contracts";
 
 /**
  * Not split into routes/controller/service/repository like a real domain
@@ -12,7 +12,7 @@ export const healthRouter: RouterType = Router();
 healthRouter.get("/health", (_req, res) => {
   const body = healthResponseSchema.parse({
     status: "ok",
-    service: "flowdesk-api",
+    service: "flowdesc-api",
     timestamp: new Date().toISOString(),
   });
 

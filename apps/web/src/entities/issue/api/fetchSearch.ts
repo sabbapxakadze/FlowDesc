@@ -1,4 +1,4 @@
-import { searchIssuesResponseSchema } from "@flowdesk/contracts";
+import { searchIssuesResponseSchema } from "@flowdesc/contracts";
 import { apiGet } from "../../../shared/api/client";
 
 /** Org-scoped, not project-scoped — see issues.routes.ts's search route. */

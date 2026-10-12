@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import type { ReactNode } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Link } from "react-router";
-import { registerRequestSchema, type RegisterRequest } from "@flowdesk/contracts";
+import { registerRequestSchema, type RegisterRequest } from "@flowdesc/contracts";
 import { ApiError } from "../../../shared/api/client";
 import {
   Button,

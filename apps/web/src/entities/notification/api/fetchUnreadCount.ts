@@ -1,4 +1,4 @@
-import { unreadCountResponseSchema } from "@flowdesk/contracts";
+import { unreadCountResponseSchema } from "@flowdesc/contracts";
 import { apiGet } from "../../../shared/api/client";
 
 export function fetchUnreadCount(organizationId: string) {

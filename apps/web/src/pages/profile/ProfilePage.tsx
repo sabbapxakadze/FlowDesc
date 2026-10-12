@@ -1,7 +1,7 @@
 import { Calendar, Mail } from "lucide-react";
 import { useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router";
-import type { IssueEvent, Profile, ProfileActivityItem } from "@flowdesk/contracts";
+import type { IssueEvent, Profile, ProfileActivityItem } from "@flowdesc/contracts";
 import { describeEvent } from "../../entities/issue";
 import { ROLE_LABELS, useMembers } from "../../entities/member";
 import { useProfile, useProfileActivity } from "../../entities/profile";

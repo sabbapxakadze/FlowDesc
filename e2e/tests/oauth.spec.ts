@@ -14,7 +14,7 @@ const GINA: Profile = { providerUserId: "g-1", email: "gina@example.com", emailV
 
 /** The next provider sign-in is this person. */
 async function actAs(page: Page, baseURL: string, profile: Profile) {
-  await page.context().addCookies([{ name: "flowdesk_fake_oauth", value: encodeURIComponent(JSON.stringify(profile)), url: baseURL }]);
+  await page.context().addCookies([{ name: "flowdesc_fake_oauth", value: encodeURIComponent(JSON.stringify(profile)), url: baseURL }]);
 }
 
 /**

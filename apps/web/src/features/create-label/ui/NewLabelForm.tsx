@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createLabelRequestSchema, type CreateLabelRequest } from "@flowdesk/contracts";
+import { createLabelRequestSchema, type CreateLabelRequest } from "@flowdesc/contracts";
 import { LabelBadge, LabelColorPicker, labelKeys } from "../../../entities/label";
 import { Button, ErrorText, Input } from "../../../shared/ui";
 import { createLabel } from "../api/createLabel";

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { authSessionSchema, demoInfoResponseSchema } from "@flowdesk/contracts";
+import { authSessionSchema, demoInfoResponseSchema } from "@flowdesc/contracts";
 import { apiGet, apiPost } from "../../../shared/api/client";
 
 /** Whether this server offers "Try the demo", and how long a visitor's private copy lives (ADR 0044). The buttons are drawn only when it does. */

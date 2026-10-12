@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { AssignIssueSprintRequest, GetBacklogResponse } from "@flowdesk/contracts";
+import type { AssignIssueSprintRequest, GetBacklogResponse } from "@flowdesc/contracts";
 import { issueKeys } from "../../entities/issue";
 import { ApiError } from "../../shared/api/client";
 import { assignIssueSprint } from "./api/assignIssueSprint";

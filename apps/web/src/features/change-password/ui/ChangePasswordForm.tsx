@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
-import { changePasswordRequestSchema } from "@flowdesk/contracts";
+import { changePasswordRequestSchema } from "@flowdesc/contracts";
 import { useAccount } from "../../../entities/account";
 import { apiPost, ApiError } from "../../../shared/api/client";
 import { useAuth } from "../../../shared/auth/useAuth";

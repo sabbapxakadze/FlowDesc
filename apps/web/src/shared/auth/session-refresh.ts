@@ -1,4 +1,4 @@
-import { authSessionSchema, type AuthSession } from "@flowdesk/contracts";
+import { authSessionSchema, type AuthSession } from "@flowdesc/contracts";
 import { setStoredAccessToken } from "./token-store";
 
 /**
@@ -76,7 +76,7 @@ async function callRefresh(): Promise<AuthSession> {
 function withRefreshLock<T>(work: () => Promise<T>): Promise<T> {
   // Not every environment has Web Locks; without them a tab still never refreshes twice at once, only across tabs it is not guarded.
   return typeof navigator !== "undefined" && navigator.locks
-    ? navigator.locks.request("flowdesk-refresh", work)
+    ? navigator.locks.request("flowdesc-refresh", work)
     : work();
 }
 

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { parseCommentMarkdown, type Inline } from "@flowdesk/contracts";
+import { parseCommentMarkdown, type Inline } from "@flowdesc/contracts";
 import { PersonName } from "./PersonName";
 
 /**

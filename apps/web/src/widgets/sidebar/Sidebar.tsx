@@ -89,7 +89,7 @@ export function Sidebar({ actions }: { actions?: ReactNode }) {
           to="/"
           className="font-display text-2xl text-[var(--color-text-sidebar-active)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-text-sidebar-active)]"
         >
-          FlowDesk
+          FlowDesc
         </NavLink>
         {actions}
       </div>

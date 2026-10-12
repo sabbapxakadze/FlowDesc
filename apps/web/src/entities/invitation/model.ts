@@ -1,1 +1,1 @@
-export type { Invitation, InvitableRole } from "@flowdesk/contracts";
+export type { Invitation, InvitableRole } from "@flowdesc/contracts";

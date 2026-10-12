@@ -5,7 +5,7 @@ import {
   exportAuditEventsQuerySchema,
   listAuditEventsQuerySchema,
   listAuditEventsResponseSchema,
-} from "@flowdesk/contracts";
+} from "@flowdesc/contracts";
 import { AppError } from "../../shared/errors.js";
 import { toCsv } from "../../shared/csv.js";
 import * as auditRepository from "./audit.repository.js";

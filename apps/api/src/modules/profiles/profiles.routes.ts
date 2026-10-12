@@ -1,6 +1,6 @@
 import { Router, type Router as RouterType, type NextFunction, type Request, type Response } from "express";
 import multer, { MulterError } from "multer";
-import { AVATAR_MAX_BYTES, AVATAR_MIME_TYPES } from "@flowdesk/contracts";
+import { AVATAR_MAX_BYTES, AVATAR_MIME_TYPES } from "@flowdesc/contracts";
 import { requireAuth } from "../../middleware/require-auth.js";
 import { requireOrgMembership } from "../../middleware/require-org-membership.js";
 import { AppError } from "../../shared/errors.js";

@@ -1,4 +1,4 @@
-import { getBacklogResponseSchema } from "@flowdesk/contracts";
+import { getBacklogResponseSchema } from "@flowdesc/contracts";
 import { apiGet } from "../../../shared/api/client";
 
 /** Unpaginated on purpose, same reasoning as fetchBoard — see the

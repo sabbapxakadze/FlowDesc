@@ -14,7 +14,7 @@ import {
   MAX_ATTACHMENT_SIZE_BYTES,
   MAX_INLINE_IMAGES,
   isSafeLinkUrl,
-} from "@flowdesk/contracts";
+} from "@flowdesc/contracts";
 import { TextSelection } from "@tiptap/pm/state";
 import type { EditorView } from "@tiptap/pm/view";
 import { cn } from "../lib/cn";

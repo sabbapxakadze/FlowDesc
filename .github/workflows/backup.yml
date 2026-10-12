@@ -40,10 +40,10 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$DATABASE_URL" || { echo "The DATABASE_URL secret is not set"; exit 1; }
-          /usr/lib/postgresql/18/bin/pg_dump --format=custom --no-owner --no-privileges --file=flowdesk.dump "$DATABASE_URL"
+          /usr/lib/postgresql/18/bin/pg_dump --format=custom --no-owner --no-privileges --file=flowdesc.dump "$DATABASE_URL"
           # A dump that is not a readable archive, or has no users table, is a failed backup even if pg_dump said nothing.
-          /usr/lib/postgresql/18/bin/pg_restore --list flowdesk.dump | grep -q "TABLE public users"
-          ls -l flowdesk.dump
+          /usr/lib/postgresql/18/bin/pg_restore --list flowdesc.dump | grep -q "TABLE public users"
+          ls -l flowdesc.dump
 
       - name: Encrypt it (AES-256) and remove the plain copy
         env:
@@ -51,13 +51,13 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$BACKUP_PASSPHRASE" || { echo "The BACKUP_PASSPHRASE secret is not set"; exit 1; }
-          openssl enc -aes-256-cbc -pbkdf2 -iter 600000 -salt -pass env:BACKUP_PASSPHRASE -in flowdesk.dump -out "flowdesk-$(date -u +%F).dump.enc"
-          rm flowdesk.dump
-          ls -l flowdesk-*.dump.enc
+          openssl enc -aes-256-cbc -pbkdf2 -iter 600000 -salt -pass env:BACKUP_PASSPHRASE -in flowdesc.dump -out "flowdesc-$(date -u +%F).dump.enc"
+          rm flowdesc.dump
+          ls -l flowdesc-*.dump.enc
 
       - uses: actions/upload-artifact@v7
         with:
-          name: flowdesk-backup
-          path: flowdesk-*.dump.enc
+          name: flowdesc-backup
+          path: flowdesc-*.dump.enc
           retention-days: 90
           if-no-files-found: error

@@ -1,1 +1,1 @@
-export type { Sprint, SprintStatus } from "@flowdesk/contracts";
+export type { Sprint, SprintStatus } from "@flowdesc/contracts";

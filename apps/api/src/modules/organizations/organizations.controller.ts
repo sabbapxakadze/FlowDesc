@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { z } from "zod";
-import { listOrganizationMembersResponseSchema, updateMemberRoleRequestSchema } from "@flowdesk/contracts";
+import { listOrganizationMembersResponseSchema, updateMemberRoleRequestSchema } from "@flowdesc/contracts";
 import { AppError } from "../../shared/errors.js";
 import * as organizationsService from "./organizations.service.js";
 

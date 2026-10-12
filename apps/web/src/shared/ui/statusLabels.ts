@@ -1,4 +1,4 @@
-import type { IssueStatus } from "@flowdesk/contracts";
+import type { IssueStatus } from "@flowdesc/contracts";
 
 /** Own module, not exported from StatusBadge.tsx — a component file
  * exporting a plain constant breaks Fast Refresh (react-refresh/

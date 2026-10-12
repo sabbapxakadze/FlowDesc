@@ -59,7 +59,7 @@ export function AuthLayout() {
         to="/"
         className="relative mb-8 font-display text-3xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-border-focus)]"
       >
-        FlowDesk
+        FlowDesc
       </FadeLink>
       <div className="glass-card relative w-full max-w-sm rounded-[var(--radius-card)] p-6">
         {showSwitch && <AuthSwitch />}

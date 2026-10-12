@@ -1,7 +1,7 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { auditEvents, users } from "../../db/schema/index.js";
-import type { AuditAction, AuditTargetType } from "@flowdesk/contracts";
+import type { AuditAction, AuditTargetType } from "@flowdesc/contracts";
 
 /** The exact type db.transaction()'s callback receives (same extraction as issues.repository.ts). */
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];

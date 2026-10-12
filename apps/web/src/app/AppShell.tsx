@@ -101,7 +101,7 @@ function AppShellLayout() {
         >
           <Menu size={20} aria-hidden="true" />
         </IconButton>
-        <span className="font-display text-xl text-[var(--color-text-sidebar-active)]">FlowDesk</span>
+        <span className="font-display text-xl text-[var(--color-text-sidebar-active)]">FlowDesc</span>
         <div className="ml-auto">
           <NotificationBell panelAlign="right" />
         </div>

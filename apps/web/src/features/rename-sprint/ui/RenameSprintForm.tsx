@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { Sprint } from "@flowdesk/contracts";
+import type { Sprint } from "@flowdesc/contracts";
 import { issueKeys } from "../../../entities/issue";
 import { sprintKeys } from "../../../entities/sprint";
 import { ApiError } from "../../../shared/api/client";

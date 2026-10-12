@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Sprint } from "@flowdesk/contracts";
+import type { Sprint } from "@flowdesc/contracts";
 import { SprintProgress, SprintStatusBadge } from "../../../entities/sprint";
 import { DeleteSprintButton } from "../../../features/delete-sprint";
 import { RenameSprintForm } from "../../../features/rename-sprint";

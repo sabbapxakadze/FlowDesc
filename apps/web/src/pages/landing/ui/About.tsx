@@ -1,7 +1,7 @@
 import { ChevronRight } from "lucide-react";
 
 /**
- * What FlowDesk is, in plain words, next to a small picture of how the pieces nest. Everything named here exists in the app: an
+ * What FlowDesc is, in plain words, next to a small picture of how the pieces nest. Everything named here exists in the app: an
  * organization holds projects, a project holds issues (read as KEY-number, like WEB-25), and an issue carries the details people act on.
  */
 export function About() {
@@ -13,7 +13,7 @@ export function About() {
             One place for your team's work
           </h2>
           <p className="mt-4 text-base text-[var(--color-text-muted)] sm:text-lg">
-            FlowDesk is a project management app. Your team works inside an organization, the organization has projects, and every project is a
+            FlowDesc is a project management app. Your team works inside an organization, the organization has projects, and every project is a
             list of issues: the tasks, bugs and ideas you are working on.
           </p>
           <p className="mt-4 text-base text-[var(--color-text-muted)] sm:text-lg">
@@ -22,7 +22,7 @@ export function About() {
           </p>
         </div>
 
-        <div className="glass-card rounded-[var(--radius-card)] p-5 sm:p-7" role="img" aria-label="How FlowDesk is organized: an organization has projects, a project has issues, and an issue has a status, priority, assignee, due date, labels, comments and files.">
+        <div className="glass-card rounded-[var(--radius-card)] p-5 sm:p-7" role="img" aria-label="How FlowDesc is organized: an organization has projects, a project has issues, and an issue has a status, priority, assignee, due date, labels, comments and files.">
           <ol className="flex flex-col gap-3 text-sm sm:text-base" aria-hidden="true">
             <Level label="Organization" example="Your team" depth={0} />
             <Level label="Projects" example="WEB · APP · API" depth={1} />

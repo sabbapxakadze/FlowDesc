@@ -3,14 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FlowDesk</title>
-    <meta name="description" content="FlowDesk: boards, sprints, issues and analytics, updated live for everyone on your team." />
+    <title>FlowDesc</title>
+    <meta name="description" content="FlowDesc: boards, sprints, issues and analytics, updated live for everyone on your team." />
     <!-- Applies the saved theme before the first paint so a saved choice does
          not flash the wrong colours. Same key as src/shared/theme/theme-store.ts
          (change both together). Guarded: storage can be blocked. -->
     <script>
       try {
-        var saved = localStorage.getItem("flowdesk-theme");
+        var saved = localStorage.getItem("flowdesc-theme");
         if (saved === "light" || saved === "dark") {
           document.documentElement.setAttribute("data-theme", saved);
         }

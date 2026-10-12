@@ -9,9 +9,9 @@ import { Button } from "../../../shared/ui";
  * app's cross-fade. The picture follows the theme the page is showing. They are static images: they go out of date when the UI changes.
  */
 const VIEWS = [
-  { id: "board", label: "Board", alt: "The FlowDesk board: issues in Todo, In progress and Done columns, with labels, priorities and assignees." },
-  { id: "issues", label: "Issues", alt: "The FlowDesk issue list: one row per issue with its status, priority and due date." },
-  { id: "analytics", label: "Analytics", alt: "The FlowDesk analytics page: weekly throughput, cycle time and sprint velocity charts." },
+  { id: "board", label: "Board", alt: "The FlowDesc board: issues in Todo, In progress and Done columns, with labels, priorities and assignees." },
+  { id: "issues", label: "Issues", alt: "The FlowDesc issue list: one row per issue with its status, priority and due date." },
+  { id: "analytics", label: "Analytics", alt: "The FlowDesc analytics page: weekly throughput, cycle time and sprint velocity charts." },
 ] as const;
 type ViewId = (typeof VIEWS)[number]["id"];
 

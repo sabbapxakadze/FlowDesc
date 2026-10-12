@@ -10,7 +10,7 @@ export function buildTourSteps(projectKey: string | undefined): TourStep[] {
   const start: TourStep[] = [
     {
       id: "welcome",
-      title: "Welcome to FlowDesk",
+      title: "Welcome to FlowDesc",
       body: "A two-minute tour of where things are. Use the buttons or the arrow keys, and press Esc whenever you want to stop. The tour never changes any of your data.",
     },
     {
@@ -173,7 +173,7 @@ export function buildTourSteps(projectKey: string | undefined): TourStep[] {
       target: "tour-button",
       placement: "right",
       title: "That is the tour",
-      body: "You can replay it any time from this button. Enjoy FlowDesk.",
+      body: "You can replay it any time from this button. Enjoy FlowDesc.",
     },
   ];
 

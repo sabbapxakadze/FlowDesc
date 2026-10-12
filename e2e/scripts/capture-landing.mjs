@@ -23,8 +23,8 @@ const browser = await chromium.launch();
 try {
   for (const theme of ["light", "dark"]) {
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: theme, reducedMotion: "reduce" });
-    await context.addInitScript((value) => localStorage.setItem("flowdesk-theme", value), theme);
-    const login = await context.request.post(`${BASE}/api/v1/auth/login`, { data: { email: "demo@flowdesk.test", password: "Demo123!@#" } });
+    await context.addInitScript((value) => localStorage.setItem("flowdesc-theme", value), theme);
+    const login = await context.request.post(`${BASE}/api/v1/auth/login`, { data: { email: "demo@flowdesc.test", password: "Demo123!@#" } });
     if (login.status() !== 200) throw new Error(`Could not log in as the demo account (HTTP ${login.status()}). Is the demo organization seeded?`);
     const page = await context.newPage();
     for (const screen of SCREENS) {

@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getIssueResponseSchema } from "@flowdesk/contracts";
+import { getIssueResponseSchema } from "@flowdesc/contracts";
 import { apiGet } from "../../../shared/api/client";
 import { issueKeys } from "./queryKeys";
 

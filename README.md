@@ -1,8 +1,8 @@
-# FlowDesk
+# FlowDesc
 
 A collaborative project-management app for small engineering teams: organizations, projects, issues, a board, sprints, comments, notifications and analytics. It is built as a real product, not a demo of one, and as a learning project: every architectural decision is written down as a short record (see [Decisions](#decisions)).
 
-**Live: <https://flowdesk-yotg.onrender.com>** (click "Try the demo" for a private copy with sample data, deleted after about two hours).
+**Live: <https://flowdesc.app>** (click "Try the demo" for a private copy with sample data, deleted after about two hours).
 
 ![The board](apps/web/public/landing/board-light.jpg)
 
@@ -51,7 +51,7 @@ pnpm install
 
 cp apps/api/.env.example apps/api/.env   # then fill in the secrets; the file explains each one
 pnpm db:migrate
-pnpm db:seed:demo                         # a demo organization: log in as demo@flowdesk.test, password Demo123!@#
+pnpm db:seed:demo                         # a demo organization: log in as demo@flowdesc.test, password Demo123!@#
 pnpm dev                                  # web on :5173, API on :4000
 ```
 

@@ -1,4 +1,4 @@
-import { getAccountResponseSchema } from "@flowdesk/contracts";
+import { getAccountResponseSchema } from "@flowdesc/contracts";
 import { apiGet } from "../../../shared/api/client";
 
 export function fetchAccount() {

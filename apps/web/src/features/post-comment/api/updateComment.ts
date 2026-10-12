@@ -1,4 +1,4 @@
-import { updateCommentResponseSchema, type UpdateCommentRequest } from "@flowdesk/contracts";
+import { updateCommentResponseSchema, type UpdateCommentRequest } from "@flowdesc/contracts";
 import { apiPatch } from "../../../shared/api/client";
 
 export function updateComment(

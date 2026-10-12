@@ -67,7 +67,7 @@ test("the sidebar's My work link and the logo both go to it", async ({ loggedInP
   await expect(page).toHaveURL(/\/$/);
   await expect(nav.getByRole("link", { name: "My work" })).toHaveAttribute("aria-current", "page");
   await page.goto("/projects");
-  await page.getByRole("link", { name: "FlowDesk" }).click();
+  await page.getByRole("link", { name: "FlowDesc" }).click();
   await expect(page).toHaveURL(/\/$/);
 });
 

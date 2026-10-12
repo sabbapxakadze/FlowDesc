@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import argon2 from "argon2";
 import { eq, inArray } from "drizzle-orm";
-import { mentionToken } from "@flowdesk/contracts";
+import { mentionToken } from "@flowdesc/contracts";
 import { db, pool } from "./client.js";
 import {
   auditEvents,
@@ -38,9 +38,9 @@ import {
 } from "./seed-demo-data.js";
 
 /**
- * The demo organization (ADR 0039): "FlowDesk Demo", five people (one per role, all with the password `Demo123!@#`),
+ * The demo organization (ADR 0039): "FlowDesc Demo", five people (one per role, all with the password `Demo123!@#`),
  * three projects with about 60 issues, sprints with history, comments with @mentions, notifications for the demo owner,
- * pending invitations and an audit log. Log in as `demo@flowdesk.test`.
+ * pending invitations and an audit log. Log in as `demo@flowdesc.test`.
  *
  * - `pnpm db:seed:demo` builds it when it is not there yet and does nothing when it is; `--reset` deletes it and the five
  *   demo users and builds it again (the way to undo whatever a visitor changed, and to refresh the dates).
@@ -177,7 +177,7 @@ export async function createDemoCopy(
 ): Promise<{ organizationId: string; ownerId: string }> {
   const suffix = randomBytes(4).toString("hex");
   const { organizationId, ownerId } = await buildDemoOrganization({
-    emailOf: (key) => `${key}.${suffix}@demo.flowdesk.test`,
+    emailOf: (key) => `${key}.${suffix}@demo.flowdesc.test`,
     orgSlug: `demo-${suffix}`,
     passwordHash: null,
     demoExpiresAt,
@@ -712,13 +712,13 @@ if (import.meta.url === entry) {
     .then((result) => {
       if (!result.created) {
         console.log(
-          `The demo organization already exists. Run with --reset to rebuild it. Log in as demo@flowdesk.test.`,
+          `The demo organization already exists. Run with --reset to rebuild it. Log in as demo@flowdesc.test.`,
         );
       } else {
         console.log(
           `Built "${DEMO_ORG_NAME}": ${result.people} people, ${result.projects} projects, ${result.issues} issues, ${result.comments} comments, ${result.events} events, ${result.notifications} notifications for the owner.`,
         );
-        console.log(`Log in as demo@flowdesk.test with the password ${DEMO_PASSWORD}`);
+        console.log(`Log in as demo@flowdesc.test with the password ${DEMO_PASSWORD}`);
       }
     })
     .catch((err: unknown) => {

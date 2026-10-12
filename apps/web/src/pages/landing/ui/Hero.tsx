@@ -2,11 +2,11 @@ import { DemoNote } from "../../../features/try-demo";
 import { buttonVariants, cn, FadeLink } from "../../../shared/ui";
 import { LandingDemoButton } from "./LandingDemoButton";
 
-/** The first thing a visitor reads: what FlowDesk is in one line, and the two ways in. */
+/** The first thing a visitor reads: what FlowDesc is in one line, and the two ways in. */
 export function Hero() {
   return (
     <header className="flex flex-col items-center px-4 pt-12 text-center sm:pt-16">
-      <p className="font-display text-3xl sm:text-4xl">FlowDesk</p>
+      <p className="font-display text-3xl sm:text-4xl">FlowDesc</p>
       <h1 className="font-display mt-9 max-w-4xl text-[2.75rem] leading-[1.08] font-normal sm:mt-11 sm:text-6xl lg:text-7xl">
         Plan the work. Follow it through.
       </h1>

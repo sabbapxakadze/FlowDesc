@@ -2,7 +2,7 @@
  * Primitive tokens only. Tailwind v4 already ships an extensive primitive
  * scale out of the box (colors, spacing, type, radius). This file only
  * adds what that default scale doesn't have: our font stacks and
- * FlowDesk's own accent color. Nothing here should be imported by a
+ * FlowDesc's own accent color. Nothing here should be imported by a
  * component directly — components consume the semantic tier
  * (shared/tokens/semantic.css), which references these.
  *
@@ -42,7 +42,7 @@
   --font-display: "Newsreader Variable", Georgia, "Times New Roman", serif;
 
   /**
-   * FlowDesk's accent: a desaturated slate-teal (OKLCH hue ~200, chroma
+   * FlowDesc's accent: a desaturated slate-teal (OKLCH hue ~200, chroma
    * kept low on purpose so it reads as ink with a hint of colour, not as
    * a brand blue). Same 11-shade shape and names as before, so the
    * semantic tier and the design-system page only see new values. This is

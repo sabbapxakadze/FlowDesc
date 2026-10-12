@@ -4,7 +4,7 @@ import {
   listAssignedIssuesResponseSchema,
   weekProgressQuerySchema,
   weekProgressResponseSchema,
-} from "@flowdesk/contracts";
+} from "@flowdesc/contracts";
 import { AppError } from "../../shared/errors.js";
 import * as myWorkRepository from "./my-work.repository.js";
 

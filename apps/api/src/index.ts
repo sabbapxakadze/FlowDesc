@@ -23,7 +23,7 @@ const httpServer = createServer(app);
 const io = attachSocketServer(httpServer);
 
 httpServer.listen(env.PORT, () => {
-  logger.info(`flowdesk-api listening on http://localhost:${env.PORT}`);
+  logger.info(`flowdesc-api listening on http://localhost:${env.PORT}`);
 });
 
 // A clean stop on SIGTERM (a deploy, or Render letting the free service sleep) and Ctrl+C: stop taking requests, then close the database.

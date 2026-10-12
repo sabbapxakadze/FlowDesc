@@ -24,7 +24,7 @@ import {
   updateCommentResponseSchema,
   updateIssueRequestSchema,
   updateIssueResponseSchema,
-} from "@flowdesk/contracts";
+} from "@flowdesc/contracts";
 import { AppError } from "../../shared/errors.js";
 import * as storage from "../../lib/storage.js";
 import { parseRange } from "../../lib/http-range.js";

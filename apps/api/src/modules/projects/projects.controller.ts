@@ -8,7 +8,7 @@ import {
   projectSummaryQuerySchema,
   updateProjectRequestSchema,
   updateProjectResponseSchema,
-} from "@flowdesk/contracts";
+} from "@flowdesc/contracts";
 import { AppError } from "../../shared/errors.js";
 import * as projectsService from "./projects.service.js";
 

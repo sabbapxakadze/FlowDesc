@@ -1,4 +1,4 @@
-import { listLabelsResponseSchema } from "@flowdesk/contracts";
+import { listLabelsResponseSchema } from "@flowdesc/contracts";
 import { apiDelete } from "../../../shared/api/client";
 
 export function detachLabel(

@@ -14,7 +14,7 @@ Why encrypted: the repository is public and the artifacts of a public repository
 1. In the GitHub repository: Settings, Secrets and variables, Actions, New repository secret:
    - `DATABASE_URL`: Neon's direct connection string (the same value as on Render).
    - `BACKUP_PASSPHRASE`: a long random passphrase you make up. **Also store it in a password manager.** GitHub never shows a secret again, and a lost passphrase makes every backup unreadable.
-2. Actions tab, Backup, Run workflow, once by hand. Check that it goes green and an artifact called `flowdesk-backup` appears.
+2. Actions tab, Backup, Run workflow, once by hand. Check that it goes green and an artifact called `flowdesc-backup` appears.
 3. Check once a month, or after the first run, that the artifact is there. A failed run shows red in the Actions tab; whether GitHub emails you about a failed scheduled run was not verified.
 
 ## How to restore (from a downloaded backup)
@@ -22,14 +22,14 @@ Why encrypted: the repository is public and the artifacts of a public repository
 You need `openssl` and the Postgres client tools (`pg_restore`), version 18 or newer, and a database to restore into: a new Neon branch or project is safest, never the live database first.
 
 ```bash
-# 1. Download the artifact from the Actions tab and unzip it, so you have flowdesk-YYYY-MM-DD.dump.enc
+# 1. Download the artifact from the Actions tab and unzip it, so you have flowdesc-YYYY-MM-DD.dump.enc
 # 2. Decrypt it (it asks for nothing: the passphrase comes from the environment)
 export BACKUP_PASSPHRASE='the passphrase from your password manager'
-openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 -pass env:BACKUP_PASSPHRASE -in flowdesk-YYYY-MM-DD.dump.enc -out flowdesk.dump
+openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 -pass env:BACKUP_PASSPHRASE -in flowdesc-YYYY-MM-DD.dump.enc -out flowdesc.dump
 # 3. Look inside first (a wrong passphrase fails at step 2 with "bad decrypt")
-pg_restore --list flowdesk.dump | head
+pg_restore --list flowdesc.dump | head
 # 4. Restore into an EMPTY database
-pg_restore --no-owner --no-privileges --dbname="<connection string of the empty database>" flowdesk.dump
+pg_restore --no-owner --no-privileges --dbname="<connection string of the empty database>" flowdesc.dump
 ```
 
 Then point `DATABASE_URL` on Render at the restored database (or copy the rows you need across).

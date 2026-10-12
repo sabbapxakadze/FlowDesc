@@ -6,4 +6,4 @@ export const IDLE_LIMIT_MS = 30 * 60 * 1000;
 export const IDLE_WARNING_MS = 60 * 1000;
 
 /** The localStorage key that shares "when did the person last do something" between tabs of the same browser. */
-export const LAST_ACTIVITY_KEY = "flowdesk.lastActivity";
+export const LAST_ACTIVITY_KEY = "flowdesc.lastActivity";

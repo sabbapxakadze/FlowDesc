@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import type { AssignedIssue, IssuePriority } from "@flowdesk/contracts";
+import type { AssignedIssue, IssuePriority } from "@flowdesc/contracts";
 import { issuePath } from "../../../shared/lib/paths";
 import { openIssueOnClick } from "../../../entities/issue";
 import { DueDate, PriorityBadge, StatusBadge } from "../../../shared/ui";

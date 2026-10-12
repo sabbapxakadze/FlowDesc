@@ -1,4 +1,4 @@
-import { updateLabelResponseSchema, type UpdateLabelRequest } from "@flowdesk/contracts";
+import { updateLabelResponseSchema, type UpdateLabelRequest } from "@flowdesc/contracts";
 import { apiPatch } from "../../../shared/api/client";
 
 export function updateLabel(

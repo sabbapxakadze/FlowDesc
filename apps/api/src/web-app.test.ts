@@ -32,7 +32,7 @@ function buildApp(appUrl = "http://localhost:4200") {
 }
 
 beforeAll(() => {
-  dir = mkdtempSync(join(tmpdir(), "flowdesk-web-"));
+  dir = mkdtempSync(join(tmpdir(), "flowdesc-web-"));
   mkdirSync(join(dir, "assets"));
   writeFileSync(join(dir, "index.html"), INDEX_HTML);
   writeFileSync(join(dir, "assets", "index-abc123.js"), "console.log('app')");

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createInvitationResponseSchema } from "@flowdesk/contracts";
+import { createInvitationResponseSchema } from "@flowdesc/contracts";
 import { invitationKeys } from "../../../entities/invitation";
 import { apiPost } from "../../../shared/api/client";
 import { Button, ErrorText, Input } from "../../../shared/ui";

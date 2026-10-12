@@ -175,7 +175,7 @@ importers:
       '@aws-sdk/client-s3':
         specifier: ^3.1147.0
         version: 3.1147.0
-      '@flowdesk/contracts':
+      '@flowdesc/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
       '@sentry/node':
@@ -278,7 +278,7 @@ importers:
       '@dnd-kit/utilities':
         specifier: ^3.2.2
         version: 3.2.2(react@19.3.0)
-      '@flowdesk/contracts':
+      '@flowdesc/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
       '@fontsource-variable/inter':

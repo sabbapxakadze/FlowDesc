@@ -16,7 +16,7 @@ import {
   UserPlus,
   type LucideIcon,
 } from "lucide-react";
-import type { IssueEvent } from "@flowdesk/contracts";
+import type { IssueEvent } from "@flowdesc/contracts";
 
 // Complete literal class strings so Tailwind can see them (no assembled names).
 const ADDED = "text-[var(--color-event-added)]";

@@ -1,7 +1,7 @@
 export const OAUTH_PROVIDERS = ["google", "github"] as const;
 export type OAuthProviderName = (typeof OAUTH_PROVIDERS)[number];
 
-/** What FlowDesk needs to know about a person from the provider, whichever provider it is. */
+/** What FlowDesc needs to know about a person from the provider, whichever provider it is. */
 export interface OAuthProfile {
   /** The provider's own stable id for the person. Never the email: emails change hands. */
   providerUserId: string;
@@ -12,7 +12,7 @@ export interface OAuthProfile {
 }
 
 /**
- * The seam between FlowDesk and a sign-in provider (same idea as lib/email.ts and lib/storage.ts): the service only
+ * The seam between FlowDesc and a sign-in provider (same idea as lib/email.ts and lib/storage.ts): the service only
  * talks to this interface, so the real providers and the test fake are interchangeable.
  */
 export interface OAuthProvider {

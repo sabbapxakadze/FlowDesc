@@ -1,4 +1,4 @@
-import type { AssignedIssue } from "@flowdesk/contracts";
+import type { AssignedIssue } from "@flowdesc/contracts";
 import { Card } from "../../../shared/ui";
 import { IssueTile } from "./IssueTile";
 

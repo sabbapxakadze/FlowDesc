@@ -7,7 +7,7 @@ import {
   renameSprintRequestSchema,
   sprintResponseSchema,
   startSprintRequestSchema,
-} from "@flowdesk/contracts";
+} from "@flowdesc/contracts";
 import { AppError } from "../../shared/errors.js";
 import * as sprintsService from "./sprints.service.js";
 

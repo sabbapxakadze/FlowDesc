@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
 import { eq } from "drizzle-orm";
-import { mentionToken } from "@flowdesk/contracts";
+import { mentionToken } from "@flowdesc/contracts";
 import { app } from "../../app.js";
 import { db } from "../../db/client.js";
 import { clearTestUploads, resetDatabase } from "../../db/test-utils.js";

@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import type { ProjectSummary } from "@flowdesk/contracts";
+import type { ProjectSummary } from "@flowdesc/contracts";
 import { projectPath } from "../../../shared/lib/paths";
 import { Card, cn, Skeleton, Time, type RowState } from "../../../shared/ui";
 import { projectInitials, sprintTimeLeft } from "../lib/projectCard";

@@ -5,7 +5,7 @@ import {
   listLabelsResponseSchema,
   updateLabelRequestSchema,
   updateLabelResponseSchema,
-} from "@flowdesk/contracts";
+} from "@flowdesc/contracts";
 import { z } from "zod";
 import { AppError } from "../../shared/errors.js";
 import * as labelsService from "./labels.service.js";

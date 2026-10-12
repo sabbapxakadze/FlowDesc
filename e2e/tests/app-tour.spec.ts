@@ -44,7 +44,7 @@ test("a new account gets the tour by itself on its first visit, once: Esc, a rel
   expect(res.status()).toBe(201);
   await logInThroughForm(page);
   await expect(card(page)).toBeVisible();
-  await expect(title(page)).toHaveText("Welcome to FlowDesk");
+  await expect(title(page)).toHaveText("Welcome to FlowDesc");
   await page.keyboard.press("Escape");
   await expect(card(page)).toHaveCount(0);
 
@@ -66,7 +66,7 @@ test("the Tutorial button starts the tour on a centered welcome; Next, Back and 
   // Why: this is the front door. It must start, count, move both ways by button and keyboard, and hand focus back when it ends.
   await setup(page);
   await startTour(page);
-  await expect(title(page)).toHaveText("Welcome to FlowDesk");
+  await expect(title(page)).toHaveText("Welcome to FlowDesc");
   await expect(card(page)).toContainText(/Step 1 of \d+/);
   await expect(spot(page)).toHaveCount(0); // the welcome has no highlighted part
 
@@ -80,7 +80,7 @@ test("the Tutorial button starts the tour on a centered welcome; Next, Back and 
   await page.keyboard.press("ArrowLeft");
   await expect(title(page)).toHaveText("Your projects");
   await card(page).getByRole("button", { name: "Back" }).click();
-  await expect(title(page)).toHaveText("Welcome to FlowDesk");
+  await expect(title(page)).toHaveText("Welcome to FlowDesc");
   await expect(card(page).getByRole("button", { name: "Back" })).toBeDisabled(); // nothing before the first step
 
   await page.keyboard.press("Escape");

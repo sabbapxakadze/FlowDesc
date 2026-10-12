@@ -24,7 +24,7 @@ let dir: string;
 
 beforeAll(async () => {
   fake = await startFakeS3("flowdesk-files");
-  dir = await mkdtemp(path.join(tmpdir(), "flowdesk-store-"));
+  dir = await mkdtemp(path.join(tmpdir(), "flowdesc-store-"));
 });
 afterAll(async () => {
   await fake.close();

@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { OrganizationMember } from "@flowdesk/contracts";
+import type { OrganizationMember } from "@flowdesc/contracts";
 import { issueKeys } from "../../../entities/issue";
 import { memberKeys } from "../../../entities/member";
 import { ConfirmDelete, Dropdown, ErrorText } from "../../../shared/ui";

@@ -1,1 +1,1 @@
-export type { AuditEvent, AuditAction, AuditTargetType } from "@flowdesk/contracts";
+export type { AuditEvent, AuditAction, AuditTargetType } from "@flowdesc/contracts";

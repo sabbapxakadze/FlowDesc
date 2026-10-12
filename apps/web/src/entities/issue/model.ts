@@ -1,1 +1,1 @@
-export type { Issue } from "@flowdesk/contracts";
+export type { Issue } from "@flowdesc/contracts";

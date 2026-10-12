@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { Editor } from "@tiptap/core";
-import { parseCommentMarkdown } from "@flowdesk/contracts";
+import { parseCommentMarkdown } from "@flowdesc/contracts";
 import { buildExtensions } from "./extensions";
 
 /**

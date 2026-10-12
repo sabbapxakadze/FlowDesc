@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { ArrowUpRight, X } from "lucide-react";
 import { Link } from "react-router";
-import type { Attachment, IssueEvent } from "@flowdesk/contracts";
+import type { Attachment, IssueEvent } from "@flowdesc/contracts";
 import { useProjects } from "../../entities/project";
 import { LabelBadge } from "../../entities/label";
 import { MentionedText, PersonName, useMemberNames, useMyRole } from "../../entities/member";

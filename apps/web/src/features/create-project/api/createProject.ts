@@ -1,4 +1,4 @@
-import { createProjectResponseSchema, type CreateProjectRequest } from "@flowdesk/contracts";
+import { createProjectResponseSchema, type CreateProjectRequest } from "@flowdesc/contracts";
 import { apiPost } from "../../../shared/api/client";
 
 export function createProject(organizationId: string, input: CreateProjectRequest) {

@@ -19,19 +19,19 @@ const isWindows = process.platform === "win32";
 const services = [
   {
     name: "contracts",
-    filter: "@flowdesk/contracts",
+    filter: "@flowdesc/contracts",
     color: "gray",
     readyPattern: /Found 0 errors\. Watching for file changes/,
   },
   {
     name: "api",
-    filter: "@flowdesk/api",
+    filter: "@flowdesc/api",
     color: "cyan",
-    readyPattern: /flowdesk-api listening/,
+    readyPattern: /flowdesc-api listening/,
   },
   {
     name: "web",
-    filter: "@flowdesk/web",
+    filter: "@flowdesc/web",
     color: "magenta",
     readyPattern: /Local:/,
   },
@@ -111,7 +111,7 @@ function printPrefixed(name, color, chunk) {
 }
 
 async function main() {
-  const banner = figlet.textSync("FLOWDESK", { font: "ANSI Shadow" });
+  const banner = figlet.textSync("FLOWDESC", { font: "ANSI Shadow" });
   console.log(styleText(["cyan", "bold"], banner));
   console.log(styleText("dim", "  starting the dev environment...\n"));
 

@@ -1,4 +1,4 @@
-import { weekProgressResponseSchema } from "@flowdesk/contracts";
+import { weekProgressResponseSchema } from "@flowdesc/contracts";
 import { apiGet } from "../../../shared/api/client";
 
 /** Of my issues due from `from` to `to` (calendar days, both included): how many are done and how many there are (the My work ring). */

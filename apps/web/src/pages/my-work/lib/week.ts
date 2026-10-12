@@ -1,4 +1,4 @@
-import type { AssignedIssue } from "@flowdesk/contracts";
+import type { AssignedIssue } from "@flowdesc/contracts";
 import { addDays } from "../../../shared/lib/dueDate";
 
 /**

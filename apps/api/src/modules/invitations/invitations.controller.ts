@@ -8,7 +8,7 @@ import {
   listInvitationsResponseSchema,
   previewInvitationRequestSchema,
   previewInvitationResponseSchema,
-} from "@flowdesk/contracts";
+} from "@flowdesc/contracts";
 import { AppError } from "../../shared/errors.js";
 import * as invitationsService from "./invitations.service.js";
 

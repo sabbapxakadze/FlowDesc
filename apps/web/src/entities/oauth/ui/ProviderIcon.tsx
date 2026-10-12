@@ -1,4 +1,4 @@
-import type { OAuthProviderName } from "@flowdesk/contracts";
+import type { OAuthProviderName } from "@flowdesc/contracts";
 
 /**
  * The Google "G" and the GitHub mark. These are other companies' brand marks, so they keep their own colors (the one

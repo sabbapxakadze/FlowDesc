@@ -1,4 +1,4 @@
-import { listAssignedIssuesResponseSchema } from "@flowdesk/contracts";
+import { listAssignedIssuesResponseSchema } from "@flowdesc/contracts";
 import { apiGet } from "../../../shared/api/client";
 
 /** The caller's open issues across all projects of the organization (the "my work" page). */

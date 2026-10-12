@@ -1,4 +1,4 @@
-import { createLabelResponseSchema, type CreateLabelRequest } from "@flowdesk/contracts";
+import { createLabelResponseSchema, type CreateLabelRequest } from "@flowdesc/contracts";
 import { apiPost } from "../../../shared/api/client";
 
 export function createLabel(organizationId: string, input: CreateLabelRequest) {

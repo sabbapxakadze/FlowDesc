@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createSprintRequestSchema, type CreateSprintRequest } from "@flowdesk/contracts";
+import { createSprintRequestSchema, type CreateSprintRequest } from "@flowdesc/contracts";
 import { sprintKeys } from "../../../entities/sprint";
 import { Button, ErrorText, Field, Input } from "../../../shared/ui";
 import { createSprint } from "../api/createSprint";

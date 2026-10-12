@@ -1,4 +1,4 @@
-import { registerResponseSchema, type RegisterRequest } from "@flowdesk/contracts";
+import { registerResponseSchema, type RegisterRequest } from "@flowdesc/contracts";
 import { apiPost } from "../../../shared/api/client";
 
 export function registerUser(input: RegisterRequest) {

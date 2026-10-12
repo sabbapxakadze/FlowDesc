@@ -39,7 +39,7 @@ export function AccountPage() {
         <ErrorText>Could not load your account: {account.error.message}</ErrorText>
       ) : (
         <div className="flex max-w-xl flex-col gap-5">
-          <Section title="Email" note="Used to log in and for emails from FlowDesk. A new address is confirmed through a link sent to it.">
+          <Section title="Email" note="Used to log in and for emails from FlowDesc. A new address is confirmed through a link sent to it.">
             <p className="mb-3 text-sm">
               <span className="font-medium">{account.data.email}</span>{" "}
               <span className="text-[var(--color-text-muted)]">{account.data.emailVerified ? "(verified)" : "(not verified yet)"}</span>

@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { profileActivityResponseSchema, profileResponseSchema } from "@flowdesk/contracts";
+import { profileActivityResponseSchema, profileResponseSchema } from "@flowdesc/contracts";
 import { apiGet } from "../../../shared/api/client";
 import { profileKeys } from "./queryKeys";
 

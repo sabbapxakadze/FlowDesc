@@ -5,7 +5,7 @@ import {
   updateProjectRequestSchema,
   type Project,
   type UpdateProjectRequest,
-} from "@flowdesk/contracts";
+} from "@flowdesc/contracts";
 import { projectKeys } from "../../../entities/project";
 import { Button, ErrorText, Field, Input, useSuccessFlash } from "../../../shared/ui";
 import { updateProject } from "../api/updateProject";

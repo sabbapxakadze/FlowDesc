@@ -4,7 +4,7 @@
  * return (a plain reload has no note, so it does not fade). `sessionStorage` is per tab and survives the round trip; where the browser
  * blocks it, there is simply no fade.
  */
-const KEY = "flowdesk_oauth_trip";
+const KEY = "flowdesc_oauth_trip";
 
 export function markOAuthTrip(): void {
   try {

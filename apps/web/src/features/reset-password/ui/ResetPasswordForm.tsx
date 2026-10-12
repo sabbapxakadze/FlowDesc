@@ -5,7 +5,7 @@ import { useNavigate } from "react-router";
 import {
   confirmPasswordResetRequestSchema,
   type ConfirmPasswordResetRequest,
-} from "@flowdesk/contracts";
+} from "@flowdesc/contracts";
 import { Button, ErrorText, Field, PasswordInput } from "../../../shared/ui";
 import { resetPassword } from "../api/resetPassword";
 

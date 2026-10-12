@@ -1,4 +1,4 @@
-import { sprintResponseSchema, type CompleteSprintRequest } from "@flowdesk/contracts";
+import { sprintResponseSchema, type CompleteSprintRequest } from "@flowdesc/contracts";
 import { apiPatch } from "../../../shared/api/client";
 
 export function completeSprint(

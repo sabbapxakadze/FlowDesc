@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import type { Attachment } from "@flowdesk/contracts";
+import type { Attachment } from "@flowdesc/contracts";
 import { issueKeys } from "../api/queryKeys";
 
 /**

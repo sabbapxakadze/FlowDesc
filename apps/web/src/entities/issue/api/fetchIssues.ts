@@ -1,4 +1,4 @@
-import { listIssuesResponseSchema } from "@flowdesk/contracts";
+import { listIssuesResponseSchema } from "@flowdesc/contracts";
 import { apiGet } from "../../../shared/api/client";
 import type { IssueListFilters } from "./queryKeys";
 

@@ -21,7 +21,7 @@ const cookieHeader = (res: request.Response, name: string) =>
 
 async function start(provider: string, intent: "signin" | "link", profile: Profile | undefined, token?: string) {
   const req = request(app).post(`/api/v1/auth/oauth/${provider}/start`);
-  if (profile) req.set("Cookie", `flowdesk_fake_oauth=${encodeURIComponent(JSON.stringify(profile))}`);
+  if (profile) req.set("Cookie", `flowdesc_fake_oauth=${encodeURIComponent(JSON.stringify(profile))}`);
   if (token) req.set("Authorization", `Bearer ${token}`);
   return req.send({ intent });
 }
@@ -31,7 +31,7 @@ async function round(opts: { provider?: string; intent?: "signin" | "link"; prof
   const provider = opts.provider ?? "google";
   const started = await start(provider, opts.intent ?? "signin", opts.profile ?? GOOGLE_PERSON, opts.token);
   expect(started.status).toBe(200);
-  const stateCookie = cookieHeader(started, "flowdesk_oauth_state")!;
+  const stateCookie = cookieHeader(started, "flowdesc_oauth_state")!;
   const url = new URL(started.body.url);
   opts.tamper?.(url);
   const callback = request(app).get(url.pathname + url.search);
@@ -47,16 +47,16 @@ async function registerPasswordUser(email: string, { verified }: { verified: boo
   await request(app).post("/api/v1/auth/register").send({ email, password: PASSWORD, name: "Password Person", organizationName: "Pw Org" }).expect(201);
   if (verified) await db.update(users).set({ emailVerifiedAt: new Date() }).where(eq(users.email, email));
   const login = await request(app).post("/api/v1/auth/login").send({ email, password: PASSWORD }).expect(200);
-  return { token: login.body.accessToken as string, cookie: cookieHeader(login, "flowdesk_refresh_token")!, userId: login.body.user.id as string };
+  return { token: login.body.accessToken as string, cookie: cookieHeader(login, "flowdesc_refresh_token")!, userId: login.body.user.id as string };
 }
 const account = (token: string) => request(app).get("/api/v1/users/me/account").set("Authorization", `Bearer ${token}`);
 
 /** A person who signed up with Google and so has no password. */
 async function googleSignUp(profile = GOOGLE_PERSON) {
   const { callback } = await round({ profile });
-  const cookie = cookieHeader(callback, "flowdesk_refresh_token")!;
+  const cookie = cookieHeader(callback, "flowdesc_refresh_token")!;
   const session = await refreshWith(cookie).expect(200);
-  return { cookie: cookieHeader(session, "flowdesk_refresh_token")!, token: session.body.accessToken as string, userId: session.body.user.id as string };
+  return { cookie: cookieHeader(session, "flowdesc_refresh_token")!, token: session.body.accessToken as string, userId: session.body.user.id as string };
 }
 
 describe("oauth: which providers exist", () => {
@@ -85,7 +85,7 @@ describe("oauth: signing up and signing in", () => {
     expect(location(callback).pathname).toBe("/");
     expect(location(callback).searchParams.get("oauth_error")).toBeNull();
 
-    const session = await refreshWith(cookieHeader(callback, "flowdesk_refresh_token")!).expect(200);
+    const session = await refreshWith(cookieHeader(callback, "flowdesc_refresh_token")!).expect(200);
     expect(session.body.user.email).toBe("gina@example.com");
     expect(session.body.organization.name).toBe("Gina Google's workspace");
 
@@ -103,7 +103,7 @@ describe("oauth: signing up and signing in", () => {
     // Why: the provider's own id is the identity, not the email; emails change hands.
     const first = await googleSignUp();
     const { callback } = await round({ profile: { ...GOOGLE_PERSON, email: "gina.new@example.com" } });
-    const again = await refreshWith(cookieHeader(callback, "flowdesk_refresh_token")!).expect(200);
+    const again = await refreshWith(cookieHeader(callback, "flowdesc_refresh_token")!).expect(200);
     expect(again.body.user.id).toBe(first.userId);
     expect(await db.select().from(users)).toHaveLength(1);
   });
@@ -112,7 +112,7 @@ describe("oauth: signing up and signing in", () => {
     // Why: someone who registered with a password and later presses "Google" must land in their own account.
     const pw = await registerPasswordUser("gina@example.com", { verified: true });
     const { callback } = await round({});
-    const session = await refreshWith(cookieHeader(callback, "flowdesk_refresh_token")!).expect(200);
+    const session = await refreshWith(cookieHeader(callback, "flowdesc_refresh_token")!).expect(200);
     expect(session.body.user.id).toBe(pw.userId);
     await request(app).post("/api/v1/auth/login").send({ email: "gina@example.com", password: PASSWORD }).expect(200);
     expect((await account(session.body.accessToken)).body.data.connectedAccounts).toHaveLength(1);
@@ -123,7 +123,7 @@ describe("oauth: signing up and signing in", () => {
     // proves the address through Google, the squatter's password and sessions must stop working.
     const squatter = await registerPasswordUser("gina@example.com", { verified: false });
     const { callback } = await round({});
-    const session = await refreshWith(cookieHeader(callback, "flowdesk_refresh_token")!).expect(200);
+    const session = await refreshWith(cookieHeader(callback, "flowdesc_refresh_token")!).expect(200);
     expect(session.body.user.id).toBe(squatter.userId); // same account, now the real owner's
 
     await request(app).post("/api/v1/auth/login").send({ email: "gina@example.com", password: PASSWORD }).expect(401);
@@ -180,14 +180,14 @@ describe("oauth: the state check", () => {
     expect(errorOf(first.callback)).toBeNull();
     const replay = await request(app).get(first.callbackPath);
     expect(errorOf(replay)).toBe("oauth_state_invalid");
-    const cleared = ((first.callback.headers["set-cookie"] as unknown as string[]) ?? []).find((c) => c.startsWith("flowdesk_oauth_state="));
+    const cleared = ((first.callback.headers["set-cookie"] as unknown as string[]) ?? []).find((c) => c.startsWith("flowdesc_oauth_state="));
     expect(cleared).toContain("Expires=Thu, 01 Jan 1970");
   });
 
   it("a state cookie made for one provider does not work on another", async () => {
     // Why: the provider is signed into the cookie, so a Google attempt cannot be finished as GitHub.
     const started = await start("google", "signin", GOOGLE_PERSON);
-    const stateCookie = cookieHeader(started, "flowdesk_oauth_state")!;
+    const stateCookie = cookieHeader(started, "flowdesc_oauth_state")!;
     const url = new URL(started.body.url);
     const asGithub = url.pathname.replace("/google/", "/github/") + url.search;
     const callback = await request(app).get(asGithub).set("Cookie", stateCookie);
@@ -204,7 +204,7 @@ describe("oauth: the state check", () => {
   it("the state cookie can never be used as an access token", async () => {
     // Why: it is signed with a key derived from the same secret; it must stay a different kind of token.
     const started = await start("google", "signin", GOOGLE_PERSON);
-    const value = cookieHeader(started, "flowdesk_oauth_state")!.split("=")[1]!;
+    const value = cookieHeader(started, "flowdesc_oauth_state")!.split("=")[1]!;
     await request(app).get("/api/v1/users/me/account").set("Authorization", `Bearer ${value}`).expect(401);
   });
 });
@@ -227,7 +227,7 @@ describe("oauth: connecting and disconnecting on the account page", () => {
   });
 
   it("a provider account that belongs to someone else cannot be connected", async () => {
-    // Why: one Google account may belong to only one FlowDesk account, or signing in with it would be ambiguous.
+    // Why: one Google account may belong to only one FlowDesc account, or signing in with it would be ambiguous.
     await googleSignUp(); // g-1 now belongs to Gina
     const other = await registerPasswordUser("other@example.com", { verified: true });
     const { callback } = await round({ intent: "link", token: other.token }); // tries to connect g-1

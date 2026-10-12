@@ -2,7 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router";
-import { loginRequestSchema, type LoginRequest } from "@flowdesk/contracts";
+import { loginRequestSchema, type LoginRequest } from "@flowdesc/contracts";
 import { useAuth } from "../../../shared/auth/useAuth";
 import { withViewTransition } from "../../../shared/lib/motion";
 import { Button, buttonVariants, ErrorText, Field, Input, PasswordInput } from "../../../shared/ui";

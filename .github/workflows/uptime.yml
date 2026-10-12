@@ -24,4 +24,4 @@ jobs:
         with:
           node-version: 24
       # Change the address here when the site gets its own domain.
-      - run: node apps/api/src/tools/smoke-live.ts https://flowdesk-yotg.onrender.com 240
+      - run: node apps/api/src/tools/smoke-live.ts https://flowdesc.app 240

@@ -12,7 +12,7 @@ import {
   arrayMove,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import type { GetBacklogResponse, IssueListItem } from "@flowdesk/contracts";
+import type { GetBacklogResponse, IssueListItem } from "@flowdesc/contracts";
 import { useVelocity } from "../../entities/analytics";
 import { useCurrentProject } from "../../entities/project";
 import { LabelPills } from "../../entities/label";

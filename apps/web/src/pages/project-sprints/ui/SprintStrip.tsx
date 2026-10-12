@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import type { Sprint } from "@flowdesk/contracts";
+import type { Sprint } from "@flowdesc/contracts";
 import { EmptyState, ErrorText, Skeleton } from "../../../shared/ui";
 import { SprintCard, type SprintCounts, type SprintOutcome } from "./SprintCard";
 

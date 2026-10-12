@@ -1,4 +1,4 @@
-import { getIssueResponseSchema } from "@flowdesk/contracts";
+import { getIssueResponseSchema } from "@flowdesc/contracts";
 import { apiGet } from "../../../shared/api/client";
 
 export function fetchIssue(organizationId: string, projectId: string, issueId: string) {

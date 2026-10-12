@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Columns3, List, Pencil, Trash2, X } from "lucide-react";
 import type { ReactNode } from "react";
-import type { IssueStatus } from "@flowdesk/contracts";
+import type { IssueStatus } from "@flowdesc/contracts";
 import { IssueCardContent, IssueCardFrame } from "../../entities/issue";
 import { LabelPills } from "../../entities/label";
 import { ProviderButton } from "../../entities/oauth";
@@ -557,8 +557,8 @@ export function DesignSystemPage() {
         note="Components never use these directly; the semantic tokens above point at them. Swapping a palette means repointing tokens or editing these ramps."
       >
         <div className="flex flex-col gap-4">
-          <Scale shades={NEUTRAL_SHADES} classes={neutralBgClassByShade} label="Neutral gray (450 is FlowDesk's added stop)" />
-          <Scale shades={ACCENT_SHADES} classes={accentBgClassByShade} label="Accent: slate-teal (FlowDesk's own)" />
+          <Scale shades={NEUTRAL_SHADES} classes={neutralBgClassByShade} label="Neutral gray (450 is FlowDesc's added stop)" />
+          <Scale shades={ACCENT_SHADES} classes={accentBgClassByShade} label="Accent: slate-teal (FlowDesc's own)" />
         </div>
       </Section>
 

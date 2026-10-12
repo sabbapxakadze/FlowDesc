@@ -1,4 +1,4 @@
-import { draftImageResponseSchema } from "@flowdesk/contracts";
+import { draftImageResponseSchema } from "@flowdesc/contracts";
 import { apiUpload } from "../../../shared/api/client";
 
 /**

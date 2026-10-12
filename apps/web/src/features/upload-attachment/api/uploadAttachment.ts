@@ -1,4 +1,4 @@
-import { attachmentResponseSchema } from "@flowdesk/contracts";
+import { attachmentResponseSchema } from "@flowdesc/contracts";
 import { apiUpload } from "../../../shared/api/client";
 
 export function uploadAttachment(organizationId: string, projectId: string, issueId: string, file: File) {

@@ -1,6 +1,6 @@
 import { useForm, useWatch } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { Label } from "@flowdesk/contracts";
+import type { Label } from "@flowdesc/contracts";
 import { issueKeys } from "../../../entities/issue";
 import { LabelBadge, LabelColorPicker, labelKeys } from "../../../entities/label";
 import { Button, ErrorText, Input } from "../../../shared/ui";

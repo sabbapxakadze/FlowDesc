@@ -1,4 +1,4 @@
-import type { IssueStatus } from "@flowdesk/contracts";
+import type { IssueStatus } from "@flowdesc/contracts";
 import { STATUS_DOT_CLASSES, STATUS_LABELS } from "./statusLabels";
 
 /**

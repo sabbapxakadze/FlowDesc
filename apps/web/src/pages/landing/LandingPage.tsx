@@ -13,7 +13,7 @@ const RIBBON_TOPS = [4, 40, 78, 116, 154, 192, 230];
 const RIBBON_TONES = ["landing-ribbon-a", "landing-ribbon-b", "landing-ribbon-c"];
 
 /**
- * What a visitor sees at `/` before logging in (ADR 0043): what FlowDesk is, a look at the real app, how it works, what it is used
+ * What a visitor sees at `/` before logging in (ADR 0043): what FlowDesc is, a look at the real app, how it works, what it is used
  * for, and who made it. Rendered by `RequireAuth` for a logged-out visit to `/` only; it is not a route of its own, and it makes no API
  * calls. The look follows the auth pages (ADR 0041): glass surfaces, serif titles, the teal action colour, the theme switch in the
  * corner. The background is a few wide, soft, diagonal ribbons of colour (the same colour tokens as the auth pages' shapes) that run

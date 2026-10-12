@@ -6,7 +6,7 @@ import {
   throughputResponseSchema,
   velocityResponseSchema,
   weeksQuerySchema,
-} from "@flowdesk/contracts";
+} from "@flowdesc/contracts";
 import { AppError } from "../../shared/errors.js";
 import * as analyticsService from "./analytics.service.js";
 

@@ -1,1 +1,1 @@
-export type { Label } from "@flowdesk/contracts";
+export type { Label } from "@flowdesc/contracts";

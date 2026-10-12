@@ -13,12 +13,12 @@ import {
   requestEmailChangeRequestSchema,
   setPasswordRequestSchema,
   updateTimezoneRequestSchema,
-} from "@flowdesk/contracts";
+} from "@flowdesc/contracts";
 import { env } from "../../config/env.js";
 import { AppError } from "../../shared/errors.js";
 import * as authService from "./auth.service.js";
 
-const REFRESH_COOKIE_NAME = "flowdesk_refresh_token";
+const REFRESH_COOKIE_NAME = "flowdesc_refresh_token";
 const REFRESH_COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 /**

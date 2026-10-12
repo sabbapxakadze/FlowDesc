@@ -7,7 +7,7 @@ import {
   updateProfileRequestSchema,
   type Profile,
   type UpdateProfileRequest,
-} from "@flowdesk/contracts";
+} from "@flowdesc/contracts";
 import { ApiError } from "../../../shared/api/client";
 import { Button, ErrorText, Field, Input, Textarea, useSuccessFlash } from "../../../shared/ui";
 import { useUpdateProfile } from "../api/profileMutations";

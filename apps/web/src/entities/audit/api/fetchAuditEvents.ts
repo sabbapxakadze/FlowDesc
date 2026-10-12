@@ -1,4 +1,4 @@
-import { listAuditEventsResponseSchema } from "@flowdesk/contracts";
+import { listAuditEventsResponseSchema } from "@flowdesc/contracts";
 import { apiGet } from "../../../shared/api/client";
 import type { AuditFilters } from "./queryKeys";
 

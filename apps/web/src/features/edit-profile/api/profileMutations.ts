@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { avatarResponseSchema, type UpdateProfileRequest } from "@flowdesk/contracts";
+import { avatarResponseSchema, type UpdateProfileRequest } from "@flowdesc/contracts";
 import { memberKeys } from "../../../entities/member";
 import { profileKeys } from "../../../entities/profile";
 import { apiDelete, apiPatchVoid, apiUpload } from "../../../shared/api/client";

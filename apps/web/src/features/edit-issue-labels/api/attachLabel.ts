@@ -1,4 +1,4 @@
-import { listLabelsResponseSchema } from "@flowdesk/contracts";
+import { listLabelsResponseSchema } from "@flowdesc/contracts";
 import { apiPost } from "../../../shared/api/client";
 
 export function attachLabel(

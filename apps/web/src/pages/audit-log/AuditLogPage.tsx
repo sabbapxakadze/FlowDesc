@@ -7,7 +7,7 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
-import type { AuditEvent, AuditTargetType } from "@flowdesk/contracts";
+import type { AuditEvent, AuditTargetType } from "@flowdesc/contracts";
 import { auditTone, describeAuditEvent, useAuditEvents, type AuditFilters } from "../../entities/audit";
 import { memberOptions, PersonName, useMembers, useMyRole } from "../../entities/member";
 import { ExportAuditLogButton } from "../../features/export-audit-log";

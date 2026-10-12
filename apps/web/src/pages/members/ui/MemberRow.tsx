@@ -1,4 +1,4 @@
-import type { OrganizationMember } from "@flowdesk/contracts";
+import type { OrganizationMember } from "@flowdesc/contracts";
 import { PersonName, ROLE_LABELS } from "../../../entities/member";
 import { MemberControls } from "../../../features/manage-member";
 import { cn, Time, useRowMotionProps, type RowState } from "../../../shared/ui";

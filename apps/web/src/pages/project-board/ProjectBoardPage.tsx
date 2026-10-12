@@ -12,7 +12,7 @@ import {
   arrayMove,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import type { IssueListItem, IssueStatus } from "@flowdesk/contracts";
+import type { IssueListItem, IssueStatus } from "@flowdesc/contracts";
 import { useCurrentProject } from "../../entities/project";
 import { LabelPills } from "../../entities/label";
 import { AssigneeAvatar } from "../../entities/member";

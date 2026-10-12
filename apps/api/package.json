@@ -1,5 +1,5 @@
 {
-  "name": "@flowdesk/api",
+  "name": "@flowdesc/api",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1147.0",
-    "@flowdesk/contracts": "workspace:*",
+    "@flowdesc/contracts": "workspace:*",
     "@sentry/node": "^11.6.0",
     "argon2": "^0.45.1",
     "cookie-parser": "^1.4.7",

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { AssignedIssue } from "@flowdesk/contracts";
+import type { AssignedIssue } from "@flowdesc/contracts";
 import { bucketIssues, mondayOf, summarize, weekStartFromParam } from "./week";
 
 // 2026-10-12 is a Monday, 2026-10-18 the Sunday after it.

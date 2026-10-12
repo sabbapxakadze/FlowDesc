@@ -22,7 +22,7 @@ test("one click enters a private demo, opens the tour by itself and shows when t
 
   await expect(page.getByRole("heading", { level: 1, name: "My work" })).toBeVisible(); // in the app, signed in
   await expect(page.getByText(/^Good (morning|afternoon|evening), /)).toBeVisible();
-  await expect(page.locator(TOUR_CARD)).toContainText("Welcome to FlowDesk"); // the guided tour started by itself
+  await expect(page.locator(TOUR_CARD)).toContainText("Welcome to FlowDesc"); // the guided tour started by itself
   const bar = page.getByTestId("demo-bar");
   await expect(bar).toContainText("This is a demo with sample data");
   await expect(bar).toContainText(/deleted at \d{1,2}:\d{2}/);

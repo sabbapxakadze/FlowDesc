@@ -1,4 +1,4 @@
-import { getBoardResponseSchema } from "@flowdesk/contracts";
+import { getBoardResponseSchema } from "@flowdesc/contracts";
 import { apiGet } from "../../../shared/api/client";
 
 /** Unpaginated on purpose — see the Phase 5 slice 1 plan's "Decisions"

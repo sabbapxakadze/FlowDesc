@@ -1,4 +1,4 @@
-import type { IssueStatus } from "@flowdesk/contracts";
+import type { IssueStatus } from "@flowdesc/contracts";
 import type { DropdownOption } from "./Dropdown";
 import { PriorityIcon } from "./PriorityBadge";
 import { PRIORITY_LABELS, PRIORITY_ORDER } from "./priorityLabels";

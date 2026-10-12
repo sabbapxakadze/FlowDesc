@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { getAccountResponseSchema } from "@flowdesk/contracts";
+import { getAccountResponseSchema } from "@flowdesc/contracts";
 import { accountKeys } from "../../../entities/account";
 import { apiPatch } from "../../../shared/api/client";
 import { browserTimezone, setTimezone } from "../../../shared/lib/timezone";

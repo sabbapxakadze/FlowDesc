@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createIssueRequestSchema, type CreateIssueRequest } from "@flowdesk/contracts";
+import { createIssueRequestSchema, type CreateIssueRequest } from "@flowdesc/contracts";
 import { issueKeys } from "../../../entities/issue";
 import { MentionEditor } from "../../../entities/member";
 import { Button, Dialog, ErrorText, Field, Input } from "../../../shared/ui";

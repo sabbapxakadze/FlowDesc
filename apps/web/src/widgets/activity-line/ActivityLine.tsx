@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { IssueEvent } from "@flowdesk/contracts";
+import type { IssueEvent } from "@flowdesc/contracts";
 import { describeEvent } from "../../entities/issue";
 import { PersonName } from "../../entities/member";
 import { formatDueDate, todayKey } from "../../shared/lib/dueDate";

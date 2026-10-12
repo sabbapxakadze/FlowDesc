@@ -1,4 +1,4 @@
-import { createIssueResponseSchema, type CreateIssueRequest } from "@flowdesk/contracts";
+import { createIssueResponseSchema, type CreateIssueRequest } from "@flowdesc/contracts";
 import { apiPost } from "../../../shared/api/client";
 
 export function createIssue(organizationId: string, projectId: string, input: CreateIssueRequest) {

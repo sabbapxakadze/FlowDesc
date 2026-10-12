@@ -1,4 +1,4 @@
-import { listAttachmentsResponseSchema } from "@flowdesk/contracts";
+import { listAttachmentsResponseSchema } from "@flowdesc/contracts";
 import { apiGet } from "../../../shared/api/client";
 
 export function fetchAttachments(organizationId: string, projectId: string, issueId: string) {

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Issue } from "@flowdesk/contracts";
+import type { Issue } from "@flowdesc/contracts";
 import { Dialog } from "../../../shared/ui";
 import { EditIssueForm } from "./EditIssueForm";
 

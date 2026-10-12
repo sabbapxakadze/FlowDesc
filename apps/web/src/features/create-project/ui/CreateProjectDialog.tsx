@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createProjectRequestSchema, type CreateProjectRequest } from "@flowdesk/contracts";
+import { createProjectRequestSchema, type CreateProjectRequest } from "@flowdesc/contracts";
 import { projectKeys } from "../../../entities/project";
 import { Button, Dialog, ErrorText, Field, Input } from "../../../shared/ui";
 import { createProject } from "../api/createProject";

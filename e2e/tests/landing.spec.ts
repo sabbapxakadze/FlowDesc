@@ -29,9 +29,9 @@ test("a visitor at any other app page is still sent to the login page", async ({
 });
 
 test("the brand link on the login page leads back to the landing page", async ({ page }) => {
-  // Why: the auth pages' "FlowDesk" link points at `/`, which used to bounce straight back to the login page.
+  // Why: the auth pages' "FlowDesc" link points at `/`, which used to bounce straight back to the login page.
   await page.goto("/login");
-  await page.getByRole("link", { name: "FlowDesk" }).click();
+  await page.getByRole("link", { name: "FlowDesc" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Plan the work. Follow it through." })).toBeVisible();
 });
 
@@ -56,7 +56,7 @@ test("after logging out, the Home button and the brand link lead to the landing 
   await page.goto("/");
   await page.getByRole("button", { name: "Log out" }).click();
   await expect(page).toHaveURL(/\/login$/);
-  for (const link of ["Home", "FlowDesk"]) {
+  for (const link of ["Home", "FlowDesc"]) {
     await page.getByRole("link", { name: link }).click();
     await expect(page.getByRole("heading", { level: 1, name: "Plan the work. Follow it through." }), link).toBeVisible();
     await page.getByRole("link", { name: "Log in" }).first().click();
@@ -108,7 +108,7 @@ test("the preview switches between the three screens and follows the theme", asy
   // must be the dark one when the page is dark (a light screenshot on a dark page would look broken).
   await page.emulateMedia({ colorScheme: "light" });
   await page.goto("/");
-  const picture = page.getByRole("img", { name: /^The FlowDesk / }); // the screenshot, not the "how it is organized" diagram
+  const picture = page.getByRole("img", { name: /^The FlowDesc / }); // the screenshot, not the "how it is organized" diagram
   const group = page.getByRole("group", { name: "Choose a screen" });
   await expect(group.getByRole("button", { name: "Board" })).toHaveAttribute("aria-pressed", "true");
   await expect(picture).toHaveAttribute("src", "/landing/board-light.jpg");

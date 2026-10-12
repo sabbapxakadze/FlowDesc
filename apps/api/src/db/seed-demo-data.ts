@@ -21,8 +21,8 @@ export type LabelName =
   | "customer-request";
 
 export const DEMO_PASSWORD = "Demo123!@#";
-export const DEMO_ORG_SLUG = "flowdesk-demo";
-export const DEMO_ORG_NAME = "FlowDesk Demo";
+export const DEMO_ORG_SLUG = "flowdesc-demo";
+export const DEMO_ORG_NAME = "FlowDesc Demo";
 
 export interface PersonSpec {
   email: string;
@@ -34,35 +34,35 @@ export interface PersonSpec {
 
 export const PEOPLE: Record<PersonKey, PersonSpec> = {
   alex: {
-    email: "demo@flowdesk.test",
+    email: "demo@flowdesc.test",
     name: "Alex Morgan",
     role: "owner",
     jobTitle: "Engineering Manager",
     bio: "I run the product team. Ask me about priorities, sprints, or where the coffee is.",
   },
   nino: {
-    email: "nino.beridze@flowdesk.test",
+    email: "nino.beridze@flowdesc.test",
     name: "Nino Beridze",
     role: "admin",
     jobTitle: "Tech Lead",
     bio: "Backend and infrastructure. I review most pull requests before lunch.",
   },
   marcus: {
-    email: "marcus.lee@flowdesk.test",
+    email: "marcus.lee@flowdesc.test",
     name: "Marcus Lee",
     role: "member",
     jobTitle: "Frontend Engineer",
     bio: "Web and mobile front ends. Performance numbers make me happy.",
   },
   sofia: {
-    email: "sofia.rossi@flowdesk.test",
+    email: "sofia.rossi@flowdesc.test",
     name: "Sofia Rossi",
     role: "member",
     jobTitle: "Product Designer",
     bio: "Design systems, prototypes and the occasional illustration.",
   },
   daniel: {
-    email: "daniel.okafor@flowdesk.test",
+    email: "daniel.okafor@flowdesc.test",
     name: "Daniel Okafor",
     role: "viewer",
     jobTitle: "QA Analyst",
@@ -1042,7 +1042,7 @@ export const AUDIT: AuditSpec[] = [
     action: "member.role_changed",
     targetType: "member",
     target: "Nino Beridze",
-    details: { email: "nino.beridze@flowdesk.test", from: "member", to: "admin" },
+    details: { email: "nino.beridze@flowdesc.test", from: "member", to: "admin" },
   },
   {
     by: "marcus",

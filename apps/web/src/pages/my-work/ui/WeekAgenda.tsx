@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { AssignedIssue } from "@flowdesk/contracts";
+import type { AssignedIssue } from "@flowdesc/contracts";
 import { addDays } from "../../../shared/lib/dueDate";
 import { Button, ScrollPanel, cn } from "../../../shared/ui";
 import { formatWeekRange, type WeekBuckets } from "../lib/week";

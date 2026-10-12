@@ -1,4 +1,4 @@
-import { createCommentResponseSchema, type CreateCommentRequest } from "@flowdesk/contracts";
+import { createCommentResponseSchema, type CreateCommentRequest } from "@flowdesc/contracts";
 import { apiPost } from "../../../shared/api/client";
 
 export function createComment(

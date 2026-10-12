@@ -1,4 +1,4 @@
-import type { RequestPasswordResetRequest } from "@flowdesk/contracts";
+import type { RequestPasswordResetRequest } from "@flowdesc/contracts";
 import { apiPostVoid } from "../../../shared/api/client";
 
 export function requestPasswordReset(input: RequestPasswordResetRequest) {

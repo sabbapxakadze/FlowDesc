@@ -1,4 +1,4 @@
-import { listNotificationsResponseSchema } from "@flowdesk/contracts";
+import { listNotificationsResponseSchema } from "@flowdesc/contracts";
 import { apiGet } from "../../../shared/api/client";
 
 export function fetchNotifications(organizationId: string) {

@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { authSessionSchema, demoInfoResponseSchema } from "@flowdesk/contracts";
+import { authSessionSchema, demoInfoResponseSchema } from "@flowdesc/contracts";
 import { setRefreshCookie } from "../auth/auth.controller.js";
 import * as demoService from "./demo.service.js";
 

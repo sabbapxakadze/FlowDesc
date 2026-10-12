@@ -78,7 +78,7 @@ export async function createInvitation(input: {
       throw new AppError(
         "email_has_account",
         409,
-        "This email already has a FlowDesk account in another organization. Inviting people who already belong to an organization is not supported yet.",
+        "This email already has a FlowDesc account in another organization. Inviting people who already belong to an organization is not supported yet.",
       );
     }
   }
@@ -125,7 +125,7 @@ async function deliverInvitation(input: {
   await sendInvitationEmail({
     to: input.created.email,
     token: input.token,
-    organizationName: organization?.name ?? "FlowDesk",
+    organizationName: organization?.name ?? "FlowDesc",
     inviterName,
     role: input.created.role,
   });

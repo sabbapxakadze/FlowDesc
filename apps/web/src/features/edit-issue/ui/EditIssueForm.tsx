@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { Issue, IssuePriority, IssueStatus } from "@flowdesk/contracts";
+import type { Issue, IssuePriority, IssueStatus } from "@flowdesc/contracts";
 import { issueKeys, useAttachments } from "../../../entities/issue";
 import { memberOptions, MentionEditor, useMembers } from "../../../entities/member";
 import { ApiError } from "../../../shared/api/client";

@@ -1,4 +1,4 @@
-import { sprintResponseSchema, type RenameSprintRequest } from "@flowdesk/contracts";
+import { sprintResponseSchema, type RenameSprintRequest } from "@flowdesc/contracts";
 import { apiPatch } from "../../../shared/api/client";
 
 export function renameSprint(

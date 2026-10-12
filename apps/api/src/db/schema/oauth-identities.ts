@@ -6,7 +6,7 @@ export const oauthProvider = pgEnum("oauth_provider", ["google", "github"]);
 /**
  * One row per way a person can sign in through another service (ADR 0042). `providerUserId` is the provider's own
  * stable id for the person (never the email: emails change); the pair is unique, so one Google account can belong to
- * only one FlowDesk user. A user has at most one identity per provider.
+ * only one FlowDesc user. A user has at most one identity per provider.
  */
 export const oauthIdentities = pgTable(
   "oauth_identities",

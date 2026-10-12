@@ -1,5 +1,5 @@
 import { createPortal } from "react-dom";
-import type { Attachment } from "@flowdesk/contracts";
+import type { Attachment } from "@flowdesc/contracts";
 import { MediaPreviewDialog } from "../../../shared/ui";
 import { formatFileSize } from "../../../shared/ui/lib/formatFileSize";
 import { useAttachmentPreview } from "./useAttachmentPreview";

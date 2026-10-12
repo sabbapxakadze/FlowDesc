@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Project } from "@flowdesk/contracts";
+import type { Project } from "@flowdesc/contracts";
 import { useProjects } from "../../../entities/project";
 import { IssuePanel, useIssuePanel } from "../../../widgets/issue-detail";
 

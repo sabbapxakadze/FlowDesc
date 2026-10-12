@@ -1,7 +1,7 @@
 import { pathToFileURL } from "node:url";
 
 /**
- * A read-only check of a running FlowDesk (ADR 0055): `node apps/api/src/tools/smoke-live.ts https://flowdesk-yotg.onrender.com`.
+ * A read-only check of a running FlowDesc (ADR 0055): `node apps/api/src/tools/smoke-live.ts https://flowdesk-yotg.onrender.com`.
  * It only sends GET requests, creates nothing and logs in as nobody, so it is safe against the live site. It checks that the site is up,
  * serves the app, keeps its private endpoints private, does not hand out files like `.env`, and sends its security headers. It does NOT
  * touch the database (the health check does not), so a database outage is not detected by it.
@@ -64,7 +64,7 @@ export async function runSmoke(baseUrl: string, options: { waitSeconds?: number 
   check("health answers 200 with status ok", health.status === 200 && healthBody?.status === "ok", `${health.status} ${health.text.slice(0, 60)}`);
 
   const home = await get(baseUrl, "/");
-  check("the app's page is served", home.status === 200 && home.type.includes("text/html") && home.text.includes("FlowDesk"), `${home.status} ${home.type}`);
+  check("the app's page is served", home.status === 200 && home.type.includes("text/html") && home.text.includes("FlowDesc"), `${home.status} ${home.type}`);
 
   const csp = home.headers.get("content-security-policy") ?? "";
   check("a strict Content-Security-Policy is sent", csp.includes("default-src 'self'") && csp.includes("object-src 'none'") && !csp.includes("'unsafe-eval'"), csp ? csp.slice(0, 60) : "missing");

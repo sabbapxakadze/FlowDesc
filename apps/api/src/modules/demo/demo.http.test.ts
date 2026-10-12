@@ -28,7 +28,7 @@ afterEach(() => {
 type Demo = { token: string; cookie: string; userId: string; organizationId: string; demoExpiresAt: string };
 async function startDemo(): Promise<Demo> {
   const res = await request(app).post("/api/v1/demo/start").expect(201);
-  const cookie = (res.headers["set-cookie"] as unknown as string[]).find((c) => c.startsWith("flowdesk_refresh_token="))!.split(";")[0]!;
+  const cookie = (res.headers["set-cookie"] as unknown as string[]).find((c) => c.startsWith("flowdesc_refresh_token="))!.split(";")[0]!;
   return { token: res.body.accessToken, cookie, userId: res.body.user.id, organizationId: res.body.organization.id, demoExpiresAt: res.body.organization.demoExpiresAt };
 }
 const as = (d: Demo) => ({ Authorization: `Bearer ${d.token}` });
@@ -71,7 +71,7 @@ describe("demo: starting one", () => {
     expect(minutesLeft).toBeLessThanOrEqual(env.DEMO_TTL_MINUTES);
     expect(demo.demoExpiresAt).toBe(org!.demoExpiresAt!.toISOString()); // the session carries it, so the app can say when it ends
 
-    const people = await db.select().from(users).where(like(users.email, "%@demo.flowdesk.test"));
+    const people = await db.select().from(users).where(like(users.email, "%@demo.flowdesc.test"));
     expect(people).toHaveLength(5);
     expect(people.every((p) => p.passwordHash === null)).toBe(true);
 
@@ -218,7 +218,7 @@ describe("demo: times are shown in the visitor's own timezone", () => {
     env.DEMO_ENABLED = "true";
     const res = await request(app).post("/api/v1/demo/start").expect(201);
     expect(res.body.user.timezone).toBeNull();
-    const people = await db.select({ email: users.email, timezone: users.timezone }).from(users).where(like(users.email, "%@demo.flowdesk.test"));
+    const people = await db.select({ email: users.email, timezone: users.timezone }).from(users).where(like(users.email, "%@demo.flowdesc.test"));
     expect(people).toHaveLength(5);
     expect(people.filter((person) => person.timezone !== null)).toEqual([]);
   });

@@ -60,9 +60,9 @@ async function seedAnalyticsDemo(organizationId: string) {
 
   await db
     .insert(users)
-    .values({ email: "analytics-demo@flowdesk.test", passwordHash: "not-a-real-hash", name: "Demo Teammate" })
+    .values({ email: "analytics-demo@flowdesc.test", passwordHash: "not-a-real-hash", name: "Demo Teammate" })
     .onConflictDoNothing({ target: users.email });
-  const demoUser = await db.query.users.findFirst({ where: eq(users.email, "analytics-demo@flowdesk.test") });
+  const demoUser = await db.query.users.findFirst({ where: eq(users.email, "analytics-demo@flowdesc.test") });
   if (!demoUser) throw new Error("Failed to create or find the analytics demo user");
   await db.insert(organizationMembers).values({ organizationId, userId: demoUser.id, role: "member" }).onConflictDoNothing();
 

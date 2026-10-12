@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { mentionDisplayName } from "@flowdesk/contracts";
+import { mentionDisplayName } from "@flowdesc/contracts";
 import { RichTextEditor, type RichTextEditorProps } from "../../../shared/ui";
 import { useMembers } from "../api/useMembers";
 import { memberOptions } from "../lib/memberOptions";

@@ -1,5 +1,5 @@
 {
-  "name": "flowdesk",
+  "name": "flowdesc",
   "private": true,
   "version": "0.0.0",
   "description": "Collaborative project/workflow management platform for small engineering teams.",
@@ -17,14 +17,14 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "test": "vitest run",
-    "test:e2e": "pnpm --filter @flowdesk/contracts build && playwright test -c e2e/playwright.config.ts",
+    "test:e2e": "pnpm --filter @flowdesc/contracts build && playwright test -c e2e/playwright.config.ts",
     "test:e2e:prod": "pnpm build && playwright test -c e2e/playwright.prod.config.ts",
-    "test:e2e:ui": "pnpm --filter @flowdesk/contracts build && playwright test -c e2e/playwright.config.ts --ui",
+    "test:e2e:ui": "pnpm --filter @flowdesc/contracts build && playwright test -c e2e/playwright.config.ts --ui",
     "prepare": "husky",
-    "db:generate": "pnpm --filter @flowdesk/api db:generate",
-    "db:migrate": "pnpm --filter @flowdesk/api db:migrate",
-    "db:seed": "pnpm --filter @flowdesk/api db:seed",
-    "db:seed:demo": "pnpm --filter @flowdesk/api db:seed:demo",
+    "db:generate": "pnpm --filter @flowdesc/api db:generate",
+    "db:migrate": "pnpm --filter @flowdesc/api db:migrate",
+    "db:seed": "pnpm --filter @flowdesc/api db:seed",
+    "db:seed:demo": "pnpm --filter @flowdesc/api db:seed:demo",
     "landing:shots": "node e2e/scripts/capture-landing.mjs"
   },
   "devDependencies": {

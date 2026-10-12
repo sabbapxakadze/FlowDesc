@@ -1,4 +1,4 @@
-import type { OAuthProviderName } from "@flowdesk/contracts";
+import type { OAuthProviderName } from "@flowdesc/contracts";
 import { Button } from "../../../shared/ui";
 import { PROVIDER_LABELS } from "../lib/provider-labels";
 import { ProviderIcon } from "./ProviderIcon";

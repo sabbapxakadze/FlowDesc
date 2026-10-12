@@ -8,7 +8,7 @@ import type { OAuthProvider } from "./types.js";
  */
 export function githubProvider(clientId: string, clientSecret: string): OAuthProvider {
   const api = (token: string): RequestInit => ({
-    headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json", "User-Agent": "FlowDesk" },
+    headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json", "User-Agent": "FlowDesc" },
   });
   return {
     name: "github",

@@ -1,4 +1,4 @@
-import { breakdownResponseSchema } from "@flowdesk/contracts";
+import { breakdownResponseSchema } from "@flowdesc/contracts";
 import { apiGet } from "../../../shared/api/client";
 
 export function fetchBreakdown(organizationId: string, projectId: string) {

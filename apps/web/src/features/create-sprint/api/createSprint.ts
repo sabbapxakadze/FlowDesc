@@ -1,4 +1,4 @@
-import { createSprintResponseSchema, type CreateSprintRequest } from "@flowdesk/contracts";
+import { createSprintResponseSchema, type CreateSprintRequest } from "@flowdesc/contracts";
 import { apiPost } from "../../../shared/api/client";
 
 export function createSprint(organizationId: string, projectId: string, input: CreateSprintRequest) {

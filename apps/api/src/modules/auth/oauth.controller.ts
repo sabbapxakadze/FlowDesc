@@ -6,7 +6,7 @@ import {
   startOAuthRequestSchema,
   startOAuthResponseSchema,
   type OAuthErrorCode,
-} from "@flowdesk/contracts";
+} from "@flowdesc/contracts";
 import { env } from "../../config/env.js";
 import { enabledProviders } from "../../lib/oauth/index.js";
 import { logger } from "../../lib/logger.js";
@@ -16,9 +16,9 @@ import { setRefreshCookie } from "./auth.controller.js";
 import * as oauthService from "./oauth.service.js";
 import { verifyAccessToken } from "./tokens.js";
 
-const STATE_COOKIE_NAME = "flowdesk_oauth_state";
+const STATE_COOKIE_NAME = "flowdesc_oauth_state";
 /** Test only: the profile the fake provider should sign in as (see lib/oauth/fake.ts). */
-const FAKE_PROFILE_COOKIE_NAME = "flowdesk_fake_oauth";
+const FAKE_PROFILE_COOKIE_NAME = "flowdesc_fake_oauth";
 
 /** Same attributes as the refresh cookie: httpOnly, lax (it must come back on the provider's redirect), auth path only. */
 function stateCookieOptions() {

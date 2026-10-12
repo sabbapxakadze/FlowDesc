@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ALLOWED_ATTACHMENT_MIME_TYPES, MAX_ATTACHMENT_SIZE_BYTES } from "@flowdesk/contracts";
+import { ALLOWED_ATTACHMENT_MIME_TYPES, MAX_ATTACHMENT_SIZE_BYTES } from "@flowdesc/contracts";
 import { issueKeys } from "../../../entities/issue";
 import { ApiError } from "../../../shared/api/client";
 import { Button, ErrorText } from "../../../shared/ui";

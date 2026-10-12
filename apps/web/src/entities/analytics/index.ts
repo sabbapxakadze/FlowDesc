@@ -1,4 +1,4 @@
-export type { ThroughputPoint, CycleTimeResponse, VelocitySprint, BreakdownResponse } from "@flowdesk/contracts";
+export type { ThroughputPoint, CycleTimeResponse, VelocitySprint, BreakdownResponse } from "@flowdesc/contracts";
 export { useThroughput } from "./api/useThroughput";
 export { useCycleTime } from "./api/useCycleTime";
 export { useVelocity } from "./api/useVelocity";

@@ -2,7 +2,7 @@ import { memo, type MouseEvent, type ReactNode } from "react";
 import { Link } from "react-router";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { IssueListItem } from "@flowdesk/contracts";
+import type { IssueListItem } from "@flowdesc/contracts";
 import { issueKey, issuePath } from "../../../shared/lib/paths";
 import { pointerListeners, useDragClickGuard } from "../lib/dragHelpers";
 import { openIssueOnClick } from "../lib/issueLinkClick";

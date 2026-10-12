@@ -11,7 +11,7 @@ import { z } from "zod";
  */
 export const healthResponseSchema = z.object({
   status: z.literal("ok"),
-  service: z.literal("flowdesk-api"),
+  service: z.literal("flowdesc-api"),
   timestamp: z.iso.datetime(),
 });
 

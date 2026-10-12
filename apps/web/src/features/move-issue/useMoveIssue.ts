@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { Issue, MoveIssueRequest } from "@flowdesk/contracts";
+import type { Issue, MoveIssueRequest } from "@flowdesc/contracts";
 import { issueKeys } from "../../entities/issue";
 import { ApiError } from "../../shared/api/client";
 import { moveIssue } from "./api/moveIssue";

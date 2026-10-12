@@ -123,7 +123,7 @@ const IDENTITY_TAKEN = () =>
   new AppError(
     "oauth_identity_taken",
     409,
-    "That account cannot be connected: it already belongs to a FlowDesk account, or you connected a different one for this provider.",
+    "That account cannot be connected: it already belongs to a FlowDesc account, or you connected a different one for this provider.",
   );
 
 function isUniqueViolation(err: unknown): boolean {
@@ -150,7 +150,7 @@ async function linkToUser(userId: string, provider: OAuthProviderName, profile: 
  * The decision table of ADR 0042:
  *  1. this provider account is already connected -> that user signs in;
  *  2. the provider did not confirm the email -> refuse (an unconfirmed address proves nothing);
- *  3. a FlowDesk account has that email -> connect to it and sign in (an account whose own email was never verified is
+ *  3. a FlowDesc account has that email -> connect to it and sign in (an account whose own email was never verified is
  *     reset first: no password, no sessions, so a squatter who registered someone else's address cannot keep access);
  *  4. otherwise a new account with its own organization, with no password.
  */

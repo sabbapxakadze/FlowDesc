@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createInvitationRequestSchema, type CreateInvitationRequest } from "@flowdesk/contracts";
+import { createInvitationRequestSchema, type CreateInvitationRequest } from "@flowdesc/contracts";
 import { invitationKeys } from "../../../entities/invitation";
 import { ApiError } from "../../../shared/api/client";
 import { Button, Dropdown, ErrorText, Field, Input } from "../../../shared/ui";

@@ -139,7 +139,7 @@ test("inviting someone who is already a member, or who already has an account, s
   await expect(page.getByText("already a member of the organization")).toBeVisible();
 
   await invite(page, "elsewhere@example.com");
-  await expect(page.getByText("already has a FlowDesk account")).toBeVisible();
+  await expect(page.getByText("already has a FlowDesc account")).toBeVisible();
 
   // A second invitation to an address that still has an open one is refused.
   await invite(page, "fresh@example.com");

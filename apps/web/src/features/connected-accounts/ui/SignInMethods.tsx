@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { useSearchParams } from "react-router";
-import type { Account, OAuthProviderName } from "@flowdesk/contracts";
+import type { Account, OAuthProviderName } from "@flowdesc/contracts";
 import { accountKeys } from "../../../entities/account";
 import { PROVIDER_LABELS, ProviderIcon, useOAuthProviders, useStartOAuth } from "../../../entities/oauth";
 import { apiDeleteVoid } from "../../../shared/api/client";

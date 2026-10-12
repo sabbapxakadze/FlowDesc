@@ -1,4 +1,4 @@
-import { previewInvitationResponseSchema } from "@flowdesk/contracts";
+import { previewInvitationResponseSchema } from "@flowdesc/contracts";
 import { apiPost } from "../../../shared/api/client";
 
 /** Public: the token in the body is the authorization. Safe to repeat (it does not use the invitation up). */
