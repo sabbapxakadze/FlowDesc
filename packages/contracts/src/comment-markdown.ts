@@ -108,7 +108,7 @@ export function inlineImageToken(attachmentId: string, name: string): string {
 }
 
 /** `[label](address)` starting at `i`: the end and the node, or undefined when it is not a link with a safe address. */
-function readLink(s: string, i: number): { end: number; node: Inline } | undefined {
+function readLink(s: string, i: number, depth: number): { end: number; node: Inline } | undefined {
   const closeLabel = s.indexOf("]", i + 1);
   if (closeLabel <= i + 1 || s[closeLabel + 1] !== "(") return undefined;
   const closeUrl = s.indexOf(")", closeLabel + 2);
@@ -117,12 +117,19 @@ function readLink(s: string, i: number): { end: number; node: Inline } | undefin
   if (!isSafeLinkUrl(href)) return undefined;
   return {
     end: closeUrl + 1,
-    node: { type: "link", href, children: parseInline(s.slice(i + 1, closeLabel)) },
+    node: { type: "link", href, children: parseInline(s.slice(i + 1, closeLabel), depth + 1) },
   };
 }
 
+/**
+ * How many levels of emphasis or link label may sit inside each other. Deeper ones stay as the text they were. Each level rescans the text for
+ * its closing marker, so a body of 10,000 stars (read as bold inside bold inside bold, 2,500 levels) took about a second: quadratic. Nobody writes
+ * emphasis ten deep on purpose.
+ */
+const MAX_NESTING = 10;
+
 /** One line of text into inline nodes. Anything that does not complete a construct stays as the text it was. */
-function parseInline(s: string): Inline[] {
+function parseInline(s: string, depth = 0): Inline[] {
   const out: Inline[] = [];
   let text = "";
   const flush = () => {
@@ -165,7 +172,7 @@ function parseInline(s: string): Inline[] {
       }
     }
     if (c === "[") {
-      const link = readLink(s, i);
+      const link = readLink(s, i, depth);
       if (link) {
         flush();
         out.push(link.node);
@@ -185,13 +192,13 @@ function parseInline(s: string): Inline[] {
     // A single _ opens italic only at a word edge and not inside a run of underscores (__init__).
     const underscoreCannotOpen =
       marker === "_" && (isWordChar(s[i - 1]) || s[i - 1] === "_" || s[i + 1] === "_");
-    if (marker && !underscoreCannotOpen) {
+    if (marker && !underscoreCannotOpen && depth < MAX_NESTING) {
       const start = i + marker.length;
       if (!isSpace(s[start])) {
         const close = findClose(s, marker, start);
         if (close !== -1) {
           flush();
-          const children = parseInline(s.slice(start, close));
+          const children = parseInline(s.slice(start, close), depth + 1);
           out.push({
             type: marker === "**" ? "bold" : marker === "~~" ? "strike" : "italic",
             children,
@@ -266,7 +273,7 @@ export function parseCommentMarkdown(body: string): Block[] {
       blocks.push({
         type: "list",
         ordered: list.ordered,
-        items: list.items.map(parseInline),
+        items: list.items.map((item) => parseInline(item)), // not `.map(parseInline)`: map would pass the index as the depth
       });
     list = undefined;
   };

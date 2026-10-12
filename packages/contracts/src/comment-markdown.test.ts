@@ -168,6 +168,25 @@ describe("nothing a writer types becomes markup", () => {
     expect(parseCommentMarkdown(body)).toEqual([para(text(body))]);
   });
 
+  it("emphasis nested more than ten levels deep stays as the text it was, and ordinary nesting is unchanged", () => {
+    // Why: a run of stars reads as bold inside bold inside bold, thousands of levels deep, and every level rescans the text: 10,000 stars took
+    // about a second (quadratic) until the depth was capped. The cap must not touch what people really write, so three levels still nest.
+    const depthOf = (nodes: Inline[]): number =>
+      Math.max(0, ...nodes.map((n) => (n.type === "bold" || n.type === "italic" || n.type === "strike" ? 1 + depthOf(n.children) : 0)));
+    const deep = "**".repeat(40) + "x" + "**".repeat(40);
+    const [block] = parseCommentMarkdown(deep);
+    expect(block?.type === "paragraph" ? depthOf(block.children) : -1).toBe(10);
+    expect(JSON.stringify(parseCommentMarkdown(deep))).toContain("x"); // nothing is lost, only left as written
+
+    const three = parseCommentMarkdown("**a ~~b *c* d~~ e**");
+    expect(three[0]?.type === "paragraph" ? depthOf(three[0].children) : -1).toBe(3);
+
+    // The same cap holds inside a list item, where the reader is called through a map: the item's position in the list must not act as a depth.
+    const list = parseCommentMarkdown("- one\n- two\n- three\n- four\n- **bold**\n- *italic*");
+    expect(JSON.stringify(list)).toContain('"type":"bold"');
+    expect(JSON.stringify(list)).toContain('"type":"italic"');
+  });
+
   it("never throws, and always finishes quickly, on any input including worst-case markers", () => {
     // Why: comments are written by strangers (the demo is public). A body that makes the reader hang or throw would break the page for everyone viewing it.
     const nasty = ["*".repeat(10_000), "**".repeat(5_000), "[".repeat(10_000), "`".repeat(10_000), "~~".repeat(5_000), "_a".repeat(5_000), "[a](".repeat(2_500), "\\".repeat(10_000), "- ".repeat(5_000), "*a*a".repeat(2_500)];
