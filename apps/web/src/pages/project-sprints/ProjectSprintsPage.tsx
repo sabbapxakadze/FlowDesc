@@ -13,21 +13,24 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import type { GetBacklogResponse, IssueListItem } from "@flowdesk/contracts";
+import { useVelocity } from "../../entities/analytics";
 import { useCurrentProject } from "../../entities/project";
 import { LabelPills } from "../../entities/label";
 import { AssigneeAvatar } from "../../entities/member";
 import { IssueCardContent, IssueCardFrame, SortableIssueCard, useBacklog } from "../../entities/issue";
 import { IssuePanel, useIssuePanel } from "../../widgets/issue-detail";
-import { SprintStatusBadge, useSprints } from "../../entities/sprint";
-import { CreateSprintForm } from "../../features/create-sprint";
+import { useSprints } from "../../entities/sprint";
+import { NewSprintButton } from "../../features/create-sprint";
 import { useStartSprint, useCompleteSprint } from "../../features/manage-sprint";
-import { DeleteSprintButton } from "../../features/delete-sprint";
-import { RenameSprintForm } from "../../features/rename-sprint";
 import { useDragSensors } from "../../shared/dnd/sensors";
 import { useAssignIssueSprint } from "../../features/assign-issue-sprint";
 import { useAuth } from "../../shared/auth/useAuth";
+import { todayKey } from "../../shared/lib/dueDate";
+import { useTimezone } from "../../shared/lib/timezone";
 import { createMultiList, useMultiListCollision, type ListMap } from "../../shared/dnd/multiList";
-import { Button, Card, ColumnHeader, EmptyState, ErrorText, Lane, Page, PageHeader, Skeleton, useAnimatedList } from "../../shared/ui";
+import { Button, Card, ColumnHeader, EmptyState, ErrorText, Lane, Page, PageHeader, Skeleton, Switch } from "../../shared/ui";
+import { ActiveSprintSummary } from "./ui/ActiveSprintSummary";
+import { SprintStrip } from "./ui/SprintStrip";
 
 /**
  * The two lists a card can be dragged between and within: the backlog and the active sprint. The drag
@@ -41,9 +44,14 @@ const { isListId, findContainer, moveAcrossLists } = createMultiList(LISTS);
 /** The label pills on a card. A module-level function, so its identity never changes and the memoised card bodies stay put while dragging. */
 const renderLabels = (labels: IssueListItem["labels"]) => <LabelPills labels={labels} variant="outline" className="" />;
 
-function buildLists(data: GetBacklogResponse | undefined): IssueLists {
+/**
+ * The ids in each lane. Finished issues are left out of the backlog unless "Show done" is on (ADR 0065): completing a sprint sends every one of
+ * its issues, the done ones too, to the top of the backlog, so without this the backlog fills with finished work. Only what is drawn is in the
+ * list, so a drop position is always measured against cards on screen; the hidden ones stay where they are.
+ */
+function buildLists(data: GetBacklogResponse | undefined, showDone: boolean): IssueLists {
   return {
-    backlog: (data?.backlog ?? []).map((issue) => issue.id),
+    backlog: (data?.backlog ?? []).filter((issue) => showDone || issue.status !== "done").map((issue) => issue.id),
     "active-sprint": (data?.activeSprintIssues ?? []).map((issue) => issue.id),
   };
 }
@@ -89,6 +97,7 @@ function SprintList({
     <Lane
       ref={setNodeRef}
       label={id === "backlog" ? "Backlog" : "Active sprint"}
+      tour={id === "backlog" ? "sprint-backlog" : "sprint-lane"}
       highlighted={highlighted}
       freezeHeight={dragging}
       header={header}
@@ -116,21 +125,39 @@ export function ProjectSprintsPage() {
   const panel = useIssuePanel();
   const project = useCurrentProject();
   const projectId = project.id;
+  const today = todayKey(useTimezone());
 
-  const { data: sprints, isPending: sprintsPending } = useSprints(organization!.id, projectId);
-  const sprintRows = useAnimatedList(sprints ?? [], (sprint) => sprint.id, { ready: !sprintsPending });
-  const [renamingSprintId, setRenamingSprintId] = useState<string | null>(null);
-  const { data: backlogData, isPending: backlogPending, isError, error } = useBacklog(organization!.id, projectId);
-  const startMutation = useStartSprint(organization!.id, projectId);
-  const completeMutation = useCompleteSprint(organization!.id, projectId);
-  const assignMutation = useAssignIssueSprint(organization!.id, projectId);
+  const { data: sprints, isPending: sprintsPending } = useSprints(organizationId, projectId);
+  // What each completed sprint took on and finished, as of its close (ADR 0011): the strip's cards say it. The velocity data covers the last 20.
+  const { data: velocity } = useVelocity(organizationId, projectId, 20);
+  const outcomes = useMemo(
+    () => new Map((velocity?.data ?? []).map((row) => [row.sprintId, { committed: row.committed, completed: row.completed }])),
+    [velocity],
+  );
+  const { data: backlogData, isPending: backlogPending, isError, error } = useBacklog(organizationId, projectId);
+  const startMutation = useStartSprint(organizationId, projectId);
+  const completeMutation = useCompleteSprint(organizationId, projectId);
+  const assignMutation = useAssignIssueSprint(organizationId, projectId);
+  const [showDone, setShowDone] = useState(false);
 
   const activeSprint = backlogData?.activeSprint ?? null;
   const byId = useMemo(
     () => new Map([...(backlogData?.backlog ?? []), ...(backlogData?.activeSprintIssues ?? [])].map((i) => [i.id, i])),
     [backlogData],
   );
-  const baseLists = useMemo(() => buildLists(backlogData), [backlogData]);
+  const baseLists = useMemo(() => buildLists(backlogData, showDone), [backlogData, showDone]);
+
+  const sprintIssues = backlogData?.activeSprintIssues ?? [];
+  const counts = {
+    done: sprintIssues.filter((issue) => issue.status === "done").length,
+    inProgress: sprintIssues.filter((issue) => issue.status === "in_progress").length,
+    todo: sprintIssues.filter((issue) => issue.status === "todo").length,
+    total: sprintIssues.length,
+  };
+  const backlogTotal = backlogData?.backlog.length ?? 0;
+  const doneInBacklog = (backlogData?.backlog ?? []).filter((issue) => issue.status === "done").length;
+  // The planned sprint to offer in the empty lane: the oldest one, the next in line.
+  const nextPlanned = [...(sprints ?? [])].filter((sprint) => sprint.status === "planned").sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0];
 
   const [activeIssue, setActiveIssue] = useState<IssueListItem | null>(null);
   const [drag, setDrag] = useState<DragState | null>(null);
@@ -239,175 +266,156 @@ export function ProjectSprintsPage() {
 
   return (
     <Page width="wide">
-      {/* From sm up the page fills the window: the Sprints list is capped and scrolls inside, and the two
-          lists take the height that is left. The page is never shorter than 52rem: the title, the create
-          form and the capped Sprints list use about 36rem, which leaves the lists their own 16rem minimum
-          (`Lane`); with less, the lists hung out below the page and touched the bottom of the window with no
-          space under them (a window shorter than about 830px). A shorter window scrolls the page instead.
-          The 4rem is the Page's own vertical padding. On a phone everything stacks at its natural height. */}
-      <div className="flex flex-col sm:h-[calc(100dvh-4rem)] sm:min-h-[52rem]">
-      <PageHeader eyebrow={project.name} title="Sprints" />
+      {/* From sm up the page fills the window: the sprint cards take one short row, and the two lists take the height that is left (ADR 0065).
+          The page is never shorter than 40rem: the title, the row of sprints and the lists' own 16rem minimum (`Lane`) fit in it; with
+          less, the lists hung out below the page and touched the bottom of the window with no space under them. A shorter window scrolls
+          the page instead. The 4rem is the Page's own vertical padding. On a phone everything stacks at its natural height. */}
+      <div className="flex flex-col sm:h-[calc(100dvh-4rem)] sm:min-h-[40rem]">
+        <PageHeader
+          eyebrow={project.name}
+          title="Sprints"
+          aside={
+            <div className="pb-2">
+              <NewSprintButton organizationId={organizationId} projectId={projectId} />
+            </div>
+          }
+        />
 
-      <CreateSprintForm organizationId={organization!.id} projectId={project.id} />
+        <section aria-label="Sprint overview" data-tour="sprint-strip" className="my-4 shrink-0">
+          <SprintStrip
+            organizationId={organizationId}
+            projectId={projectId}
+            sprints={sprints}
+            pending={sprintsPending}
+            today={today}
+            counts={counts}
+            outcomes={outcomes}
+            startingId={startMutation.isPending ? startMutation.variables.sprintId : null}
+            onStart={(sprint) => startMutation.mutate({ sprintId: sprint.id, version: sprint.version })}
+            startError={startMutation.isError ? startMutation.error.message : null}
+          />
+        </section>
 
-      <section className="mb-4 shrink-0">
-        <ColumnHeader label="Sprints" count={sprintsPending ? undefined : sprints?.length} />
-        {sprintsPending ? (
-          <ListSkeleton />
-        ) : !sprints || sprintRows.length === 0 ? (
-          <EmptyState block>No sprints yet.</EmptyState>
+        {isError ? (
+          <ErrorText>Failed to load the backlog: {error.message}</ErrorText>
         ) : (
-          <ul className="scrollbar-list-always flex flex-col gap-2 sm:max-h-[19rem] sm:overflow-y-auto sm:pr-1">
-            {sprintRows.map(({ key, item: sprint, state, index }) => (
-              <Card key={key} as="li" rowState={state} rowIndex={index} className="flex items-center justify-between gap-2">
-                {renamingSprintId === sprint.id ? (
-                  <RenameSprintForm
-                    organizationId={organization!.id}
-                    projectId={project.id}
-                    sprint={sprint}
-                    onDone={() => setRenamingSprintId(null)}
-                  />
-                ) : (
-                  <div className="min-w-0">
-                    <p className="font-medium">{sprint.name}</p>
-                    <SprintStatusBadge status={sprint.status} />
-                  </div>
-                )}
-                {renamingSprintId !== sprint.id && (
-                  // Three fixed slots in a fixed order (Rename, Start or Complete, Delete), so Rename
-                  // sits at the same place on every row whatever the status: a slot a status does not
-                  // use stays empty instead of letting the other buttons slide into it.
-                  <div className="flex shrink-0 items-center gap-2" data-testid="sprint-actions">
-                    <div className="w-20">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        fullWidth
-                        aria-label={`Rename ${sprint.name}`}
-                        onClick={() => setRenamingSprintId(sprint.id)}
-                      >
-                        Rename
-                      </Button>
-                    </div>
-                    <div className="w-24">
-                      {sprint.status === "planned" && (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          fullWidth
-                          disabled={startMutation.isPending}
-                          onClick={() => startMutation.mutate({ sprintId: sprint.id, version: sprint.version })}
-                        >
-                          Start
-                        </Button>
-                      )}
-                      {sprint.status === "active" && (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          fullWidth
-                          disabled={completeMutation.isPending}
-                          onClick={() => completeMutation.mutate({ sprintId: sprint.id, version: sprint.version })}
-                        >
-                          Complete
-                        </Button>
-                      )}
-                    </div>
-                    <div className="flex min-w-20 justify-end">
-                      {sprint.status !== "active" && (
-                        <DeleteSprintButton organizationId={organization!.id} projectId={project.id} sprint={sprint} />
-                      )}
-                    </div>
-                  </div>
-                )}
-              </Card>
-            ))}
-          </ul>
-        )}
-        {startMutation.isError && <ErrorText>{startMutation.error.message}</ErrorText>}
-        {completeMutation.isError && <ErrorText>{completeMutation.error.message}</ErrorText>}
-      </section>
-
-      {isError ? (
-        <ErrorText>Failed to load the backlog: {error.message}</ErrorText>
-      ) : (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={collisionDetection}
-          onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
-          onDragEnd={handleDragEnd}
-          onDragCancel={handleDragCancel}
-        >
-          <div className="grid grid-cols-1 gap-4 sm:min-h-0 sm:flex-1 sm:grid-cols-2 sm:grid-rows-[minmax(16rem,1fr)]">
-            {LISTS.map((listId) => {
-              const ids = lists[listId];
-              const listIssues = ids.flatMap((id) => {
-                const issue = byId.get(id);
-                return issue ? [issue] : [];
-              });
-              const isSprint = listId === "active-sprint";
-              const activeContainer = activeIssue ? findContainer(lists, activeIssue.id) : undefined;
-              return (
-                <SprintList
-                  key={listId}
-                  id={listId}
-                  itemIds={ids}
-                  highlighted={activeContainer === listId}
-                  dragging={activeIssue !== null}
-                  header={
-                    isSprint ? (
-                      <ColumnHeader
-                        status={activeSprint ? "in_progress" : undefined}
-                        label={activeSprint ? `Active: ${activeSprint.name}` : "No active sprint"}
-                        count={backlogPending || !activeSprint ? undefined : ids.length}
-                      />
+          <DndContext
+            sensors={sensors}
+            collisionDetection={collisionDetection}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDragEnd={handleDragEnd}
+            onDragCancel={handleDragCancel}
+          >
+            <div className="grid grid-cols-1 gap-4 sm:min-h-0 sm:flex-1 sm:grid-cols-2 sm:grid-rows-[minmax(16rem,1fr)]">
+              {LISTS.map((listId) => {
+                const ids = lists[listId];
+                const listIssues = ids.flatMap((id) => {
+                  const issue = byId.get(id);
+                  return issue ? [issue] : [];
+                });
+                const isSprint = listId === "active-sprint";
+                const activeContainer = activeIssue ? findContainer(lists, activeIssue.id) : undefined;
+                return (
+                  <SprintList
+                    key={listId}
+                    id={listId}
+                    itemIds={ids}
+                    highlighted={activeContainer === listId}
+                    dragging={activeIssue !== null}
+                    header={
+                      isSprint ? (
+                        activeSprint ? (
+                          <ActiveSprintSummary
+                            organizationId={organizationId}
+                            projectId={projectId}
+                            sprint={activeSprint}
+                            today={today}
+                            counts={counts}
+                            total={counts.total}
+                            completing={completeMutation.isPending}
+                            onComplete={() => completeMutation.mutate({ sprintId: activeSprint.id, version: activeSprint.version })}
+                            error={completeMutation.isError ? completeMutation.error.message : null}
+                          />
+                        ) : (
+                          <ColumnHeader label="Active sprint" />
+                        )
+                      ) : (
+                        <div className="flex items-start justify-between gap-2">
+                          <ColumnHeader label="Backlog" count={backlogPending ? undefined : backlogTotal} />
+                          {doneInBacklog > 0 && (
+                            <Switch checked={showDone} onChange={setShowDone}>
+                              Show done ({doneInBacklog})
+                            </Switch>
+                          )}
+                        </div>
+                      )
+                    }
+                  >
+                    {backlogPending ? (
+                      <ListSkeleton />
+                    ) : isSprint && !activeSprint ? (
+                      <EmptyState block>
+                        <p className="font-medium text-[var(--color-text-default)]">No sprint is running.</p>
+                        <p className="mt-1">
+                          {nextPlanned
+                            ? `${nextPlanned.name} is planned. Start it, then drag issues in from the backlog.`
+                            : "Create a sprint, then start it to plan work here."}
+                        </p>
+                        {nextPlanned && (
+                          <Button
+                            className="mt-3"
+                            disabled={startMutation.isPending}
+                            onClick={() => startMutation.mutate({ sprintId: nextPlanned.id, version: nextPlanned.version })}
+                          >
+                            Start {nextPlanned.name}
+                          </Button>
+                        )}
+                      </EmptyState>
+                    ) : listIssues.length > 0 ? (
+                      <ul className="flex flex-col gap-2">
+                        {listIssues.map((issue) => (
+                          <SortableIssueCard
+                            key={issue.id}
+                            issue={issue}
+                            projectKey={project.key}
+                            assigneeId={issue.assigneeId}
+                            renderAssignee={renderAssignee}
+                            renderLabels={renderLabels}
+                            onOpen={panel.open}
+                            dragLabel="Drag to reorder or move between backlog and sprint"
+                          />
+                        ))}
+                      </ul>
                     ) : (
-                      <ColumnHeader label="Backlog" count={backlogPending ? undefined : ids.length} />
-                    )
-                  }
-                >
-                  {backlogPending ? (
-                    <ListSkeleton />
-                  ) : isSprint && !activeSprint ? (
-                    <EmptyState block>Start a planned sprint to drag issues here.</EmptyState>
-                  ) : listIssues.length > 0 ? (
-                    <ul className="flex flex-col gap-2">
-                      {listIssues.map((issue) => (
-                        <SortableIssueCard
-                          key={issue.id}
-                          issue={issue}
-                          projectKey={project.key}
-                          assigneeId={issue.assigneeId}
-                          renderAssignee={renderAssignee}
-                          renderLabels={renderLabels}
-                          onOpen={panel.open}
-                          dragLabel="Drag to reorder or move between backlog and sprint"
-                        />
-                      ))}
-                    </ul>
-                  ) : (
-                    <EmptyState block>{isSprint ? "No issues in this sprint yet." : "Backlog is empty."}</EmptyState>
-                  )}
-                </SprintList>
-              );
-            })}
-          </div>
+                      <EmptyState block>{isSprint ? "No issues in this sprint yet. Drag some in from the backlog." : "Nothing open in the backlog."}</EmptyState>
+                    )}
+                    {!isSprint && !showDone && doneInBacklog > 0 && !backlogPending && (
+                      <div className="mt-2">
+                        <Button variant="link" onClick={() => setShowDone(true)}>
+                          Show {doneInBacklog} done {doneInBacklog === 1 ? "issue" : "issues"}
+                        </Button>
+                      </div>
+                    )}
+                  </SprintList>
+                );
+              })}
+            </div>
 
-          <DragOverlay dropAnimation={{ duration: 180, easing: "cubic-bezier(0.2, 0, 0, 1)" }}>
-            {activeIssue && (
-              <IssueCardFrame priority={activeIssue.priority} hoverable={false} className="cursor-grabbing shadow-lg">
-                <IssueCardContent issue={activeIssue} projectKey={project.key} labels={renderLabels(activeIssue.labels)} />
-                {activeIssue.assigneeId && (
-                  <span className="shrink-0">
-                    <AssigneeAvatar organizationId={organization!.id} userId={activeIssue.assigneeId} interactive={false} />
-                  </span>
-                )}
-              </IssueCardFrame>
-            )}
-          </DragOverlay>
-        </DndContext>
-      )}
+            <DragOverlay dropAnimation={{ duration: 180, easing: "cubic-bezier(0.2, 0, 0, 1)" }}>
+              {activeIssue && (
+                <IssueCardFrame priority={activeIssue.priority} hoverable={false} className="cursor-grabbing shadow-lg">
+                  <IssueCardContent issue={activeIssue} projectKey={project.key} labels={renderLabels(activeIssue.labels)} />
+                  {activeIssue.assigneeId && (
+                    <span className="shrink-0">
+                      <AssigneeAvatar organizationId={organizationId} userId={activeIssue.assigneeId} interactive={false} />
+                    </span>
+                  )}
+                </IssueCardFrame>
+              )}
+            </DragOverlay>
+          </DndContext>
+        )}
       </div>
       <IssuePanel project={project} />
     </Page>

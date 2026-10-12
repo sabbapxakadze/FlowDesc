@@ -27,27 +27,39 @@ async function sprintsInEveryState(page: Page) {
   return { projectId };
 }
 
-test("Rename sits in the same place on a completed, an active and a planned sprint, and Delete only where allowed", async ({
-  loggedInPage: page,
-}) => {
-  // Why: the buttons used to be spread by space-between, so a row without a Delete button (the
-  // active one) put Rename somewhere else. Three fixed slots keep every row the same.
+test("the sprint strip tells each state apart, and Start waits while another sprint runs", async ({ loggedInPage: page }) => {
+  // Why: the strip is how people read the project's sprints. A completed, an active and a planned sprint must each say what they are,
+  // Delete must not be offered for the active one, and Start must be unavailable while a sprint is running (a project has only one).
   const { projectId } = await sprintsInEveryState(page);
   await page.goto(`/projects/${projectId}/sprints`);
-  const row = (name: string) => page.getByRole("listitem").filter({ hasText: name }).filter({ has: page.getByTestId("sprint-actions") });
-  await expect(row("Done sprint")).toBeVisible();
+  const strip = page.getByRole("list", { name: "Sprints" });
+  const card = (name: string) => strip.getByRole("listitem").filter({ hasText: name });
+  await expect(card("Done sprint")).toContainText("Completed");
+  await expect(card("Active sprint")).toContainText("Active");
+  await expect(card("Planned sprint")).toContainText("Planned");
 
-  const fromRight = async (name: string, button: string) => {
-    const li = (await row(name).boundingBox())!;
-    const b = (await row(name).getByRole("button", { name: button }).boundingBox())!;
-    return Math.round(li.x + li.width - (b.x + b.width));
-  };
-  const rename = [await fromRight("Done sprint", "Rename Done sprint"), await fromRight("Active sprint", "Rename Active sprint"), await fromRight("Planned sprint", "Rename Planned sprint")];
-  expect(new Set(rename).size).toBe(1);
+  await expect(card("Planned sprint").getByRole("button", { name: "Start sprint" })).toBeDisabled();
+  await expect(card("Done sprint").getByRole("button", { name: "Start sprint" })).toHaveCount(0);
 
-  // The middle slot: Complete on the active row and Start on the planned row take the same place.
-  expect(await fromRight("Active sprint", "Complete")).toBe(await fromRight("Planned sprint", "Start"));
-  // Delete is at the far right, on the completed and planned rows, and absent on the active one.
-  expect(await fromRight("Done sprint", "Delete")).toBe(await fromRight("Planned sprint", "Delete"));
-  await expect(row("Active sprint").getByRole("button", { name: "Delete" })).toHaveCount(0);
+  await card("Active sprint").getByRole("button", { name: "Active sprint options" }).click();
+  await expect(page.getByRole("menuitem", { name: "Rename" })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: "Delete" })).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await card("Done sprint").getByRole("button", { name: "Done sprint options" }).click();
+  await expect(page.getByRole("menuitem", { name: "Delete" })).toBeVisible();
+});
+
+test("done issues are hidden in the backlog until Show done is on", async ({ loggedInPage: page }) => {
+  // Why: completing a sprint sends its finished issues to the top of the backlog too; hidden by default keeps the backlog about what is left.
+  const { projectId, issueIds } = await createIssueViaApi(page.request, { projectName: "Website", projectKey: "WEB", titles: ["Open one", "Finished one"] });
+  const { headers, base } = await apiSession(page.request);
+  const res = await page.request.patch(`${base}/projects/${projectId}/issues/${issueIds[1]}`, { headers, data: { status: "done", version: 1 } });
+  expect(res.status()).toBe(200);
+
+  await page.goto(`/projects/${projectId}/sprints`);
+  const backlog = page.getByRole("group", { name: "Backlog" });
+  await expect(backlog.getByText("Open one")).toBeVisible();
+  await expect(backlog.getByText("Finished one")).toHaveCount(0);
+  await page.getByRole("switch", { name: /Show done/ }).check();
+  await expect(backlog.getByText("Finished one")).toBeVisible();
 });

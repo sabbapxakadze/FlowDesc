@@ -30,18 +30,19 @@ test("pressing Submit on an empty inline create form moves nothing: not the labe
   });
 
   const forms = [
-    { url: `/projects/${projectId}/sprints`, submit: "Create sprint", error: "Name is required" },
+    { url: `/projects/${projectId}/sprints`, submit: "Create sprint", error: "Name is required", opener: "New sprint" },
   ];
-  for (const { url, submit, error } of forms) {
+  for (const { url, submit, error, opener } of forms) {
     await page.goto(url);
+    await page.getByRole("button", { name: opener }).click(); // the form lives in a popup
     const button = page.getByRole("button", { name: submit });
     await expect(button).toBeVisible();
     const before = await layoutOf(page, submit);
     await button.click();
     await expect(page.getByText(error).first()).toBeVisible();
     expect(await layoutOf(page, submit), `${submit}: layout changed when the error appeared`).toEqual(before);
-    // The button lines up with the bottoms of the inputs, not with an empty line under them.
-    const input = before.inputs[0]!;
-    expect(Math.abs(before.button[1]! + before.button[3]! - (input[1]! + input[3]!))).toBeLessThanOrEqual(1);
+    // The popup form stacks its fields, so the button sits below the last input, never beside it.
+    const input = before.inputs.at(-1)!;
+    expect(before.button[1]!).toBeGreaterThanOrEqual(input[1]! + input[3]!);
   }
 });

@@ -25,10 +25,12 @@ export const Lane = forwardRef<
     label?: string;
     highlighted?: boolean;
     freezeHeight?: boolean;
+    /** The `data-tour` name the guided tour points at (shared/tour). */
+    tour?: string;
     className?: string;
     children: ReactNode;
   }
->(function Lane({ header, label, highlighted = false, freezeHeight = false, className, children }, ref) {
+>(function Lane({ header, label, highlighted = false, freezeHeight = false, tour, className, children }, ref) {
   const element = useRef<HTMLDivElement | null>(null);
   const setRefs = useCallback(
     (node: HTMLDivElement | null) => {
@@ -54,6 +56,7 @@ export const Lane = forwardRef<
       ref={setRefs}
       role={label ? "group" : undefined}
       aria-label={label}
+      data-tour={tour}
       className={cn(
         "flex flex-col rounded-[var(--radius-card)] bg-[var(--color-bg-lane)] p-2 transition-shadow sm:max-h-full sm:min-h-64 sm:self-start",
         highlighted && "shadow-[inset_0_0_0_2px_var(--color-border-focus)]",

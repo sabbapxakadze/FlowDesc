@@ -117,17 +117,18 @@ test("a sprint can be deleted, but not while it is active", async ({
   await createSprintViaApi(page.request, projectId, "Live sprint");
 
   await page.goto(`/projects/${projectId}/sprints`);
-  const row = (name: string) => page.getByRole("listitem").filter({ hasText: name });
+  const row = (name: string) => page.getByRole("list", { name: "Sprints" }).getByRole("listitem").filter({ hasText: name });
 
-  // Start "Live sprint": its Delete disappears and Complete appears.
-  await row("Live sprint").getByRole("button", { name: "Start" }).click();
-  await expect(
-    row("Live sprint").getByRole("button", { name: "Complete" }),
-  ).toBeVisible();
-  await expect(row("Live sprint").getByRole("button", { name: "Delete" })).toHaveCount(0);
+  // Start "Live sprint": its Delete disappears and Complete appears in the active lane.
+  await row("Live sprint").getByRole("button", { name: "Start sprint" }).click();
+  await expect(page.getByRole("button", { name: "Complete sprint" })).toBeVisible();
+  await row("Live sprint").getByRole("button", { name: "Live sprint options" }).click();
+  await expect(page.getByRole("menuitem", { name: "Delete" })).toHaveCount(0);
+  await page.keyboard.press("Escape");
 
   // "Old sprint" is deletable, after a confirmation.
-  await row("Old sprint").getByRole("button", { name: "Delete" }).click();
+  await row("Old sprint").getByRole("button", { name: "Old sprint options" }).click();
+  await page.getByRole("menuitem", { name: "Delete" }).click();
   await expect(page.getByText(`Delete the sprint "Old sprint"?`)).toBeVisible();
   await page.getByRole("button", { name: "Delete sprint" }).click();
   await expect(row("Old sprint")).toHaveCount(0);

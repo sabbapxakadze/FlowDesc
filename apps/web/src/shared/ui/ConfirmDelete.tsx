@@ -15,6 +15,8 @@ export function ConfirmDelete({
   onConfirm,
   isPending,
   error,
+  startAsking = false,
+  onCancel,
 }: {
   /** The button that starts it, e.g. "Delete issue". */
   label: string;
@@ -24,8 +26,12 @@ export function ConfirmDelete({
   onConfirm: () => void;
   isPending?: boolean;
   error?: string | null;
+  /** Open already showing the question (the action was chosen from a menu, so the first click has been made). */
+  startAsking?: boolean;
+  /** Called when the person backs out. */
+  onCancel?: () => void;
 }) {
-  const [asking, setAsking] = useState(false);
+  const [asking, setAsking] = useState(startAsking);
 
   if (!asking) {
     return (
@@ -53,7 +59,10 @@ export function ConfirmDelete({
           size="sm"
           variant="secondary"
           disabled={isPending}
-          onClick={() => setAsking(false)}
+          onClick={() => {
+            setAsking(false);
+            onCancel?.();
+          }}
         >
           Cancel
         </Button>

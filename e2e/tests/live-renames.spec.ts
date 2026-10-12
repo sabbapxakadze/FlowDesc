@@ -43,7 +43,8 @@ test("a rename in one tab shows up in another person's open tab without reloadin
 
   // Sprint rename: B's sprints page updates.
   await pageA.goto(`/projects/${projectId}/sprints`);
-  await pageA.getByRole("button", { name: "Rename Sprint 1" }).click();
+  await pageA.getByRole("button", { name: "Sprint 1 options" }).click();
+  await pageA.getByRole("menuitem", { name: "Rename" }).click();
   await pageA.locator(`input[aria-label="Sprint name"]`).fill("Launch sprint");
   await pageA.getByRole("button", { name: "Save" }).click();
   await expect(pageB.getByText("Launch sprint")).toBeVisible();

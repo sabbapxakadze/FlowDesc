@@ -138,6 +138,7 @@ export default tseslint.config(
       "apps/web/src/shared/ui/IconButton.tsx", // the IconButton itself
       "apps/web/src/shared/ui/Dropdown.tsx", // the box that opens the list: a select-style control, not a Button look
       "apps/web/src/shared/ui/PersonHover.tsx", // the name that opens a card: text plus avatar, not a Button look
+      "apps/web/src/shared/ui/ActionMenu.tsx", // the rows of a popup menu: full-width list rows, not a Button look
       "apps/web/src/shared/ui/ThemeSwitch.tsx", // a segmented toggle group
       "apps/web/src/entities/issue/ui/DragHandle.tsx", // a drag handle with dnd-kit listeners
       "apps/web/src/entities/label/ui/LabelBadge.tsx", // the small remove X inside a coloured pill

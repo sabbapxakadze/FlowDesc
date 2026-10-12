@@ -20,11 +20,14 @@ export function RenameSprintForm({
   projectId,
   sprint,
   onDone,
+  inputClassName = "w-56",
 }: {
   organizationId: string;
   projectId: string;
   sprint: Sprint;
   onDone: () => void;
+  /** The input's width classes; the default suits a wide row. */
+  inputClassName?: string;
 }) {
   const queryClient = useQueryClient();
   const { register, handleSubmit } = useForm<FormValues>({
@@ -65,7 +68,7 @@ export function RenameSprintForm({
       <Input
         {...register("name", { required: true })}
         aria-label="Sprint name"
-        className="w-56"
+        className={inputClassName}
       />
       <Button type="submit" size="sm" variant="success" pending={mutation.isPending}>
         {mutation.isPending ? "Saving…" : "Save"}

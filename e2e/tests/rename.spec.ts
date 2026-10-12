@@ -104,7 +104,8 @@ test("rename a sprint from the sprints page", async ({ loggedInPage: page }) => 
   await createSprintViaApi(page.request, projectId, "Sprint 1");
 
   await page.goto(`/projects/${projectId}/sprints`);
-  await page.getByRole("button", { name: "Rename Sprint 1" }).click();
+  await page.getByRole("button", { name: "Sprint 1 options" }).click();
+  await page.getByRole("menuitem", { name: "Rename" }).click();
   await page.locator(`input[aria-label="Sprint name"]`).fill("Launch sprint");
   await page.getByRole("button", { name: "Save" }).click();
   await expect(page.getByText("Launch sprint")).toBeVisible();

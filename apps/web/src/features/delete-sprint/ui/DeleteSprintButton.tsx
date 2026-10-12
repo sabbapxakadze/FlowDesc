@@ -13,10 +13,15 @@ export function DeleteSprintButton({
   organizationId,
   projectId,
   sprint,
+  startAsking,
+  onCancel,
 }: {
   organizationId: string;
   projectId: string;
   sprint: Sprint;
+  /** Show the question at once (the page opens it from the sprint menu). */
+  startAsking?: boolean;
+  onCancel?: () => void;
 }) {
   const queryClient = useQueryClient();
   const mutation = useMutation({
@@ -34,6 +39,8 @@ export function DeleteSprintButton({
       confirmLabel="Delete sprint"
       onConfirm={() => mutation.mutate()}
       isPending={mutation.isPending}
+      startAsking={startAsking}
+      onCancel={onCancel}
       error={mutation.isError ? mutation.error.message : null}
     />
   );
