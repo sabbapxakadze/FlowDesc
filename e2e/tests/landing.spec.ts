@@ -136,6 +136,7 @@ test("the contact links are exactly the owner's email and phone", async ({ page 
   await page.goto("/");
   await expect(page.getByRole("link", { name: "phkhakadze.saba49@gmail.com" })).toHaveAttribute("href", "mailto:phkhakadze.saba49@gmail.com");
   await expect(page.getByRole("link", { name: "+995 591917297" })).toHaveAttribute("href", "tel:+995591917297");
+  await expect(page.getByText("© 2026 FlowDesc. All rights reserved.")).toBeVisible(); // the page's last line
 });
 
 test("on a phone the page does not scroll sideways, and the theme choice is remembered", async ({ page }) => {
@@ -163,4 +164,19 @@ test("the landing page only asks the server whether the demo is offered", async 
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   await page.waitForTimeout(500);
   expect(calls).toEqual([]);
+});
+
+test("the ways of working open one at a time, and the open one says which it is", async ({ page }) => {
+  // Why: "What people use it for" is a row of tabs (ADR 0067). The first is open on arrival, choosing another swaps the text, and
+  // the pressed state must follow, because it is how a screen reader hears which one is open.
+  await page.goto("/");
+  const tabs = page.getByRole("list", { name: "Ways of working" });
+  await expect(tabs.getByRole("button", { name: "Run a sprint" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("heading", { level: 3, name: "Run a sprint" })).toBeVisible();
+
+  await tabs.getByRole("button", { name: "Hand work over cleanly" }).click();
+  await expect(tabs.getByRole("button", { name: "Hand work over cleanly" })).toHaveAttribute("aria-pressed", "true");
+  await expect(tabs.getByRole("button", { name: "Run a sprint" })).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByRole("heading", { level: 3, name: "Hand work over cleanly" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 3, name: "Run a sprint" })).toHaveCount(0);
 });

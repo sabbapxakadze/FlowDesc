@@ -23,5 +23,5 @@ The name was in the UI, the emails, the docs, the package names (`@flowdesk/*`),
 ## Not done here
 
 - The domain `flowdesc.app` was bought and connected by the owner on 2026-10-12: two CNAME records in Cloudflare (DNS only, grey cloud, so Render can issue its own certificate), `APP_URL=https://flowdesc.app` set in Render (the live security header then lists `wss://flowdesc.app`), and the Google and GitHub callback addresses changed; the owner checked that both sign-ins work. The old `onrender.com` address still answers. Not proxied through Cloudflare: that would add a hop, so `TRUST_PROXY` (ADR 0051) would have to be measured again.
-- Email sending stays off until a sender exists on the new domain.
+- Email was switched on the same day: the domain is verified in Resend (region Ireland, the DKIM and two sending CNAME records in Cloudflare, DNS only), `EMAIL_FROM=support@flowdesc.app`, and Cloudflare Email Routing forwards `support@flowdesc.app` to the owner's inbox (the catch-all stays off, so mail to any other address is dropped). The owner received a password-reset email from that address with the new name. Not checked: that the link in the email starts with `https://flowdesc.app` (it is built from `APP_URL`, which is set).
 - The GitHub repository and the Render service are not renamed.

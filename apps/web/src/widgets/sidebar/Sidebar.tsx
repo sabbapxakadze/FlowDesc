@@ -159,7 +159,6 @@ export function Sidebar({ actions }: { actions?: ReactNode }) {
 
       <div className="mt-2 flex flex-col gap-0.5 border-t border-[var(--color-border-sidebar)] pt-3">
         <TourButton className={cn(LINK, "w-full text-left")} />
-        <SideLink to="/design-system">Design system</SideLink>
         <SideLink to="/account">Account settings</SideLink>
         <div data-tour="theme-switch" className="px-2.5 pt-2">
           <ThemeSwitch variant="sidebar" />

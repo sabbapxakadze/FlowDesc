@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { withViewTransition } from "../../../shared/lib/motion";
 import { useResolvedTheme } from "../../../shared/theme";
 import { Button } from "../../../shared/ui";
+import { shotSrc } from "./landing-shots";
 
 /**
  * The real app, shown: screenshots of the demo organization (taken by `pnpm landing:shots`, in `public/landing/`), one per screen and
@@ -15,8 +16,6 @@ const VIEWS = [
 ] as const;
 type ViewId = (typeof VIEWS)[number]["id"];
 
-const srcFor = (view: ViewId, theme: "light" | "dark") => `/landing/${view}-${theme}.jpg`;
-
 export function ProductPreview() {
   const theme = useResolvedTheme();
   const [view, setView] = useState<ViewId>("board");
@@ -24,7 +23,7 @@ export function ProductPreview() {
 
   // Fetch the other screens (for the current theme) once the page is idle, so switching shows them at once instead of a blank frame.
   useEffect(() => {
-    for (const v of VIEWS) new Image().src = srcFor(v.id, theme);
+    for (const v of VIEWS) new Image().src = shotSrc(v.id, theme);
   }, [theme]);
 
   return (
@@ -48,7 +47,7 @@ export function ProductPreview() {
         <div className="overflow-hidden rounded-[var(--radius-control)] border border-[var(--color-border-default)]" style={{ aspectRatio: "1440 / 740" }}>
           <img
             key={`${view}-${theme}`}
-            src={srcFor(view, theme)}
+            src={shotSrc(view, theme)}
             width={1440}
             height={900}
             alt={current.alt}

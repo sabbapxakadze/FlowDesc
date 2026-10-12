@@ -28,7 +28,7 @@ None is in the repository. All live in Render's Environment page (and the provid
 | `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | Neon credential `flowdesk-render` | Create a new credential (`storage:read`, `storage:write`), put it in Render, then delete the old one | None |
 | `GOOGLE_CLIENT_SECRET` | Google Cloud, the OAuth client | Add a new secret in the console, update Render, delete the old one | None |
 | `GITHUB_CLIENT_SECRET` | The GitHub OAuth App | Generate a new client secret, update Render, delete the old one | None |
-| `RESEND_API_KEY` | Resend (currently a placeholder) | New key in Resend | None |
+| `RESEND_API_KEY` | Resend (a real sending key since 2026-10-12) | New key in Resend | None |
 
 ## Things only the owner can check (not visible from here)
 

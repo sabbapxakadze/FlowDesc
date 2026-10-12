@@ -40,15 +40,16 @@ services:
       - key: S3_SECRET_ACCESS_KEY
         sync: false
       - key: EMAIL_FROM
-        value: onboarding@resend.dev
+        value: support@flowdesc.app # the domain is verified in Resend; Cloudflare Email Routing forwards this address to the owner
       - key: LOG_LEVEL
         value: info
-      # APP_URL is not set: the server takes Render's own address (RENDER_EXTERNAL_URL). Set APP_URL later for a custom domain.
+      - key: APP_URL
+        value: https://flowdesc.app # the custom domain (before it, the server fell back to Render's own address, RENDER_EXTERNAL_URL)
       - key: DATABASE_URL
         sync: false # the Neon DIRECT connection string (hostname without "-pooler")
       # Optional, ADR 0055: add SENTRY_DSN in the dashboard to switch error tracking on (not set today).
       - key: RESEND_API_KEY
-        sync: false # a placeholder until a domain exists (emails fail quietly and are logged)
+        sync: false # a real Resend sending key, set in the dashboard (emails that fail are logged, not thrown)
       - key: JWT_SECRET
         generateValue: true
       - key: ATTACHMENT_SIGNING_SECRET
