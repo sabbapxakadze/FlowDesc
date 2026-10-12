@@ -3,7 +3,7 @@ import { Menu, X } from "lucide-react";
 import { Outlet, useLocation } from "react-router";
 import { FirstTour } from "../features/app-tour";
 import { useAuth } from "../shared/auth/useAuth";
-import { IconButton } from "../shared/ui";
+import { IconButton, LogoMark } from "../shared/ui";
 import { DemoBar } from "../widgets/demo-bar";
 import { NotificationBell } from "../widgets/notification-bell";
 import { Sidebar } from "../widgets/sidebar";
@@ -101,7 +101,10 @@ function AppShellLayout() {
         >
           <Menu size={20} aria-hidden="true" />
         </IconButton>
-        <span className="font-display text-xl text-[var(--color-text-sidebar-active)]">FlowDesc</span>
+        <span className="font-display inline-flex items-center gap-2 text-xl text-[var(--color-text-sidebar-active)]">
+          <LogoMark onDark className="h-7 w-7" />
+          FlowDesc
+        </span>
         <div className="ml-auto">
           <NotificationBell panelAlign="right" />
         </div>

@@ -7,7 +7,7 @@ import { useAuth } from "../../shared/auth/useAuth";
 import { isUuid, personPath, projectPath } from "../../shared/lib/paths";
 import { useSearchPalette } from "../../shared/search-palette/useSearchPalette";
 import { TourButton } from "../../features/app-tour";
-import { Avatar, cn, Skeleton, ThemeSwitch } from "../../shared/ui";
+import { Avatar, cn, LogoMark, Skeleton, ThemeSwitch } from "../../shared/ui";
 
 const LINK =
   "flex items-center rounded-[var(--radius-control)] px-2.5 py-1.5 text-sm text-[var(--color-text-sidebar)] hover:bg-[var(--color-bg-sidebar-active)] hover:text-[var(--color-text-sidebar-active)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--color-text-sidebar-active)]";
@@ -87,8 +87,9 @@ export function Sidebar({ actions }: { actions?: ReactNode }) {
       <div className="flex items-center justify-between px-1 pb-3">
         <NavLink
           to="/"
-          className="font-display text-2xl text-[var(--color-text-sidebar-active)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-text-sidebar-active)]"
+          className="font-display inline-flex items-center gap-2.5 text-2xl text-[var(--color-text-sidebar-active)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-text-sidebar-active)]"
         >
+          <LogoMark onDark className="h-8 w-8" />
           FlowDesc
         </NavLink>
         {actions}

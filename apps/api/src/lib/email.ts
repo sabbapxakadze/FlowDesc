@@ -10,12 +10,29 @@ import { logger } from "./logger.js";
  */
 const resend = new Resend(env.RESEND_API_KEY);
 
+/**
+ * Every email gets the same frame (ADR 0068): the FlowDesc mark and name on top, the message, and the copyright line. The mark is a PNG served by the
+ * app itself (`apps/web/public/email-logo.png`, drawn at 2x for sharp screens), because email programs do not draw SVG. Inline styles and a table,
+ * because that is what email programs support. The picture has no alt text on purpose: the name is written next to it.
+ */
+function withFrame(body: string): string {
+  const logo = `${env.APP_URL}/email-logo.png`;
+  return `<div style="max-width:520px;margin:0 auto;padding:24px 20px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#222222">
+<table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse"><tr>
+<td style="padding:0"><img src="${logo}" width="44" height="44" alt="" style="display:block;border:0;border-radius:10px" /></td>
+<td style="padding:0 0 0 12px;font-family:Georgia,'Times New Roman',serif;font-size:26px;line-height:1;color:#1a1a1a">Flow<span style="color:#0f766e">Desc</span></td>
+</tr></table>
+<div style="margin-top:22px">${body}</div>
+<p style="margin:28px 0 0;padding-top:14px;border-top:1px solid #e5e5e5;font-size:12px;line-height:1.5;color:#777777">&copy; 2026 FlowDesc. All rights reserved.</p>
+</div>`;
+}
+
 async function sendEmail(input: { to: string; subject: string; html: string }): Promise<void> {
   const { error } = await resend.emails.send({
     from: env.EMAIL_FROM,
     to: input.to,
     subject: input.subject,
-    html: input.html,
+    html: withFrame(input.html),
   });
 
   if (error) {

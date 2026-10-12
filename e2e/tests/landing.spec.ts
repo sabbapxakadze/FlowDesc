@@ -180,3 +180,16 @@ test("the ways of working open one at a time, and the open one says which it is"
   await expect(page.getByRole("heading", { level: 3, name: "Hand work over cleanly" })).toBeVisible();
   await expect(page.getByRole("heading", { level: 3, name: "Run a sprint" })).toHaveCount(0);
 });
+
+test("the page has a tab icon, and every file it names (and the email logo) is served as an image", async ({ page, request }) => {
+  // Why: the icon is the first thing in the browser tab, and the email logo is linked from every email we send. A renamed or missing file
+  // fails silently (a default globe, a broken picture in an inbox), so this checks the links and that each file really answers.
+  await page.goto("/");
+  const hrefs = await page.locator('link[rel~="icon"], link[rel="apple-touch-icon"]').evaluateAll((els) => els.map((e) => e.getAttribute("href") ?? ""));
+  expect([...hrefs].sort()).toEqual(["/apple-touch-icon.png", "/favicon-32.png", "/favicon.svg"]);
+  for (const href of [...hrefs, "/email-logo.png", "/email-lockup.png"]) {
+    const res = await request.get(href);
+    expect(res.status(), href).toBe(200);
+    expect(res.headers()["content-type"], href).toMatch(/^image\//);
+  }
+});

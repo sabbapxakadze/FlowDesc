@@ -2,7 +2,7 @@ import { ArrowLeft } from "lucide-react";
 import { useEffect } from "react";
 import { NavLink, Outlet, useLocation } from "react-router";
 import { useAuth } from "../shared/auth/useAuth";
-import { buttonVariants, cn, FadeLink, ThemeSwitch } from "../shared/ui";
+import { buttonVariants, cn, FadeLink, LogoMark, ThemeSwitch } from "../shared/ui";
 
 /**
  * Layout route for the public auth pages (login, register, verify-email,
@@ -57,8 +57,9 @@ export function AuthLayout() {
       </div>
       <FadeLink
         to="/"
-        className="relative mb-8 font-display text-3xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-border-focus)]"
+        className="relative mb-8 inline-flex items-center gap-3 font-display text-3xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-border-focus)]"
       >
+        <LogoMark className="h-10 w-10" />
         FlowDesc
       </FadeLink>
       <div className="glass-card relative w-full max-w-sm rounded-[var(--radius-card)] p-6">

@@ -1,4 +1,5 @@
 export { Button, type ButtonProps } from "./Button";
+export { LogoMark } from "./LogoMark";
 export { useSuccessFlash } from "./useSuccessFlash";
 export { useExitPresence } from "./useExitPresence";
 export { useAnimatedList, type AnimatedRow, type RowState } from "./useAnimatedList";

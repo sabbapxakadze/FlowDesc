@@ -45,6 +45,12 @@
   --color-aurora-1: var(--color-teal-300);
   --color-aurora-2: var(--color-blue-300);
   --color-aurora-3: var(--color-amber-200);
+  /* The FlowDesc mark (ADR 0068): a teal tile with a white mark on a light page, a bright teal tile with a dark mark on a dark page; the
+     -on-dark pair is for surfaces that are dark in both themes (the sidebar). */
+  --color-logo-tile: var(--color-teal-700);
+  --color-logo-ink: var(--color-white);
+  --color-logo-tile-on-dark: var(--color-teal-300);
+  --color-logo-ink-on-dark: var(--color-teal-950);
   /* Delete is two clicks. The first button is a solid red; the final confirm is a
      STRONGER red: darker in light mode, brighter in dark mode (a darker red would
      all but vanish on the dark page). White text on all of them. */
@@ -147,6 +153,8 @@
     --color-aurora-1: var(--color-teal-700);
     --color-aurora-2: var(--color-indigo-600);
     --color-aurora-3: var(--color-pink-700);
+    --color-logo-tile: var(--color-teal-300);
+    --color-logo-ink: var(--color-teal-950);
     --color-bg-action-danger: var(--color-red-700);
     --color-bg-action-danger-strong: var(--color-red-600);
     --color-text-on-action-strong: var(--color-white);
@@ -209,6 +217,8 @@
   --color-aurora-1: var(--color-teal-700);
   --color-aurora-2: var(--color-indigo-600);
   --color-aurora-3: var(--color-pink-700);
+  --color-logo-tile: var(--color-teal-300);
+  --color-logo-ink: var(--color-teal-950);
   --color-bg-action-danger: var(--color-red-700);
   --color-bg-action-danger-strong: var(--color-red-600);
   --color-text-on-action-strong: var(--color-white);
