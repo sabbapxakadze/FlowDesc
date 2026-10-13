@@ -15,3 +15,4 @@ export * from "./attachments.js";
 export * from "./invitations.js";
 export * from "./audit-events.js";
 export * from "./oauth-identities.js";
+export * from "./api-tokens.js";

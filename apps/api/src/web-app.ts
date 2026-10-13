@@ -36,7 +36,9 @@ export function loadWebApp(distDir: string): WebApp {
 export function inlineScriptHashes(html: string): string[] {
   const hashes: string[] = [];
   for (const match of html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)) {
-    const body = match[1];
+    // The browser hashes the script as its HTML parser sees it, and the parser turns CRLF into LF, so the hash must be of the LF text
+    // (a file saved with Windows line endings would otherwise be blocked by its own policy).
+    const body = match[1]?.replace(/\r\n?/g, "\n");
     if (body && body.trim() !== "") hashes.push(`'sha256-${createHash("sha256").update(body).digest("base64")}'`);
   }
   return hashes;

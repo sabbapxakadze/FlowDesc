@@ -2623,6 +2623,19 @@ Who does what: **the owner** creates the accounts, pushes to GitHub and pastes s
 
 ---
 
+## MCP server for AI clients (proposed 2026-10-13, ADR 0070)
+
+Design in `docs/adr/0070-mcp-server-and-access-tokens.md`: a local stdio package `apps/mcp` that calls the existing REST API with a personal access token, published to npm from GitHub Actions later.
+
+- [x] **Slice 1: personal access tokens (API only) - DONE 2026-10-13.** Table `api_tokens` (migration 0033), `POST/GET/DELETE /users/me/api-tokens` (session only, refused in a demo, 20 active at most, 30/90/365 days), `GET /users/me/context`, `requireAuth` accepts `fd_pat_...` bearers, and one default-deny list of the GET addresses a token may call (`middleware/token-access.ts`). Read-only: only the `read` scope can be created, every write answers 403 `token_not_allowed`. Per-token rate limit (120/min). **Verified:** 14 HTTP tests + 5 allowlist/limiter tests + a log-redaction test; four mutation checks each failed a test (no expiry check, no revoked check, any method allowed, raw token stored). **Not verified:** the per-token limiter against real traffic (skipped under test; only its keying was tested in an isolated app); behind Render's proxy.
+- [ ] Slice 2: "Access tokens" section on the Account page (create, copy once, list, revoke).
+- [ ] Slice 3: `apps/mcp` with the read-only tools, tested against a real client; README with setup for Claude Desktop and Claude Code.
+- [ ] Slice 3b: npm publish workflow (tag-triggered, trusted publishing) and a first release.
+- [ ] Slice 4: write tools (`create_issue`, `comment_on_issue`, `update_issue`) with a `read_write` scope and "via token" on events.
+- [ ] Later, optional: hosted remote server with OAuth.
+
+---
+
 ## Honest estimate
 
 3–4 months part-time if the code is actually being read and understood.

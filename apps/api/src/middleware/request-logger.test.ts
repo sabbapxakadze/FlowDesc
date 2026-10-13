@@ -45,4 +45,18 @@ describe("request logging - secrets never reach the log (ADR 0050)", () => {
     expect(log).toContain("GET /ping 200");
     expect(log).toContain("203.0.113.7");
   });
+
+  it("does not print a personal access token either (ADR 0070)", async () => {
+    // Why: a token is a lasting credential, worse to leak than a 15-minute session token. It travels in the same header, so the same
+    // redaction has to cover it; this pins that.
+    const { logger, output } = capture();
+    const app = express();
+    app.use(createRequestLogger(logger));
+    app.get("/ping", (_req, res) => res.json({ ok: true }));
+
+    await request(app).get("/ping").set("Authorization", "Bearer fd_pat_SECRET-PERSONAL-TOKEN").expect(200);
+
+    expect(output()).not.toContain("SECRET-PERSONAL-TOKEN");
+    expect(output()).toContain("GET /ping 200");
+  });
 });

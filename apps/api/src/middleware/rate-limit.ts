@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+import { API_TOKEN_PREFIX } from "@flowdesc/contracts";
 import rateLimit from "express-rate-limit";
 import type { Request, Response } from "express";
 import { env } from "../config/env.js";
@@ -83,5 +85,20 @@ export const passwordResetRequestRateLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: skipInTest,
+  handler: tooManyRequests,
+});
+
+// A personal access token (ADR 0070) is for an automated client, which can call far faster than a person, so each token gets a
+// ceiling of its own. Keyed by a hash of the token, not the address, so it does not depend on the proxy setup and one runaway
+// client cannot use up another person's allowance. Only requests that carry such a token are counted; it runs before sign-in, so
+// guessing token values is slowed down too.
+const ACCESS_TOKEN_PREFIX = `Bearer ${API_TOKEN_PREFIX}`;
+export const tokenRateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => env.NODE_ENV === "test" || !req.headers.authorization?.startsWith(ACCESS_TOKEN_PREFIX),
+  keyGenerator: (req) => createHash("sha256").update(req.headers.authorization ?? "").digest("hex"),
   handler: tooManyRequests,
 });

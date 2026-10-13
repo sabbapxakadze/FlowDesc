@@ -11,7 +11,8 @@ import type { Role } from "../shared/permissions.js";
 declare global {
   namespace Express {
     interface Request {
-      auth?: { userId: string };
+      // `token` is present only when the request came in with a personal access token (ADR 0070), not a signed-in session.
+      auth?: { userId: string; token?: { id: string; scope: "read" | "read_write" } };
       ctx?: {
         userId: string;
         organizationId: string;

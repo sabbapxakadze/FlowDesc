@@ -20,6 +20,8 @@ import { invitationsRouter } from "./modules/invitations/invitations.routes.js";
 import { auditRouter } from "./modules/audit/audit.routes.js";
 import { profilesRouter } from "./modules/profiles/profiles.routes.js";
 import { myWorkRouter } from "./modules/my-work/my-work.routes.js";
+import { apiTokensRouter } from "./modules/api-tokens/api-tokens.routes.js";
+import { tokenRateLimiter } from "./middleware/rate-limit.js";
 
 /**
  * Split from index.ts so tests can exercise the real middleware chain
@@ -38,6 +40,7 @@ if (webApp) applySecurityHeaders(app, { html: webApp.html, appUrl: env.APP_URL }
 
 app.use(requestLogger);
 app.use(express.json());
+app.use("/api/v1", tokenRateLimiter);
 app.use(cookieParser());
 
 // Health check is intentionally unversioned — it's infrastructure, not API
@@ -56,6 +59,7 @@ app.use("/api/v1", invitationsRouter);
 app.use("/api/v1", auditRouter);
 app.use("/api/v1", profilesRouter);
 app.use("/api/v1", myWorkRouter);
+app.use("/api/v1", apiTokensRouter);
 
 // An address under /api that no route answered is a JSON 404, never the web app's page (the page's fallback skips /api too).
 app.use("/api", (_req, _res, next) => next(new AppError("not_found", 404, "No such API route.")));
