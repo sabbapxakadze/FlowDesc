@@ -5,8 +5,8 @@ FlowDesc projects and issues. It runs on your own computer, talks to FlowDesc wi
 anything**: every tool is read-only, and the FlowDesc API itself refuses writes from a token.
 
 > Needs Node.js 22 or newer (tested on Node 24; 22 is not tested). MIT licence (this package only; the rest of the FlowDesc repository
-> has its own LICENSE). Once the package is on npm you start it with `npx -y flowdesc-mcp`; until the first release is published
-> (ADR 0070 slice 3b) use "Run it from the source" below.
+> has its own LICENSE). Start it with `npx -y flowdesc-mcp` (published on npm, with a provenance record that links each version to its
+> source commit). To work on it, or to run an unreleased change, use "Run it from the source" below.
 
 ## 1. Get a token
 
@@ -52,7 +52,7 @@ on macOS; open it from Settings, Developer, Edit Config):
 Quit Claude Desktop completely and start it again. If the server does not show up, its messages are in
 `%APPDATA%\Claude\logs\mcp-server-flowdesc.log` (Windows).
 
-### Run it from the source (before the first npm release, or to work on it)
+### Run it from the source (to work on it, or to run a change that is not released yet)
 
 ```
 pnpm install
@@ -113,5 +113,5 @@ Try asking: "What is overdue in WEB?", "Summarise what happened on WEB-12", "How
 - stdout is the protocol channel: never `console.log` here, log to stderr only.
 - **Releasing** (the owner): change `version` in `apps/mcp/package.json` and commit; `git tag mcp-vX.Y.Z` (the number must equal the version);
   `git push origin mcp-vX.Y.Z`. The workflow `.github/workflows/publish-mcp.yml` refuses a tag that does not match, runs the tests and
-  publishes with npm trusted publishing (no npm token is stored in GitHub). The very first version has to be published by hand, see the ADR.
+  publishes with npm trusted publishing (no npm token is stored in GitHub).
 - Design and decisions: `docs/adr/0070-mcp-server-and-access-tokens.md`.
