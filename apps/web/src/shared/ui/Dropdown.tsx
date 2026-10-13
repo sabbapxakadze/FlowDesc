@@ -60,6 +60,8 @@ export function Dropdown({
   searchable,
   keepOpen = false,
   size = "md",
+  quiet = false,
+  emptyLabel,
   disabled = false,
   className,
   "aria-label": ariaLabel,
@@ -80,6 +82,13 @@ export function Dropdown({
   /** Stay open after a choice, for adding several things in one go (the label picker); Esc, a click outside or Tab closes it. */
   keepOpen?: boolean;
   size?: "md" | "sm";
+  /**
+   * A toolbar look (ADR 0072): no box until you point at it, and it is as wide as what it shows (it does not reserve room for its widest
+   * option). Chosen, it turns into the link colour on a faint tint, so the active filters stand out in a row of quiet ones.
+   */
+  quiet?: boolean;
+  /** For `quiet`: the short name shown while nothing is chosen ("Priority"); once something is chosen it reads "Priority: High". */
+  emptyLabel?: string;
   disabled?: boolean;
   className?: string;
   "aria-label"?: string;
@@ -104,6 +113,10 @@ export function Dropdown({
   const selected = options.find((o) => o.value === value);
   const chosenValues = new Set(values);
   const chosen = multiple ? options.filter((o) => chosenValues.has(o.value)) : [];
+  // Something other than "the default" is chosen: a value that is not empty, or at least one of several.
+  const hasChoice = multiple ? chosen.length > 0 : value !== "" && selected !== undefined;
+  // `quiet` with a name: "Priority" while nothing is chosen, "Priority: High" after.
+  const named = quiet && emptyLabel !== undefined;
 
   function openList() {
     if (disabled) return;
@@ -250,8 +263,8 @@ export function Dropdown({
     }
   }
 
-  const sizer: DropdownOption[] = options.length > 0 ? [...options] : [{ value: "", label: placeholder }];
-  if (multiple && options.length > 0) {
+  const sizer: DropdownOption[] = quiet ? [] : options.length > 0 ? [...options] : [{ value: "", label: placeholder }];
+  if (!quiet && multiple && options.length > 0) {
     const longest = options.reduce((a, b) => (b.label.length > a.label.length ? b : a));
     sizer.push({ value: "\u0000summary", label: `${longest.label} +9` });
   }
@@ -272,7 +285,15 @@ export function Dropdown({
         disabled={disabled}
         onClick={() => (open ? close(false) : openList())}
         className={cn(
-          "flex w-full items-center justify-between gap-2 rounded-[var(--radius-control)] border border-[var(--color-border-input)] bg-[var(--color-bg-surface)] px-3 text-left text-sm text-[var(--color-text-default)] transition-colors hover:border-[var(--color-text-muted)] focus:border-[var(--color-border-focus)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-border-focus)] disabled:opacity-60 aria-[invalid=true]:border-[var(--color-text-danger)]",
+          "flex w-full items-center justify-between gap-2 rounded-[var(--radius-control)] border text-left text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-border-focus)] disabled:opacity-60 aria-[invalid=true]:border-[var(--color-text-danger)]",
+          quiet
+            ? cn(
+                "gap-1 border-transparent px-2.5",
+                named && hasChoice
+                  ? "bg-[var(--color-border-default)]/60 font-medium text-[var(--color-text-link)]"
+                  : "text-[var(--color-text-muted)] hover:bg-[var(--color-border-default)]/60 hover:text-[var(--color-text-default)]",
+              )
+            : "border-[var(--color-border-input)] bg-[var(--color-bg-surface)] px-3 text-[var(--color-text-default)] hover:border-[var(--color-text-muted)] focus:border-[var(--color-border-focus)]",
           size === "sm" ? "py-1" : "py-1.5",
         )}
       >
@@ -287,23 +308,27 @@ export function Dropdown({
           <span className="col-start-1 row-start-1 flex min-w-0 items-center gap-2">
             {multiple && chosen.length > 0 ? (
               <span className="truncate">
+                {named ? `${emptyLabel}: ` : ""}
                 {chosen[0]!.label}
                 {chosen.length > 1 && <span className="text-[var(--color-text-muted)]"> +{chosen.length - 1}</span>}
               </span>
-            ) : selected && !multiple ? (
+            ) : selected && !multiple && !(named && !hasChoice) ? (
               <>
                 <Mark>{selected.icon}</Mark>
-                <span className="truncate">{selected.label}</span>
+                <span className="truncate">
+                  {named ? `${emptyLabel}: ` : ""}
+                  {selected.label}
+                </span>
               </>
             ) : (
-              <span className="truncate text-[var(--color-text-muted)]">{placeholder}</span>
+              <span className={cn("truncate", !named && "text-[var(--color-text-muted)]")}>{named ? emptyLabel : placeholder}</span>
             )}
           </span>
         </span>
         <ChevronDown
-          size={16}
+          size={quiet ? 14 : 16}
           aria-hidden="true"
-          className={cn("shrink-0 text-[var(--color-text-muted)] transition-transform", open && "rotate-180")}
+          className={cn("shrink-0 transition-transform", named && hasChoice ? "text-[var(--color-text-link)]" : "text-[var(--color-text-muted)]", open && "rotate-180")}
         />
       </button>
 

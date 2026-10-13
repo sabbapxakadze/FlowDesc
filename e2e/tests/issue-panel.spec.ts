@@ -3,7 +3,7 @@ import { test, expect, logInThroughForm } from "../support/fixtures";
 import { createIssueViaApi } from "../support/api";
 import { addOrgMember } from "../support/db";
 import { makePng } from "../support/png";
-import { combobox, pick } from "../support/dropdown";
+import { combobox } from "../support/dropdown";
 
 const panelOf = (page: Page) => page.getByRole("dialog", { name: "Issue", exact: true });
 const cardLink = (page: Page, title: string) => page.getByRole("link", { name: new RegExp(title) });
@@ -90,28 +90,52 @@ test("pressing the empty page closes the panel; pressing inside it, or typing in
   await expect(panel).toHaveCount(0);
 });
 
+test("opening an issue does not narrow or move the list or the toolbar: the panel overlays them", async ({ loggedInPage: page }) => {
+  // Why: the owner does not want the table to shrink when an issue opens (2026-10-14, ADR 0073). The old rule made the list stack into its
+  // phone layout under 1560px. Measured at two window widths: the list and the toolbar keep their position and width, and the panel
+  // really does sit over their right-hand end.
+  const { listUrl } = await setup(page);
+  for (const width of [1280, 1440]) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto(listUrl);
+    const list = page.getByRole("region", { name: "Todo issues" });
+    const toolbar = page.locator('[data-tour="issue-filters"]');
+    await expect(list).toBeVisible();
+    const before = { list: (await list.boundingBox())!, toolbar: (await toolbar.boundingBox())! };
+
+    await cardLink(page, "Alpha issue").click();
+    await expect(panelOf(page)).toBeVisible();
+    await page.waitForTimeout(400); // past the panel's slide-in
+    const after = { list: (await list.boundingBox())!, toolbar: (await toolbar.boundingBox())! };
+    expect(Math.round(after.list.x)).toBe(Math.round(before.list.x));
+    expect(Math.round(after.list.width)).toBe(Math.round(before.list.width));
+    expect(Math.round(after.toolbar.x)).toBe(Math.round(before.toolbar.x));
+    expect(Math.round(after.toolbar.width)).toBe(Math.round(before.toolbar.width));
+
+    const panel = (await panelOf(page).boundingBox())!;
+    expect(panel.x).toBeLessThan(after.list.x + after.list.width); // it overlays the list's right-hand end
+    await page.keyboard.press("Escape");
+    await expect(panelOf(page)).toHaveCount(0);
+  }
+});
+
 test("a click outside that lands on a link still works while the panel closes; changing the sort with the panel open keeps it open and in the URL", async ({
   loggedInPage: page,
 }) => {
   // Why: (1) the outside click must not be swallowed: a sidebar link must still navigate.
-  // (2) The panel's ?issue= and the list's own parameters must not wipe each other.
+  // (2) The panel's ?issue= and the list's own parameters must not wipe each other. The controls are driven from the keyboard here, because
+  // under about 1560px the panel now covers the toolbar's right-hand end (ADR 0073): a pointer would land on the panel instead.
   const { listUrl } = await setup(page);
   await page.goto(`${listUrl}?status=todo`);
   await cardLink(page, "Alpha issue").click();
   await expect(panelOf(page)).toBeVisible();
 
-  // A REAL click on a filter first (selectOption fires no click, which is how this once passed
-  // while a real mouse closed the panel), including Sort, which used to sit under the panel at
-  // this window width (the filter row now wraps clear of it).
-  const panelBox = (await panelOf(page).boundingBox())!;
-  for (const label of ["Filter by status", "Filter by priority", "Filter by assignee", "Sort"]) {
-    const box = (await page.getByLabel(label).boundingBox())!;
-    expect(box.x + box.width).toBeLessThanOrEqual(panelBox.x);
-    await page.getByLabel(label).click();
-    await page.keyboard.press("Escape"); // close the native option list, if one opened
-    await expect(panelOf(page)).toBeVisible();
-  }
-  await pick(combobox(page, "Sort"), "Highest priority first");
+  const sort = combobox(page, "Sort");
+  await sort.focus();
+  await page.keyboard.press("ArrowDown"); // opens (the list floats above the panel)
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("ArrowDown"); // Highest priority first
+  await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/sort=priority/);
   await expect(page).toHaveURL(/status=todo/);
   await expect(page).toHaveURL(/issue=WEB-1/); // still open

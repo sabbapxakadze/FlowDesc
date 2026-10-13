@@ -21,28 +21,28 @@ test("it opens with the mouse or keys, moves with the arrows, chooses with Enter
   // Why: the basics, and the accessible shape (combobox, listbox, option, aria-selected) a screen reader relies on.
   await setup(page);
   await page.goto("/projects/WEB");
-  const status = combobox(page, "Filter by status");
-  await expect(status).toHaveAttribute("aria-expanded", "false");
-  await expectValue(status, "");
+  const due = combobox(page, "Filter by due date");
+  await expect(due).toHaveAttribute("aria-expanded", "false");
+  await expectValue(due, "");
 
-  await status.focus();
+  await due.focus();
   await page.keyboard.press("ArrowDown"); // opens
-  await expect(status).toHaveAttribute("aria-expanded", "true");
+  await expect(due).toHaveAttribute("aria-expanded", "true");
   await expect(listbox(page)).toBeVisible();
-  await expect(page.getByRole("option", { name: "All statuses" })).toHaveAttribute("aria-selected", "true");
-  await page.keyboard.press("ArrowDown"); // Todo
-  await page.keyboard.press("ArrowDown"); // In progress
+  await expect(page.getByRole("option", { name: "Any due date" })).toHaveAttribute("aria-selected", "true");
+  await page.keyboard.press("ArrowDown"); // Overdue
+  await page.keyboard.press("ArrowDown"); // No due date
   await page.keyboard.press("Enter");
   await expect(listbox(page)).toHaveCount(0);
-  await expect(page).toHaveURL(/status=in_progress/);
-  await expectValue(status, "in_progress");
-  await expect(status).toBeFocused(); // focus stays on the box
+  await expect(page).toHaveURL(/due=none/);
+  await expectValue(due, "none");
+  await expect(due).toBeFocused(); // focus stays on the box
 
-  // Type-ahead: "d" jumps to Done.
+  // Type-ahead: "o" jumps to Overdue.
   await page.keyboard.press("ArrowDown");
-  await page.keyboard.type("d");
+  await page.keyboard.type("o");
   await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/status=done/);
+  await expect(page).toHaveURL(/due=overdue/);
 });
 
 test("Esc closes only the list: the side panel and a dialog behind it stay open", async ({ loggedInPage: page }) => {
@@ -121,8 +121,8 @@ test("a long list gets a search box that filters it, and says when nothing match
   await expect(page).toHaveURL(/assignee=/);
   await expect(assignee).toContainText("Person Number5");
 
-  // A short list (status) has none.
-  await combobox(page, "Filter by status").click();
+  // A short list (due date) has none.
+  await combobox(page, "Filter by due date").click();
   await expect(page.getByRole("searchbox")).toHaveCount(0);
 });
 

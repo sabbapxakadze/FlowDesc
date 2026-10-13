@@ -24,3 +24,7 @@ Status: **Accepted, built** - 2026-10-14. Builds on ADR 0070 (the MCP server and
 - The 30-second poll's real cost was not measured (one small request per open, visible tab).
 - Tests: found while writing them, a "the pill is grey" check passed on the loading state alone (the pill is also grey while loading); the specs now wait for the real label first, and a mutation (green whenever any usable token exists) is caught.
 - A pre-existing, unrelated console warning ("<p> cannot contain a nested <p>") comes from the Sprints page, not from this slice; left for the owner to decide.
+
+## Amended 2026-10-14 (ADR 0073)
+
+The landing page's screenshots are taken with a freshly used token, so the MCP dot is green in them.

@@ -21,8 +21,8 @@ test("set a priority, see it on the card, filter by it, and see it in the activi
   await card("Urgent thing").getByRole("button", { name: "Edit" }).click();
   await pick(editField(page, "Priority"), "High");
   await page.getByRole("button", { name: "Save" }).click();
-  await expect(card("Urgent thing")).toContainText("High");
-  await expect(card("Calm thing")).not.toContainText("High");
+  await expect(card("Urgent thing").getByRole("img", { name: "High priority" })).toBeVisible(); // the priority is an icon with a name
+  await expect(card("Calm thing").getByRole("img", { name: "High priority" })).toHaveCount(0);
 
   // Filter: only the high-priority issue remains, and the choice lives in the URL.
   await pick(combobox(page, "Filter by priority"), "High");

@@ -141,6 +141,8 @@ export default tseslint.config(
       "apps/web/src/shared/ui/ActionMenu.tsx", // the rows of a popup menu: full-width list rows, not a Button look
       "apps/web/src/shared/ui/ThemeSwitch.tsx", // a segmented toggle group
       "apps/web/src/entities/issue/ui/DragHandle.tsx", // a drag handle with dnd-kit listeners
+      "apps/web/src/pages/project-detail/ui/IssueToolbar.tsx", // the status tabs: a joined pill group of toggle buttons, not a Button look
+      "apps/web/src/entities/issue/ui/IssueSectionHeader.tsx", // a whole group header strip is the button (an accordion), not a Button look
       "apps/web/src/entities/label/ui/LabelBadge.tsx", // the small remove X inside a coloured pill
       "apps/web/src/features/post-comment/ui/CommentForm.tsx", // the x that removes a chosen file inside a chip
       "apps/web/src/widgets/command-palette/CommandPalette.tsx", // result rows and the open trigger

@@ -58,17 +58,21 @@ test("Edit stays out of sight until you point at the row or tab into it, and wor
   await expect(page.getByRole("dialog", { name: "Edit WEB-1" })).toBeVisible();
 });
 
-test("narrow (a phone): no header, status and priority sit under the title, and the page does not scroll sideways", async ({
+test("narrow (a phone): the key sits under the title, the assignee stays on the title's line at the right, and the page does not scroll sideways", async ({
   loggedInPage: page,
 }) => {
-  // Why: the table is for room. On a phone the same rows must stack, not squeeze six columns into 400 pixels.
+  // Why: one line per issue needs room. On a phone the same row stacks (title and assignee first, the key and due date under the title)
+  // instead of squeezing six columns into 400 pixels.
   await page.setViewportSize({ width: 420, height: 800 });
   await setup(page);
-  await expect(page.getByText("Priority", { exact: true })).toBeHidden(); // the header strip is gone
   const priorityRow = row(page, "Priority thing");
   const title = (await priorityRow.getByText("Priority thing").boundingBox())!;
-  const high = (await priorityRow.getByText("High").boundingBox())!;
-  expect(high.y).toBeGreaterThan(title.y + title.height - 1); // under the title, not beside it
+  const key = (await priorityRow.getByText(/^WEB-\d+$/).boundingBox())!;
+  expect(key.y).toBeGreaterThan(title.y + title.height - 1); // under the title, not beside it
+  const assignee = (await row(page, "Mine thing").getByRole("link", { name: /^Assigned to/ }).boundingBox())!;
+  const mineTitle = (await row(page, "Mine thing").getByText("Mine thing").boundingBox())!;
+  expect(assignee.y).toBeLessThan(mineTitle.y + mineTitle.height); // on the title's line
+  expect(assignee.x + assignee.width).toBeGreaterThan(380); // at the right edge
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,

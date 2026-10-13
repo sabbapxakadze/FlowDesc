@@ -12,15 +12,21 @@ export function AssigneeAvatar({
   organizationId,
   userId,
   interactive = true,
+  size = "sm",
+  align,
 }: {
   organizationId: string;
   userId: string;
   interactive?: boolean;
+  /** sm = 20px (cards), md = 28px (the Issues list, ADR 0072). */
+  size?: "sm" | "md";
+  /** "right" at the right edge of a row, so the person card opens leftwards. */
+  align?: "left" | "right";
 }) {
   const { data: members } = useMembers(organizationId);
   const member = members?.find((m) => m.userId === userId);
   if (!member) return null;
   const label = `Assigned to ${member.name}`;
-  if (!interactive) return <Avatar name={member.name} label={label} src={member.avatarUrl} />;
-  return <PersonName organizationId={organizationId} userId={userId} name={member.name} avatarOnly avatarLabel={label} />;
+  if (!interactive) return <Avatar name={member.name} label={label} src={member.avatarUrl} size={size} />;
+  return <PersonName organizationId={organizationId} userId={userId} name={member.name} avatarOnly avatarLabel={label} avatarSize={size} align={align} />;
 }

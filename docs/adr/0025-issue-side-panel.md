@@ -89,3 +89,7 @@ Dragging a text selection out of the panel (for example out of the comment box) 
 
 - My work opens issues in the panel too (tiles, the overdue card, "Recently updated"). The page spans projects, so `MyWorkIssuePanel` finds the project from the key in `?issue=`.
   Notifications still open the full page, as above.
+
+## Amended 2026-10-14 (ADR 0073)
+
+The Issues page no longer makes room for the open panel: its list and toolbar keep their width and the panel overlays their right-hand end, at every window width (it was: under 1560px they narrowed by the panel's width). The List/Board tabs and My work keep their clearance.

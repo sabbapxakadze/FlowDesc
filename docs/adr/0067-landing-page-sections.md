@@ -20,3 +20,7 @@ Every section after the hero was a heading over a grid of identical glass cards,
 - Only the "Run a sprint" example mirrors a real screen closely; the others are simplified drawings.
 - No legal text beyond the copyright line (no terms or privacy page exists).
 - Looked at in the owner's browser in dark and light at desktop width and at 420px: nothing scrolls sideways. Not checked in other browsers.
+
+## Amended 2026-10-14 (ADR 0073)
+
+"What people use it for" has a fifth way of working, "Ask your AI", and a new section, "Use it from your AI app", follows it. The page's item counts are now 3 / 8 / 5 and 3 for the new section.

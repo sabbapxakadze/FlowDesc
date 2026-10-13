@@ -37,7 +37,7 @@ export { ThemeSwitch } from "./ThemeSwitch";
 export { ViewTabs } from "./ViewTabs";
 export { FadeLink } from "./FadeLink";
 export { Time } from "./Time";
-export { PriorityBadge, PriorityIcon } from "./PriorityBadge";
+export { PriorityBadge, PriorityIcon, PriorityMark } from "./PriorityBadge";
 export { DueDate } from "./DueDate";
 export { PRIORITY_LABELS, PRIORITY_ORDER } from "./priorityLabels";
 export { Avatar } from "./Avatar";

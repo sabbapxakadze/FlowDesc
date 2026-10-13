@@ -11,7 +11,7 @@ import { shotSrc } from "./landing-shots";
  */
 const VIEWS = [
   { id: "board", label: "Board", alt: "The FlowDesc board: issues in Todo, In progress and Done columns, with labels, priorities and assignees." },
-  { id: "issues", label: "Issues", alt: "The FlowDesc issue list: one row per issue with its status, priority and due date." },
+  { id: "issues", label: "Issues", alt: "The FlowDesc issue list: issues grouped by status, one line each with priority, labels, due date and assignee." },
   { id: "analytics", label: "Analytics", alt: "The FlowDesc analytics page: weekly throughput, cycle time and sprint velocity charts." },
 ] as const;
 type ViewId = (typeof VIEWS)[number]["id"];

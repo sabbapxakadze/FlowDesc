@@ -355,7 +355,7 @@ export function ProjectSprintsPage() {
                     {backlogPending ? (
                       <ListSkeleton />
                     ) : isSprint && !activeSprint ? (
-                      <EmptyState block>
+                      <EmptyState block as="div">
                         <p className="font-medium text-[var(--color-text-default)]">No sprint is running.</p>
                         <p className="mt-1">
                           {nextPlanned

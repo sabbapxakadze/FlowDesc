@@ -94,13 +94,15 @@ test("the page has its sections, in order, with a sensible heading structure", a
     "How it works",
     "What you get",
     "What people use it for",
+    "Use it from your AI app",
     "Ready to look around?",
     "Built by Saba Pkhakadze",
   ]);
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
   await expect(page.getByRole("region", { name: "What you get" }).getByRole("listitem")).toHaveCount(8);
   await expect(page.getByRole("region", { name: "How it works" }).getByRole("listitem")).toHaveCount(3);
-  await expect(page.getByRole("region", { name: "What people use it for" }).getByRole("listitem")).toHaveCount(4);
+  await expect(page.getByRole("region", { name: "What people use it for" }).getByRole("listitem")).toHaveCount(5);
+  await expect(page.getByRole("region", { name: "Use it from your AI app" }).getByRole("listitem")).toHaveCount(3);
 });
 
 test("the preview switches between the three screens and follows the theme", async ({ page }) => {
@@ -212,4 +214,33 @@ test("the page says how it looks when shared, and the files for search engines a
   expect(await robots.text()).toContain("Sitemap: https://flowdesc.app/sitemap.xml");
   const sitemap = await request.get("/sitemap.xml");
   expect(await sitemap.text()).toContain("<loc>https://flowdesc.app/</loc>");
+});
+
+test("the Ask your AI way of working shows a drawn example, labelled as one", async ({ page }) => {
+  // Why: the fifth tab (ADR 0073) shows a conversation that is drawn, not real; it must say so ("Example"), like the other pictures, and the
+  // words next to it must not promise more than the package does (it only reads).
+  await page.goto("/");
+  const tabs = page.getByRole("list", { name: "Ways of working" });
+  await tabs.getByRole("button", { name: "Ask your AI" }).click();
+  await expect(tabs.getByRole("button", { name: "Ask your AI" })).toHaveAttribute("aria-pressed", "true");
+  const open = page.getByRole("heading", { level: 3, name: "Ask your AI" }).locator("xpath=ancestor::div[2]");
+  await expect(open).toContainText("it can never change anything");
+  await expect(open.getByText(/^Example: a question to an AI app/)).toBeVisible();
+  await expect(open.getByText("What is overdue in WEB?")).toBeVisible();
+});
+
+test("the AI section shows a placeholder command, never a token, and its Copy button copies exactly that", async ({ page }) => {
+  // Why: the landing page is public. The command it teaches must carry the placeholder only, and the package link must go where the README says.
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.goto("/");
+  const section = page.getByRole("region", { name: "Use it from your AI app" });
+  await section.scrollIntoViewIfNeeded();
+  const command = "claude mcp add --env FLOWDESC_TOKEN=fd_pat_YOUR_TOKEN --transport stdio flowdesc -- npx -y flowdesc-mcp";
+  await expect(section.getByLabel("Command to add FlowDesc to Claude Code")).toHaveText(command);
+  expect(await section.innerText()).not.toMatch(/fd_pat_[A-Za-z0-9_-]{43}/); // nothing that looks like a real token
+
+  await section.getByRole("button", { name: "Copy" }).click();
+  await expect(section.getByRole("button", { name: "Copied" })).toBeVisible();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(command);
+  await expect(section.getByRole("link", { name: /flowdesc-mcp page on npm/ })).toHaveAttribute("href", "https://www.npmjs.com/package/flowdesc-mcp");
 });

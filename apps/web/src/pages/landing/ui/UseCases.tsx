@@ -1,9 +1,9 @@
-import { ListChecks, Timer, TrendingUp, UserCheck, type LucideIcon } from "lucide-react";
+import { Bot, ListChecks, Timer, TrendingUp, UserCheck, type LucideIcon } from "lucide-react";
 import { useState, type ComponentType } from "react";
 import { withViewTransition } from "../../../shared/lib/motion";
 import { Button } from "../../../shared/ui";
 import { SectionHeading } from "./SectionHeading";
-import { BacklogVisual, HandoverVisual, ProgressVisual, SprintVisual } from "./UseCaseVisuals";
+import { AiVisual, BacklogVisual, HandoverVisual, ProgressVisual, SprintVisual } from "./UseCaseVisuals";
 
 /** Ways of working the app supports today, written as what a person does, not as claims about who uses it. */
 const CASES: { id: string; title: string; text: string; Icon: LucideIcon; Visual: ComponentType }[] = [
@@ -35,11 +35,18 @@ const CASES: { id: string; title: string; text: string; Icon: LucideIcon; Visual
     Icon: TrendingUp,
     Visual: ProgressVisual,
   },
+  {
+    id: "ai",
+    title: "Ask your AI",
+    text: "Connect an AI app such as Claude and ask about your projects in plain words. It reads your issues, sprints and numbers as you, and it can never change anything.",
+    Icon: Bot,
+    Visual: AiVisual,
+  },
 ];
 
 /**
- * Four ways of working as a row of pills, one open at a time (ADR 0067). The pills are buttons inside a list (so the section still has
- * its four items) and say which is open with `aria-pressed`, like the product preview's pills; the open one's text is announced politely when it
+ * Five ways of working as a row of pills, one open at a time (ADR 0067). The pills are buttons inside a list (so the section still has
+ * its five items) and say which is open with `aria-pressed`, like the product preview's pills; the open one's text is announced politely when it
  * changes. The picture is a drawn example and is hidden from assistive technology.
  */
 export function UseCases() {

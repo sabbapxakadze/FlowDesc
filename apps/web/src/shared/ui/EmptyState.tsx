@@ -6,18 +6,22 @@ import { cn } from "./lib/cn";
  * that treatment consistent. The default is one inline line (charts, the bell
  * panel). `block` is for a whole list or drop zone being empty on a data
  * screen: a dashed, padded, centered box that also reads as a drop target.
+ * It is a paragraph by default. `as="div"` is for a message made of several paragraphs or with a button in it (a <p> may not
+ * contain another <p> or a button: React warns, and the browser re-arranges the markup).
  */
 export function EmptyState({
   children,
   className,
   block = false,
+  as: Tag = "p",
 }: {
   children: ReactNode;
   className?: string;
   block?: boolean;
+  as?: "p" | "div";
 }) {
   return (
-    <p
+    <Tag
       className={cn(
         "text-[var(--color-text-muted)]",
         block &&
@@ -26,6 +30,6 @@ export function EmptyState({
       )}
     >
       {children}
-    </p>
+    </Tag>
   );
 }

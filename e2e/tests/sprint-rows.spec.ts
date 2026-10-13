@@ -27,6 +27,24 @@ async function sprintsInEveryState(page: Page) {
   return { projectId };
 }
 
+test("the Sprints page logs no React errors, also when no sprint is running", async ({ loggedInPage: page }) => {
+  // Why: the "No sprint is running" message once put two paragraphs and a button inside one <p>. React warned ("<p> cannot contain a nested
+  // <p>") and the browser re-arranges such markup. Nothing looked wrong, so only the console shows it: this test reads the console.
+  const { projectId } = await createIssueViaApi(page.request, { projectName: "Website", projectKey: "WEB", titles: ["Something"] });
+  const { headers, base } = await apiSession(page.request);
+  const planned = await page.request.post(`${base}/projects/${projectId}/sprints`, { headers, data: { name: "Planned sprint" } });
+  expect(planned.status()).toBe(201); // a planned sprint and no running one: the message with a Start button
+  const errors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+  await page.goto("/projects/WEB/sprints");
+  await expect(page.getByText("No sprint is running.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Start Planned sprint" })).toBeVisible();
+  await page.waitForTimeout(500);
+  expect(errors).toEqual([]);
+});
+
 test("the sprint strip tells each state apart, and Start waits while another sprint runs", async ({ loggedInPage: page }) => {
   // Why: the strip is how people read the project's sprints. A completed, an active and a planned sprint must each say what they are,
   // Delete must not be offered for the active one, and Start must be unavailable while a sprint is running (a project has only one).

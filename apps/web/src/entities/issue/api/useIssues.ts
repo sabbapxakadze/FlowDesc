@@ -14,8 +14,9 @@ import { issueKeys, type IssueListFilters } from "./queryKeys";
  * queryKeys.ts for why that doesn't break CreateIssueForm/EditIssueForm's
  * existing unfiltered invalidation calls.
  */
-export function useIssues(organizationId: string, projectId: string, filters: IssueListFilters = {}) {
+export function useIssues(organizationId: string, projectId: string, filters: IssueListFilters = {}, options: { enabled?: boolean } = {}) {
   return useInfiniteQuery({
+    enabled: options.enabled ?? true,
     queryKey: issueKeys.list(projectId, filters),
     queryFn: ({ pageParam }: { pageParam: string | undefined }) =>
       fetchIssues(organizationId, projectId, { ...filters, cursor: pageParam }),

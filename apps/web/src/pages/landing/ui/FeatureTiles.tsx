@@ -22,7 +22,7 @@ const SHOWCASE: { title: string; text: string; Icon: LucideIcon; view: ShotView;
     text: "Search across your issues, jump anywhere with Ctrl+K, and filter by status, priority, label, assignee or due date.",
     Icon: Search,
     view: "issues",
-    alt: "Screenshot of the issue list: one row per issue with its status, priority and due date.",
+    alt: "Screenshot of the issue list, grouped by status: one line per issue with its priority, labels, due date and assignee.",
     points: ["Search, and Ctrl+K from any page", "Filter by status, priority, label, assignee or due date", "Sort by priority"],
   },
   {

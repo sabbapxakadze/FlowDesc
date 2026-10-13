@@ -113,3 +113,36 @@ export function ProgressVisual() {
     </ExampleCard>
   );
 }
+
+/** A question to an AI app that is connected to FlowDesc, and its answer: drawn, not a real conversation (ADR 0073). */
+export function AiVisual() {
+  const overdue = [
+    { key: "WEB-25", title: "Fix layout shift on the homepage hero image", due: "Oct 10" },
+    { key: "WEB-18", title: "Set up redirects from the old blog URLs", due: "Oct 7" },
+  ];
+  return (
+    <ExampleCard caption="Example: a question to an AI app connected to FlowDesc">
+      <div className="flex justify-end">
+        <p className="rounded-2xl rounded-br-sm bg-[var(--color-bg-action-create)] px-3 py-2 text-[var(--color-text-on-action-strong)]">What is overdue in WEB?</p>
+      </div>
+      <div className="mt-3 rounded-2xl rounded-bl-sm border border-[var(--color-border-default)] p-3">
+        <p>Two issues are past their due date:</p>
+        <ul className="mt-2 flex flex-col gap-1.5">
+          {overdue.map((issue) => (
+            <li key={issue.key} className="flex items-center justify-between gap-3">
+              <span className="min-w-0 truncate">
+                <b className="font-medium">{issue.key}</b> {issue.title}
+              </span>
+              <span className={`${CHIP} shrink-0 text-[var(--color-text-warning)]`}>
+                <CalendarClock size={13} aria-hidden="true" />
+                {issue.due}
+              </span>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-2 text-xs text-[var(--color-text-muted)]">Read from FlowDesc through a read-only access token.</p>
+      </div>
+    </ExampleCard>
+  );
+}
+

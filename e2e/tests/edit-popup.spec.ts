@@ -31,7 +31,7 @@ test("Edit on a list row opens a popup, Save updates the row, and focus goes bac
   await pick(dialog.getByRole("combobox", { name: /priority/i }), "High");
   await dialog.getByRole("button", { name: "Save" }).click();
   await expect(dialog).toHaveCount(0);
-  await expect(row(page, "Alpha renamed")).toContainText("High");
+  await expect(row(page, "Alpha renamed").getByRole("img", { name: "High priority" })).toBeVisible();
   await expect(edit).toBeFocused();
 });
 

@@ -1,5 +1,7 @@
-export type { Issue } from "./model";
+export type { Issue, IssueListItem } from "./model";
 export { useIssues } from "./api/useIssues";
+export { useIssueSections } from "./api/useIssueSections";
+export { SECTION_ORDER, sectionPlan, summaryCount, loadedCountLabel } from "./lib/sections";
 export { useAssignedIssues } from "./api/useAssignedIssues";
 export { useWeekProgress } from "./api/useWeekProgress";
 export { useIssue } from "./api/useIssue";
@@ -18,7 +20,8 @@ export { describeEvent, describeEventFor } from "./lib/describeEvent";
 export { openIssueOnClick } from "./lib/issueLinkClick";
 export { issueKeys } from "./api/queryKeys";
 export { IssueCard } from "./ui/IssueCard";
-export { IssueRow, IssueListHeader } from "./ui/IssueRow";
+export { IssueRow } from "./ui/IssueRow";
+export { IssueSectionHeader } from "./ui/IssueSectionHeader";
 export { IssueSummary } from "./ui/IssueSummary";
 export { IssueCardFrame, IssueCardContent } from "./ui/IssueCardFace";
 export { SortableIssueCard } from "./ui/SortableIssueCard";

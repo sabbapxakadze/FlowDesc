@@ -36,3 +36,7 @@ and chose "a table of two-line rows".
 ## Noted 2026-10-07: wider than 1560px the panel may cover the right-hand columns (accepted)
 
 The 1560px limit was chosen when a wider window meant "nothing is covered". Since the sidebar was added that is no longer true: measured in a real browser at 1862px (the owner's window) the panel starts at 1370px while the list reaches 1527px, so about 157px at the right end (the assignee and Edit columns, part of the due date) sits under the floating panel; between roughly 1560px and 2240px the list is partly covered, and from about 2240px it is clear. The owner looked at it and chose to leave it: the panel is a floating, non-modal card by design (ADR 0025), a wide window should not reflow when it opens, and closing it (Esc) brings the columns back. Not checked: the board and sprints pages. If it is ever changed, raise the three `1559px` thresholds (`ProjectDetailPage` twice, `ProjectViewTabs`) to about 2239px and update the motion test "on a wide window the issue filters do not move when the panel opens", which asserts the current behaviour at 1920px.
+
+## Amended 2026-10-14 (ADR 0072)
+
+The two-line rows, the Status / Priority / Due / Who columns and the header strip described above were replaced by one-line rows in groups by status (ADR 0072). What stays: one bordered surface, the layout chosen by the list's own width (a container query), the stretched title link, and the side panel keeping clear of the list.

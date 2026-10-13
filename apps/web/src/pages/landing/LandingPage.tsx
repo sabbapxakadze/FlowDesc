@@ -1,6 +1,7 @@
 import { ThemeSwitch } from "../../shared/ui";
 import { About } from "./ui/About";
 import { BuiltBy } from "./ui/BuiltBy";
+import { ConnectAi } from "./ui/ConnectAi";
 import { FeatureTiles } from "./ui/FeatureTiles";
 import { FinalCta } from "./ui/FinalCta";
 import { Hero } from "./ui/Hero";
@@ -37,6 +38,7 @@ export function LandingPage() {
         <HowItWorks />
         <FeatureTiles />
         <UseCases />
+        <ConnectAi />
         <FinalCta />
         <BuiltBy />
       </main>

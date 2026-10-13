@@ -1,1 +1,1 @@
-export type { Issue } from "@flowdesc/contracts";
+export type { Issue, IssueListItem } from "@flowdesc/contracts";
