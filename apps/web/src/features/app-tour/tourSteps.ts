@@ -169,6 +169,21 @@ export function buildTourSteps(projectKey: string | undefined): TourStep[] {
       body: "Choose light, dark or follow your system. Your timezone and password are on your account page, under your name.",
     },
     {
+      id: "mcp-status",
+      target: "mcp-status",
+      placement: "right",
+      title: "Use it from an AI app",
+      body: "MCP lets an AI app such as Claude read your projects and issues, as you. This dot is green while one is using your access token and grey when none is. It can only read, never change anything.",
+    },
+    {
+      id: "access-tokens",
+      target: "access-tokens",
+      path: "/account",
+      placement: "bottom",
+      title: "Access tokens",
+      body: "Make a token here and copy it once. Press the ? beside the title for the setup steps. Treat a token like a password, and revoke it here whenever you like.",
+    },
+    {
       id: "again",
       target: "tour-button",
       placement: "right",

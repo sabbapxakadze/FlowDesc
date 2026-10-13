@@ -29,7 +29,7 @@ async function startTour(page: Page) {
 }
 
 async function advanceTo(page: Page, heading: string) {
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < 30; i++) {
     if ((await title(page).innerText()) === heading) return;
     await nextButton(page).click();
     await expect(card(page)).toBeVisible();
@@ -156,11 +156,11 @@ test("on a phone the tour still runs to the end", async ({ loggedInPage: page })
   });
   await page.getByRole("button", { name: "Open menu" }).click();
   await startTour(page);
-  for (let i = 0; i < 20 && (await card(page).count()) > 0; i++) {
+  for (let i = 0; i < 30 && (await card(page).count()) > 0; i++) {
     await nextButton(page).click();
     await page.waitForTimeout(150);
   }
-  await expect(card(page)).toHaveCount(0); // finished, within 20 steps
+  await expect(card(page)).toHaveCount(0); // finished, within 30 steps
 });
 
 test("a whole tour changes no data", async ({ loggedInPage: page }) => {
@@ -177,7 +177,7 @@ test("a whole tour changes no data", async ({ loggedInPage: page }) => {
   });
   await setup(page);
   await startTour(page);
-  for (let i = 0; i < 20 && (await card(page).count()) > 0; i++) {
+  for (let i = 0; i < 30 && (await card(page).count()) > 0; i++) {
     await nextButton(page).click();
     await page.waitForTimeout(120);
   }
@@ -207,4 +207,25 @@ test("the tour visits My work's week and its overdue list, on My work", async ({
   await nextButton(page).click();
   await expect(title(page)).toHaveText("What needs you");
   await expect(spot(page)).toHaveCount(1);
+});
+
+test("the tour explains MCP: the sidebar pill, then the Access tokens section on the account page", async ({ loggedInPage: page }) => {
+  // Why: the MCP feature is invisible unless the tutorial points at it. The pill is in the sidebar; the setup lives on the account page, which
+  // the tour has to open by itself and highlight the right section on (ADR 0071).
+  await setup(page);
+  await startTour(page);
+  await advanceTo(page, "Use it from an AI app");
+  await expect(spot(page)).toHaveCount(1);
+  await expect(card(page)).toContainText("green while one is using your access token");
+  const pill = (await page.locator('[data-tour="mcp-status"]').boundingBox())!;
+  await expect.poll(async () => Math.round((await spot(page).boundingBox())?.x ?? -999)).toBe(Math.round(pill.x - 6));
+
+  await nextButton(page).click();
+  await expect(title(page)).toHaveText("Access tokens");
+  await expect(page).toHaveURL(/\/account$/);
+  await expect(spot(page)).toHaveCount(1);
+  await expect(card(page)).toContainText("Press the ? beside the title");
+  const section = (await page.locator('[data-tour="access-tokens"]').boundingBox())!;
+  const highlight = (await spot(page).boundingBox())!;
+  expect(Math.abs(highlight.x - (section.x - 6))).toBeLessThan(3);
 });

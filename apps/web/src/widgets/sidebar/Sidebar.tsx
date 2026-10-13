@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Search } from "lucide-react";
+import { LogOut, Search } from "lucide-react";
 import { Link, NavLink, useMatch } from "react-router";
 import { useProjects } from "../../entities/project";
 import { useMembers, useMyRole } from "../../entities/member";
@@ -7,6 +7,7 @@ import { useAuth } from "../../shared/auth/useAuth";
 import { isUuid, personPath, projectPath } from "../../shared/lib/paths";
 import { useSearchPalette } from "../../shared/search-palette/useSearchPalette";
 import { TourButton } from "../../features/app-tour";
+import { McpStatus } from "../../features/mcp-status";
 import { Avatar, cn, LogoMark, Skeleton, ThemeSwitch } from "../../shared/ui";
 
 const LINK =
@@ -161,8 +162,11 @@ export function Sidebar({ actions }: { actions?: ReactNode }) {
       <div className="mt-2 flex flex-col gap-0.5 border-t border-[var(--color-border-sidebar)] pt-3">
         <TourButton className={cn(LINK, "w-full text-left")} />
         <SideLink to="/account">Account settings</SideLink>
-        <div data-tour="theme-switch" className="px-2.5 pt-2">
-          <ThemeSwitch variant="sidebar" />
+        <div className="flex items-center justify-between gap-2 px-2.5 pt-2">
+          <div data-tour="theme-switch">
+            <ThemeSwitch variant="sidebar" />
+          </div>
+          <McpStatus />
         </div>
         {user && (
           <div className="flex items-center justify-between gap-2 px-2.5 pt-2 text-sm">
@@ -176,8 +180,9 @@ export function Sidebar({ actions }: { actions?: ReactNode }) {
             <button
               type="button"
               onClick={logout}
-              className="shrink-0 text-[var(--color-text-sidebar)] underline hover:text-[var(--color-text-sidebar-active)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-text-sidebar-active)]"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-[var(--radius-control)] border border-[var(--color-border-sidebar)] px-2.5 py-1 text-sm text-[var(--color-text-sidebar)] hover:bg-[var(--color-bg-sidebar-active)] hover:text-[var(--color-text-sidebar-active)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-text-sidebar-active)]"
             >
+              <LogOut aria-hidden size={14} />
               Log out
             </button>
           </div>

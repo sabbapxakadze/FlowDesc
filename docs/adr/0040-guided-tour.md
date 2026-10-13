@@ -48,3 +48,7 @@ The "no automatic offer to new people" limit above is lifted for one case: a per
 - Two steps follow "My work": "Your week" and "What needs you". They go to `/` by themselves (`path: "/"`) and point at `data-tour="my-week"` (the agenda) and
   `data-tour="my-needs-you"` (the overdue card). Like every step, they are skipped when their part is not on screen (nothing assigned), and the My work step's text
   describes the new page. One e2e test walks to them.
+
+## Amended 2026-10-14 (ADR 0071)
+
+- Two steps follow "Make it yours": "Use it from an AI app" (the sidebar's MCP pill, `data-tour="mcp-status"`) and "Access tokens" (`path: "/account"`, `data-tour="access-tokens"`). The tour is now longer than 20 steps, so the tests' limit is 30. One e2e test walks to them and checks both highlights.
