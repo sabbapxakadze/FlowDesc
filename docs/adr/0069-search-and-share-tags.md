@@ -16,3 +16,8 @@ Status: **Accepted, built** - 2026-10-13. Builds on ADR 0043 (the landing page),
 - The tags were checked to be present and the files to be served, not checked in the real previews of chat apps or social networks (they cache pictures and have their own debuggers), and not checked in a search console.
 - The sitemap's date is written by hand and is not updated by a build.
 - No structured data (schema.org) was added.
+
+## Amended 2026-10-14 (ADR 0073)
+
+The share picture is now `public/og-image-v2.png` (1200x630): the logo and headline on the brand gradient, and the board, issue list and analytics screenshots (light theme) stacked beside them, with an "MCP server for AI assistants" badge, so a shared link shows the product itself. It is a new file name on purpose: chat apps and LinkedIn cache a picture by its address, so a changed file under the old name would keep showing the old one. The old `og-image.png` is kept so links shared before still have a picture. The picture is drawn by a script outside the repository from the screenshots in `public/landing/`, so it is out of date whenever those are (retake both). LinkedIn also caches the page's tags: after a deploy, its Post Inspector page re-reads them (not opened or verified here).
+

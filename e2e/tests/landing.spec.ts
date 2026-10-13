@@ -202,14 +202,16 @@ test("the page says how it looks when shared, and the files for search engines a
   await page.goto("/");
   const meta = (selector: string) => page.locator(selector).first().getAttribute("content");
   expect(await meta('meta[property="og:title"]')).toContain("FlowDesc");
-  expect(await meta('meta[property="og:image"]')).toBe("https://flowdesc.app/og-image.png");
+  expect(await meta('meta[property="og:image"]')).toBe("https://flowdesc.app/og-image-v2.png");
   expect(await meta('meta[name="twitter:card"]')).toBe("summary_large_image");
   expect((await meta('meta[name="description"]'))?.length ?? 0).toBeGreaterThan(50);
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://flowdesc.app/");
 
-  const image = await request.get("/og-image.png");
+  const image = await request.get("/og-image-v2.png");
   expect(image.status()).toBe(200);
   expect(image.headers()["content-type"]).toMatch(/^image\/png/);
+  const older = await request.get("/og-image.png"); // kept: links shared before the new picture still point at it
+  expect(older.status()).toBe(200);
   const robots = await request.get("/robots.txt");
   expect(await robots.text()).toContain("Sitemap: https://flowdesc.app/sitemap.xml");
   const sitemap = await request.get("/sitemap.xml");
