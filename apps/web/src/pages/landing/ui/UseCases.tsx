@@ -1,7 +1,7 @@
 import { Bot, ListChecks, Timer, TrendingUp, UserCheck, type LucideIcon } from "lucide-react";
 import { useState, type ComponentType } from "react";
 import { withViewTransition } from "../../../shared/lib/motion";
-import { Button } from "../../../shared/ui";
+import { Button, cn } from "../../../shared/ui";
 import { SectionHeading } from "./SectionHeading";
 import { AiVisual, BacklogVisual, HandoverVisual, ProgressVisual, SprintVisual } from "./UseCaseVisuals";
 
@@ -57,29 +57,36 @@ export function UseCases() {
       <SectionHeading id="landing-use-cases" title="What people use it for">
         A few ways the same pieces fit together.
       </SectionHeading>
-      <ul aria-label="Ways of working" className="mt-10 flex flex-wrap justify-center gap-2.5">
-        {CASES.map(({ id, title, Icon }) => (
-          <li key={id}>
+      {/* On a phone the pills are a tidy two-column grid (the odd one out spans both columns) instead of a ragged stack of wrapped pills; from
+          `sm` up they are the centred row they always were. */}
+      <ul aria-label="Ways of working" className="mt-10 grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:justify-center">
+        {CASES.map(({ id, title, Icon }, index) => (
+          <li key={id} className={index === CASES.length - 1 && CASES.length % 2 === 1 ? "col-span-2 sm:col-span-1" : undefined}>
             <Button
               type="button"
               size="md"
               variant={id === selected ? "create" : "secondary"}
               aria-pressed={id === selected}
               onClick={() => withViewTransition(() => setSelected(id))}
-              className={id === selected ? "inline-flex items-center gap-2 rounded-full px-4" : "inline-flex items-center gap-2 rounded-full bg-[var(--color-bg-surface)] px-4"}
+              className={cn(
+                "inline-flex h-full min-h-11 w-full items-center justify-start gap-2 rounded-2xl px-3.5 text-left sm:w-auto sm:justify-center sm:rounded-full sm:px-4 sm:text-center",
+                id !== selected && "bg-[var(--color-bg-surface)]",
+              )}
             >
-              <Icon size={16} aria-hidden="true" />
+              <Icon size={16} aria-hidden="true" className="shrink-0" />
               {title}
             </Button>
           </li>
         ))}
       </ul>
       <div aria-live="polite" className="glass-card mt-6 grid items-center gap-8 rounded-[var(--radius-card)] p-6 sm:p-10 md:grid-cols-2">
-        <div key={current.id}>
+        {/* min-w-0: a grid item may not shrink below its content by default, so a long line inside (the chat example's issue titles) used to
+            push the whole card wider than a phone screen and get cut off. */}
+        <div key={current.id} className="min-w-0">
           <h3 className="font-display text-3xl leading-tight font-normal">{current.title}</h3>
           <p className="mt-3 text-lg text-[var(--color-text-muted)]">{current.text}</p>
         </div>
-        <div aria-hidden="true">
+        <div aria-hidden="true" className="min-w-0">
           <current.Visual />
         </div>
       </div>

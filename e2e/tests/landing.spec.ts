@@ -246,3 +246,32 @@ test("the AI section shows a placeholder command, never a token, and its Copy bu
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(command);
   await expect(section.getByRole("link", { name: /flowdesc-mcp page on npm/ })).toHaveAttribute("href", "https://www.npmjs.com/package/flowdesc-mcp");
 });
+
+test("on a phone each way of working fits inside the screen, and the pills are a tidy grid", async ({ page }) => {
+  // Why: the landing page clips what overflows its edge (the document never scrolls sideways), so the usual "no sideways scroll" check cannot see
+  // a card that is wider than the screen with its text cut off. This measures the elements themselves, for every tab. It also pins the pill layout:
+  // two columns, the odd one out across both.
+  await page.setViewportSize({ width: 390, height: 800 });
+  await page.goto("/");
+  const section = page.getByRole("region", { name: "What people use it for" });
+  await section.scrollIntoViewIfNeeded();
+  const tabs = section.getByRole("list", { name: "Ways of working" }).getByRole("button");
+  const count = await tabs.count();
+  expect(count).toBe(5);
+
+  const boxes = await Promise.all(Array.from({ length: count }, async (_, i) => (await tabs.nth(i).boundingBox())!));
+  expect(Math.round(boxes[0]!.y)).toBe(Math.round(boxes[1]!.y)); // 1 and 2 share a row
+  expect(Math.round(boxes[2]!.y)).toBe(Math.round(boxes[3]!.y)); // 3 and 4 share a row
+  expect(boxes[4]!.width).toBeGreaterThan(boxes[0]!.width * 1.8); // the fifth spans both columns
+
+  for (let i = 0; i < count; i++) {
+    await tabs.nth(i).click();
+    const overflowing = await section.evaluate((root, viewport) => {
+      return [...root.querySelectorAll("*")]
+        .filter((el) => el.getBoundingClientRect().right > viewport + 1)
+        .map((el) => `${el.tagName}.${String(el.className).slice(0, 40)}`);
+    }, 390);
+    expect(overflowing, `tab ${i + 1} has elements past the screen edge`).toEqual([]);
+  }
+});
+

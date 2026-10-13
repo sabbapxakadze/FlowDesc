@@ -52,8 +52,11 @@ test("Esc closes only the list: the side panel and a dialog behind it stay open"
   const panel = page.locator('section[aria-label="Issue"]');
   await expect(panel).toBeVisible();
 
+  // Opened from the keyboard: the panel now overlays the right-hand end of the toolbar (ADR 0073), so at some window widths the Sort box sits
+  // under the panel and a mouse click would land on the panel. The list itself still floats above it.
   const sort = combobox(page, "Sort");
-  await sort.click();
+  await sort.focus();
+  await page.keyboard.press("ArrowDown");
   await expect(listbox(page)).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(listbox(page)).toHaveCount(0);
