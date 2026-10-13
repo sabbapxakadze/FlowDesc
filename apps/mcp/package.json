@@ -1,6 +1,6 @@
 {
   "name": "flowdesc-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "An MCP server that lets an AI app read your FlowDesc projects and issues with a personal access token.",
   "keywords": [
     "mcp",
