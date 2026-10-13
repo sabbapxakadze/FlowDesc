@@ -122,6 +122,14 @@ describe("helpers", () => {
     ]);
   });
 
+  it("hashes a script saved with Windows line endings as the browser reads it (LF)", () => {
+    // Why: found by running the production smoke test on Windows. The HTML parser turns CRLF into LF before the browser hashes the
+    // script, so a CRLF file hashed as-is made the page block its own theme script.
+    const crlf = inlineScriptHashes("<script>\r\na()\r\nb()\r\n</script>");
+    const lf = inlineScriptHashes("<script>\na()\nb()\n</script>");
+    expect(crlf).toEqual(lf);
+  });
+
   it("refuses to start when the build is missing, and says what to do", () => {
     // Why: a missing build is found when the server boots, not when the first visitor gets a blank page.
     expect(() => loadWebApp(join(tmpdir(), "flowdesk-no-such-build"))).toThrow(/Build the web app first/);

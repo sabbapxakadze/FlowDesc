@@ -40,7 +40,7 @@ test("the landing page comes from the one server, with security headers and noth
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await page.getByRole("button", { name: "Issues" }).click(); // the landing preview swaps pictures (images load under img-src)
-  await expect(page.getByRole("img", { name: /issue list/ })).toBeVisible();
+  await expect(page.getByRole("img", { name: /^The FlowDesc issue list/ })).toBeVisible();
 
   expect(await violations(page)).toEqual([]);
   expect(consoleErrors).toEqual([]);
