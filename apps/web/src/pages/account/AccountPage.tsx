@@ -3,6 +3,7 @@ import { ChangeEmailForm } from "../../features/change-email";
 import { OAuthErrorNotice } from "../../entities/oauth";
 import { ChangePasswordForm, SetPasswordForm } from "../../features/change-password";
 import { SignInMethods } from "../../features/connected-accounts";
+import { ApiTokens } from "../../features/manage-api-tokens";
 import { TimezoneForm } from "../../features/set-timezone";
 import { SignOutEverywhere } from "../../features/sign-out-everywhere";
 import { useAuth } from "../../shared/auth/useAuth";
@@ -70,6 +71,9 @@ export function AccountPage() {
           )}
           <Section title="Devices" note="Ends every session of your account, this one too. Use it if a device is lost or you left yourself logged in somewhere.">
             <SignOutEverywhere />
+          </Section>
+          <Section title="Access tokens" note="For apps that act on your behalf, such as an AI assistant. Each one can be revoked at any time.">
+            <ApiTokens />
           </Section>
           <Section title="Timezone" note={"Used for the exact time you see when you point at a time like \u201c5 minutes ago\u201d."}>
             <TimezoneForm current={account.data.timezone} />

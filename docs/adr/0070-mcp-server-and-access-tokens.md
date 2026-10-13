@@ -32,6 +32,12 @@ Today the API accepts only a short-lived JWT access token (`requireAuth` sets `r
 - Tests: `api-tokens.http.test.ts`, `token-access.test.ts` and a log case in `request-logger.test.ts`. Four mutation checks (no expiry check, no revoked check, any HTTP method allowed, raw token stored) each failed a test.
 - Not audited: token creation and revocation are logged but write no `audit_events` row (that table needs an organization; tokens belong to a person).
 
+## What slice 2 did (2026-10-13)
+
+- An "Access tokens" section on `/account` (after Devices): create (name, 30 days / 90 days / 1 year, read-only), the secret shown once with a Copy button, the list with Active / Revoked / Expired, last used and an inline Revoke that asks first. A demo copy sees "not available" instead of the form, so a visitor never meets a form the server would refuse.
+- The secret is held only in the create mutation's result, never in the list's cache, so it is gone after Done or a reload. Web only: no API change.
+- The owner checked the Copy button against the real clipboard by hand (2026-10-13).
+
 ## Slices
 
 1. Tokens: schema + migration, create/list/revoke API, the `requireAuth` second path, tests (revoked, expired, read-only on a write, wrong organization, a token for user A never sees user B's data).

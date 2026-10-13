@@ -48,7 +48,7 @@ None is in the repository. All live in Render's Environment page (and the provid
 
 - **What a token is:** a long random value (`fd_pat_...`) a person creates for an automated client; only its sha256 hash is stored, and the secret is shown once. It acts as its owner and never exceeds their role.
 - **What a token can reach:** only the GET addresses in `middleware/token-access.ts`. It is default-deny: a new route is closed to tokens until someone adds it there on purpose. Writes, `/auth`, account, token management, uploads, invitations, audit log and notifications are all closed.
-- **Revoking:** the owner revokes a token on the account (the page is slice 2; the API exists); it stops working on its next request. Tokens also expire (30, 90 or 365 days).
+- **Revoking:** the owner revokes a token on the account (Account page, "Access tokens"); it stops working on its next request. Tokens also expire (30, 90 or 365 days).
 - **Logs:** the Authorization header is redacted by the logger (ADR 0050), and a test covers a `fd_pat_` value.
 - **Not covered:** an AI client that holds a token can be steered by text in issues and comments it reads (prompt injection); the read-only scope limits the harm to reading what its owner can read.
 
