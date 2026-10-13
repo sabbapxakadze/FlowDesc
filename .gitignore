@@ -28,3 +28,4 @@ playwright-report/
 test-results/
 apps/api/uploads-e2e/
 e2e/.tsbuild/
+bundle/

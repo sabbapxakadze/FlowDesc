@@ -1,34 +1,59 @@
 {
   "name": "flowdesc-mcp",
-  "private": true,
   "version": "0.1.0",
   "description": "An MCP server that lets an AI app read your FlowDesc projects and issues with a personal access token.",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "flowdesc",
+    "project-management",
+    "claude"
+  ],
+  "homepage": "https://flowdesc.app",
+  "bugs": {
+    "url": "https://github.com/sabbapxakadze/FlowDesc/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sabbapxakadze/FlowDesc.git",
+    "directory": "apps/mcp"
+  },
+  "license": "MIT",
+  "author": "Saba Pkhakadze",
   "type": "module",
-  "main": "./dist/server.js",
-  "types": "./dist/server.d.ts",
   "bin": {
-    "flowdesc-mcp": "./dist/index.js"
+    "flowdesc-mcp": "./bundle/index.js"
   },
   "exports": {
-    ".": {
-      "types": "./dist/server.d.ts",
-      "default": "./dist/server.js"
-    },
     "./testing": {
       "types": "./dist/testing.d.ts",
       "default": "./dist/testing.js"
     }
   },
+  "files": [
+    "bundle",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -b",
-    "dev": "tsc -b --watch --preserveWatchOutput"
+    "bundle": "tsc -b && esbuild src/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=bundle/index.js --external:@modelcontextprotocol/sdk --external:zod",
+    "dev": "tsc -b --watch --preserveWatchOutput",
+    "prepack": "node scripts/check-bundle.mjs"
   },
   "dependencies": {
-    "@flowdesc/contracts": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.32.1",
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@flowdesc/contracts": "workspace:*",
+    "esbuild": "^0.28.2",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3"
   }

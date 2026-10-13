@@ -1,0 +1,63 @@
+# Publishes the flowdesc-mcp package (apps/mcp) to npm when a version tag is pushed (ADR 0070, slice 3b).
+#
+#   how to release:  1. change "version" in apps/mcp/package.json and commit it
+#                    2. git tag mcp-v0.1.1        (the number after "mcp-v" must equal that version)
+#                    3. git push origin mcp-v0.1.1
+#
+# No npm password or token is stored in GitHub. This uses npm "trusted publishing": npm is told, on npmjs.com, that THIS repository and THIS
+# workflow file may publish the package, and the job proves who it is with a short-lived OpenID Connect token (that is what "id-token: write"
+# allows). Because the repository and the package are public, npm also attaches a provenance statement (who built it, from which commit).
+# Setting it up (once, after the first manual publish): npmjs.com, package flowdesc-mcp, Settings, Trusted Publisher, GitHub Actions:
+#   user sabbapxakadze, repository FlowDesc, workflow filename publish-mcp.yml (the file name only, with .yml).
+#
+# Anyone who can push a tag to this repository can start a release, so only the owner should have write access.
+name: Publish flowdesc-mcp
+
+on:
+  push:
+    tags: ["mcp-v*"]
+
+permissions:
+  contents: read
+  id-token: write # lets the job ask GitHub for the identity token that npm trusts
+
+jobs:
+  publish:
+    name: Test, bundle, publish
+    # Pinned, not ubuntu-latest (same reason as ci.yml). Trusted publishing needs a GitHub-hosted runner.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6 # the pnpm version comes from "packageManager" in package.json
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+      - run: pnpm install --frozen-lockfile
+
+      # A tag that does not match the version in package.json would publish the wrong number (a version can never be reused), so stop here.
+      - name: The tag must match the package version
+        run: |
+          tag="${GITHUB_REF_NAME#mcp-v}"
+          version="$(node -p "require('./apps/mcp/package.json').version")"
+          if [ "$tag" != "$version" ]; then
+            echo "The tag $GITHUB_REF_NAME says version $tag but apps/mcp/package.json says $version. Nothing was published."
+            exit 1
+          fi
+
+      - name: Build the program (this also builds the contracts it is made from)
+        run: pnpm --filter flowdesc-mcp bundle
+      - name: Test the package
+        run: pnpm --filter flowdesc-mcp exec vitest run
+
+      # npm 11.5.1 or newer is required for trusted publishing; Node 24 should already have it, this makes it certain.
+      - name: Use a new enough npm
+        run: |
+          npm install -g npm@11
+          npm --version
+
+      - name: Publish
+        working-directory: apps/mcp
+        run: npm publish --access public

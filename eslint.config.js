@@ -8,7 +8,7 @@ import prettierConfig from "eslint-config-prettier";
 
 export default tseslint.config(
   {
-    ignores: ["**/dist/**", "apps/web/build/**", "**/node_modules/**", "**/.turbo/**", "**/coverage/**", "e2e/.tsbuild/**", "playwright-report/**", "test-results/**"],
+    ignores: ["**/dist/**", "**/bundle/**", "apps/web/build/**", "**/node_modules/**", "**/.turbo/**", "**/coverage/**", "e2e/.tsbuild/**", "playwright-report/**", "test-results/**"],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -172,7 +172,7 @@ export default tseslint.config(
   // base no-undef rule for .ts/.tsx (the compiler already checks that,
   // more accurately). Plain .mjs still needs the runtime globals named.
   {
-    files: ["scripts/**/*.mjs", "e2e/scripts/**/*.mjs"],
+    files: ["scripts/**/*.mjs", "e2e/scripts/**/*.mjs", "apps/mcp/scripts/**/*.mjs"],
     languageOptions: {
       globals: { process: "readonly", console: "readonly", URL: "readonly", localStorage: "readonly" },
     },

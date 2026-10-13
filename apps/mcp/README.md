@@ -4,8 +4,9 @@ An [MCP](https://modelcontextprotocol.io) server that lets an AI app (Claude Cod
 FlowDesc projects and issues. It runs on your own computer, talks to FlowDesc with a personal access token, and **cannot change
 anything**: every tool is read-only, and the FlowDesc API itself refuses writes from a token.
 
-> Status: works from this repository. It is **not published to npm yet** (that is the next step, ADR 0070 slice 3b), so for now you
-> run it from the built file.
+> Needs Node.js 22 or newer (tested on Node 24; 22 is not tested). MIT licence (this package only; the rest of the FlowDesc repository
+> has its own LICENSE). Once the package is on npm you start it with `npx -y flowdesc-mcp`; until the first release is published
+> (ADR 0070 slice 3b) use "Run it from the source" below.
 
 ## 1. Get a token
 
@@ -13,17 +14,7 @@ In FlowDesc open **Account**, then **Access tokens**, give it a name (for exampl
 and press **Create token**. Copy the secret (it starts with `fd_pat_`). It is shown **once**: FlowDesc keeps only a hash, so it cannot
 show it again. Treat it like a password. You can revoke it on the same page at any time; it stops working immediately.
 
-## 2. Build it (until it is on npm)
-
-```
-pnpm install
-pnpm --filter flowdesc-mcp build
-```
-
-The program is then `apps/mcp/dist/index.js` in this repository. Use its full path below (on Windows, forward slashes work in
-these commands: `C:/Users/you/Desktop/ProjectManagement/apps/mcp/dist/index.js`).
-
-## 3. Connect your AI app
+## 2. Connect your AI app
 
 The server reads two environment variables:
 
@@ -35,12 +26,13 @@ The server reads two environment variables:
 **Claude Code** (syntax from the Claude Code docs, `claude mcp add [options] <name> -- <command> [args...]`):
 
 ```
-claude mcp add --env FLOWDESC_TOKEN=fd_pat_YOUR_TOKEN --transport stdio flowdesc -- node C:/full/path/to/apps/mcp/dist/index.js
+claude mcp add --env FLOWDESC_TOKEN=fd_pat_YOUR_TOKEN --transport stdio flowdesc -- npx -y flowdesc-mcp
 claude mcp list
 ```
 
 To point it at a FlowDesc running on your own machine add `--env FLOWDESC_URL=http://localhost:4000` as well (whether repeating
-`--env` works in your version is **not verified**; the docs say `--env` takes several `KEY=value` pairs).
+`--env` works in your version is **not verified**; the docs say `--env` takes several `KEY=value` pairs). On Windows, if `npx` is not
+found by Claude Code, a `cmd /c npx ...` wrapper is sometimes needed: **not verified** (the docs page could not be read that far).
 
 **Claude Desktop** (file `%APPDATA%\Claude\claude_desktop_config.json` on Windows, `~/Library/Application Support/Claude/claude_desktop_config.json`
 on macOS; open it from Settings, Developer, Edit Config):
@@ -49,8 +41,8 @@ on macOS; open it from Settings, Developer, Edit Config):
 {
   "mcpServers": {
     "flowdesc": {
-      "command": "node",
-      "args": ["C:\\full\\path\\to\\apps\\mcp\\dist\\index.js"],
+      "command": "npx",
+      "args": ["-y", "flowdesc-mcp"],
       "env": { "FLOWDESC_TOKEN": "fd_pat_YOUR_TOKEN" }
     }
   }
@@ -59,6 +51,16 @@ on macOS; open it from Settings, Developer, Edit Config):
 
 Quit Claude Desktop completely and start it again. If the server does not show up, its messages are in
 `%APPDATA%\Claude\logs\mcp-server-flowdesc.log` (Windows).
+
+### Run it from the source (before the first npm release, or to work on it)
+
+```
+pnpm install
+pnpm --filter flowdesc-mcp build
+```
+
+Then use `node` and the full path to `apps/mcp/dist/index.js` in place of `npx -y flowdesc-mcp` above (on Windows, forward slashes work in
+the Claude Code command; in the Claude Desktop JSON write the backslashes doubled).
 
 ## What it can do
 
@@ -102,9 +104,14 @@ Try asking: "What is overdue in WEB?", "Summarise what happened on WEB-12", "How
 
 ## For developers
 
-- `pnpm --filter flowdesc-mcp build` compiles to `dist/`; `src/index.ts` is the program, `src/server.ts` builds the server,
+- `pnpm --filter flowdesc-mcp build` compiles to `dist/` (used by the tests and when running from source). `pnpm --filter flowdesc-mcp bundle`
+  makes `bundle/index.js`, the single file that is published (the private contracts package is inlined; the MCP SDK and zod stay normal
+  dependencies). `src/index.ts` is the program, `src/server.ts` builds the server,
   `src/tools.ts` has the tools, `src/client.ts` the only code that talks to the network.
 - Tests: `pnpm test` runs this package's (a pretend FlowDesc API, in memory and as a real child process over stdio) and, in
   `apps/api`, a test that drives every tool against the real API and database.
 - stdout is the protocol channel: never `console.log` here, log to stderr only.
+- **Releasing** (the owner): change `version` in `apps/mcp/package.json` and commit; `git tag mcp-vX.Y.Z` (the number must equal the version);
+  `git push origin mcp-vX.Y.Z`. The workflow `.github/workflows/publish-mcp.yml` refuses a tag that does not match, runs the tests and
+  publishes with npm trusted publishing (no npm token is stored in GitHub). The very first version has to be published by hand, see the ADR.
 - Design and decisions: `docs/adr/0070-mcp-server-and-access-tokens.md`.
