@@ -50,6 +50,7 @@ None is in the repository. All live in Render's Environment page (and the provid
 - **What a token can reach:** only the GET addresses in `middleware/token-access.ts`. It is default-deny: a new route is closed to tokens until someone adds it there on purpose. Writes, `/auth`, account, token management, uploads, invitations, audit log and notifications are all closed.
 - **Revoking:** the owner revokes a token on the account (Account page, "Access tokens"); it stops working on its next request. Tokens also expire (30, 90 or 365 days).
 - **Logs:** the Authorization header is redacted by the logger (ADR 0050), and a test covers a `fd_pat_` value.
+- **The MCP server (`apps/mcp`):** reads the token from the environment, never prints it, strips it from error text, refuses a plain `http` address unless it is localhost, has no write tool, and tags every tool as read-only with a note that issue text is data. The README tells people the token is a password.
 - **Not covered:** an AI client that holds a token can be steered by text in issues and comments it reads (prompt injection); the read-only scope limits the harm to reading what its owner can read.
 
 ## Known limits, named

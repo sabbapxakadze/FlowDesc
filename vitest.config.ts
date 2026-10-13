@@ -9,6 +9,6 @@ import { defineConfig } from "vitest/config";
  */
 export default defineConfig({
   test: {
-    projects: ["apps/api", "packages/contracts", "apps/web"],
+    projects: ["apps/api", "packages/contracts", "apps/web", "apps/mcp"],
   },
 });

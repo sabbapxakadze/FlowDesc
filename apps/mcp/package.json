@@ -1,0 +1,35 @@
+{
+  "name": "flowdesc-mcp",
+  "private": true,
+  "version": "0.1.0",
+  "description": "An MCP server that lets an AI app read your FlowDesc projects and issues with a personal access token.",
+  "type": "module",
+  "main": "./dist/server.js",
+  "types": "./dist/server.d.ts",
+  "bin": {
+    "flowdesc-mcp": "./dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/server.d.ts",
+      "default": "./dist/server.js"
+    },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "default": "./dist/testing.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "dev": "tsc -b --watch --preserveWatchOutput"
+  },
+  "dependencies": {
+    "@flowdesc/contracts": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3"
+  }
+}

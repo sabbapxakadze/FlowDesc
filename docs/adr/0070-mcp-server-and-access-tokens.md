@@ -38,6 +38,17 @@ Today the API accepts only a short-lived JWT access token (`requireAuth` sets `r
 - The secret is held only in the create mutation's result, never in the list's cache, so it is gone after Done or a reload. Web only: no API change.
 - The owner checked the Copy button against the real clipboard by hand (2026-10-13).
 
+## What slice 3 did (2026-10-13)
+
+- New workspace package `apps/mcp` (name `flowdesc-mcp`, still `private`): a local stdio MCP server built on `@modelcontextprotocol/sdk` 1.32.1 (the stable line; the v2 split-package line is a beta and was not chosen). Credentials come from the environment: `FLOWDESC_TOKEN` (must start `fd_pat_`) and `FLOWDESC_URL` (default `https://flowdesc.app`; plain `http` only for localhost, so a token is never sent unencrypted to another machine).
+- Nine read-only tools, all marked `readOnlyHint` and all saying that issue text is data, not instructions: `whoami`, `list_projects`, `list_issues`, `get_issue`, `search_issues`, `get_sprints`, `get_backlog`, `get_analytics`, `get_my_work`. They take project keys and label names (the model's vocabulary) and resolve them to ids. Answers are JSON text, cut at 50,000 characters with a note on how to ask for less.
+- `src/client.ts` is the only code that touches the network. Errors become plain sentences (revoked or expired token, not allowed, rate limited, unreachable, not JSON) and the token is removed from any text that could contain it. The organization id is asked once; projects are cached for a minute.
+- Tests: 26 in `apps/mcp` against a pretend FlowDesc (in memory and as a real child process over stdio), plus `apps/api/.../mcp.http.test.ts`, which drives all tools against the real API and database: real data comes back, another organization's project and search hits are invisible, a revoked token stops every tool, and no row in any data table changes. Eight mutation checks (four on the API side in slice 1, four here: no Authorization header, token not redacted, any http host accepted, the project argument ignored) each failed a test.
+- Real run: the built `dist/index.js` was driven over stdio by the SDK's own client against the local API and the demo organization (76 issues): all nine tools returned real data and a wrong project name returned the list of real keys. The biggest answer (the backlog) was about 26,000 characters.
+- The MCP SDK could not be added to `apps/api` (pnpm linked it to a folder that does not exist, even after `--force`), so `flowdesc-mcp/testing` exports a small in-memory client helper and the API test uses that.
+- CI: the API test job now builds `flowdesc-mcp` (and with it the contracts) before the tests, because the API test imports the built package.
+- **Not done / not verified:** it has not been run inside Claude Desktop or Claude Code (the README snippets follow their docs: the Claude Code `claude mcp add ... -- command` form and the Claude Desktop JSON were read there; repeating `--env` is unverified); not published to npm (3b); the prompt-injection risk is reduced, not removed.
+
 ## Slices
 
 1. Tokens: schema + migration, create/list/revoke API, the `requireAuth` second path, tests (revoked, expired, read-only on a write, wrong organization, a token for user A never sees user B's data).

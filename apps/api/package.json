@@ -42,6 +42,7 @@
     "@types/pg": "^8.23.1",
     "@types/supertest": "^7.2.1",
     "drizzle-kit": "^0.31.10",
+    "flowdesc-mcp": "workspace:*",
     "socket.io-client": "^4.8.4",
     "supertest": "^7.2.2",
     "tsx": "^4.23.13",

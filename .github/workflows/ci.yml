@@ -72,7 +72,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @flowdesc/contracts build # the API imports the built contracts
+      - run: pnpm --filter flowdesc-mcp build # also builds the contracts: the API and the MCP tests import the built packages
       - run: pnpm test # the test setup migrates the database itself
 
   build-and-smoke:
