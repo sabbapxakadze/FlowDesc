@@ -102,3 +102,15 @@ export const tokenRateLimiter = rateLimit({
   keyGenerator: (req) => createHash("sha256").update(req.headers.authorization ?? "").digest("hex"),
   handler: tooManyRequests,
 });
+
+// Writes through a token (ADR 0074) get a much lower ceiling than reads: an AI that loops on "create issue" should be stopped long before
+// it has made hundreds. Same keying as above, counted separately (the key carries a prefix), and only for requests that are not GET.
+export const tokenWriteRateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => env.NODE_ENV === "test" || req.method === "GET" || !req.headers.authorization?.startsWith(ACCESS_TOKEN_PREFIX),
+  keyGenerator: (req) => `write:${createHash("sha256").update(req.headers.authorization ?? "").digest("hex")}`,
+  handler: tooManyRequests,
+});

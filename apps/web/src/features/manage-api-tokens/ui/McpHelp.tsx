@@ -60,12 +60,15 @@ export function McpHelp() {
         <Dialog title="Use FlowDesc from an AI app" onClose={() => setOpen(false)} className="max-w-xl">
           <div className="flex flex-col gap-4 text-sm">
             <p>
-              An access token lets an AI app such as Claude read your projects and issues, as you, through a small free program called{" "}
-              <strong>flowdesc-mcp</strong>. It can only <strong>read</strong>: it can never change or delete anything.
+              An access token lets an AI app such as Claude use your projects and issues, as you, through a small free program called{" "}
+              <strong>flowdesc-mcp</strong>. A <strong>read-only</strong> token (the default) can only look. A token with{" "}
+              <strong>write access</strong> can also create an issue, change one and add a comment, one issue at a time; changes made that way show
+              &ldquo;via token&rdquo; in the history. Neither kind can delete anything.
             </p>
             <ol className="flex list-decimal flex-col gap-3 pl-5">
               <li>
-                <strong>Create a token</strong> in the form on this page. Copy it straight away: it is shown once.
+                <strong>Create a token</strong> in the form on this page. Choose Read only unless you want the AI to make changes. Copy it straight
+                away: it is shown once.
               </li>
               <li>
                 <strong>Install Node.js</strong> (version 22 or newer) if you do not have it. The program runs on your own computer.
@@ -84,8 +87,9 @@ export function McpHelp() {
               </li>
             </ol>
             <p className="rounded-[var(--radius-control)] border border-[var(--color-border-default)] p-3 text-[var(--color-text-muted)]">
-              Treat a token like a password: anyone who has it can read your FlowDesc data until you revoke it. Issue text is written by other
-              people, and an AI app can be influenced by what it reads, so only connect apps you trust.
+              Treat a token like a password: anyone who has it can read your FlowDesc data (and change it, with write access) until you revoke
+              it. Issue text is written by other people, and an AI app can be influenced by what it reads, so only connect apps you trust, and
+              give write access only to ones you watch.
             </p>
             <p>
               More detail, other apps and troubleshooting (including Windows) are on the{" "}

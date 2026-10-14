@@ -12,6 +12,8 @@ export const issueEventSchema = z.object({
   actorName: z.string(),
   type: z.string(),
   payload: z.record(z.string(), z.unknown()),
+  // True when the change was made through a personal access token (ADR 0074). Never says which token.
+  viaToken: z.boolean(),
   createdAt: z.iso.datetime(),
 });
 

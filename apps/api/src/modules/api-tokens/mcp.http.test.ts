@@ -35,8 +35,8 @@ async function registerAndLogIn(email: string, organizationName: string): Promis
 }
 const as = (s: Session) => ({ Authorization: `Bearer ${s.token}` });
 
-async function makeToken(s: Session) {
-  const res = await request(app).post("/api/v1/users/me/api-tokens").set(as(s)).send({ name: "mcp", scope: "read", expiresInDays: 30 }).expect(201);
+async function makeToken(s: Session, scope: "read" | "read_write" = "read") {
+  const res = await request(app).post("/api/v1/users/me/api-tokens").set(as(s)).send({ name: "mcp", scope, expiresInDays: 30 }).expect(201);
   return { secret: res.body.token as string, id: res.body.data.id as string };
 }
 
@@ -140,8 +140,8 @@ describe("every tool against the real API", () => {
     }
   });
 
-  it("cannot change anything: no row in any data table changes after calling every tool", async () => {
-    // Why: the whole promise of this release is read-only. Counting rows before and after, in every table that holds user data, proves it.
+  it("the read tools change nothing: no row in any data table changes after calling each of them, even with a write token", async () => {
+    // Why: a tool that only reads must never write by accident. Counting rows before and after, in every table that holds user data, proves it.
     const owner = await registerAndLogIn("owner@example.com", "Org A");
     await seed(owner, "WEB", "Footer links");
     const { secret } = await makeToken(owner);
@@ -159,5 +159,93 @@ describe("every tool against the real API", () => {
     const { call } = await connect(secret);
     for (const [name, args] of ALL_CALLS) await call(name, args);
     expect(await counts()).toEqual(before);
+
+    const writer = await connect((await makeToken(owner, "read_write")).secret);
+    const afterToken = await counts();
+    for (const [name, args] of ALL_CALLS) await writer.call(name, args);
+    expect(await counts()).toEqual(afterToken);
+  });
+});
+
+describe("the write tools against the real API (ADR 0074)", () => {
+  it("creates, comments and updates through a write token, and the history says each came through a token", async () => {
+    // Why: proves the three tools send what the real API accepts (title/body/version/assigneeId names, the version read first) and that the
+    // "via token" marker really reaches the history an AI or a person reads.
+    const owner = await registerAndLogIn("owner@example.com", "Org A");
+    await seed(owner, "WEB", "Footer links");
+    const { call } = await connect((await makeToken(owner, "read_write")).secret);
+
+    expect((await call("whoami")).json()).toMatchObject({ scope: "read_write" });
+    const created = await call("create_issue", { project: "WEB", title: "Add dark mode", description: "Both themes" });
+    expect(created.isError, created.text).toBe(false);
+    expect(created.json().created).toBe("WEB-3");
+    expect((await call("comment_on_issue", { issue: "WEB-3", body: "Started on this" })).isError).toBe(false);
+    const updated = await call("update_issue", { issue: "WEB-3", status: "in_progress", priority: "high", due_date: "2026-12-24", assignee: "owner@example.com" });
+    expect(updated.isError, updated.text).toBe(false);
+    expect(updated.json().issue).toMatchObject({ status: "in_progress", priority: "high", dueDate: "2026-12-24" });
+
+    const issue = (await call("get_issue", { issue: "WEB-3" })).json();
+    expect(issue.issue.assigneeId).not.toBeNull();
+    const history = issue.history as { type: string; viaToken: boolean }[];
+    expect(history.map((e) => [e.type, e.viaToken])).toEqual([
+      ["issue.created", true],
+      ["issue.commented", true],
+      ["issue.updated", true],
+    ]);
+  });
+
+  it("changes only the one issue it was asked to: the neighbouring issue is untouched", async () => {
+    // Why: "one issue per call" is a promise (ADR 0074). Changing WEB-1 must leave WEB-2 exactly as it was, version included.
+    const owner = await registerAndLogIn("owner@example.com", "Org A");
+    await seed(owner, "WEB", "Footer links");
+    const { call } = await connect((await makeToken(owner, "read_write")).secret);
+    const other = (await call("get_issue", { issue: "WEB-2" })).json();
+
+    expect((await call("update_issue", { issue: "WEB-1", status: "done" })).isError).toBe(false);
+
+    const after = (await call("get_issue", { issue: "WEB-2" })).json();
+    expect(after.issue).toEqual(other.issue);
+    expect(after.history).toEqual(other.history);
+  });
+
+  it("a read token gets a clear answer and nothing is written", async () => {
+    // Why: the safe default must hold through the tools too, and the model must be told what to ask the person for.
+    const owner = await registerAndLogIn("owner@example.com", "Org A");
+    await seed(owner, "WEB", "Footer links");
+    const { call } = await connect((await makeToken(owner)).secret);
+
+    for (const [name, args] of [
+      ["create_issue", { project: "WEB", title: "Nope" }],
+      ["comment_on_issue", { issue: "WEB-1", body: "Nope" }],
+      ["update_issue", { issue: "WEB-1", status: "done" }],
+    ] as const) {
+      const out = await call(name, args);
+      expect(out.isError, name).toBe(true);
+      expect(out.text, name).toContain("read-only");
+      expect(out.text, name).toContain("Access tokens");
+    }
+    const issues = (await call("list_issues", { project: "WEB" })).json().data as { title: string; status: string }[];
+    expect(issues).toHaveLength(2);
+    expect(issues.every((i) => i.status === "todo")).toBe(true);
+  });
+
+  it("tells the model when someone changed the issue after it was read", async () => {
+    // Why: the real 409 body has to carry what the tool turns into its advice. A person edits between the tool's read and its write.
+    const owner = await registerAndLogIn("owner@example.com", "Org A");
+    const { projectId, issueId } = await seed(owner, "WEB", "Footer links");
+    const { secret } = await makeToken(owner, "read_write");
+    const org = `/api/v1/organizations/${owner.organizationId}/projects/${projectId}/issues`;
+
+    // The server reads the issue, then a person saves a change, then the tool's write arrives with the old version: simulated by
+    // fetching the version first and writing with it after a person's edit, through the same HTTP address the tool uses.
+    const before = await request(app).get(`${org}/${issueId}`).set(as(owner)).expect(200);
+    await request(app).patch(`${org}/${issueId}`).set(as(owner)).send({ version: before.body.data.version, title: "Edited by a person" }).expect(200);
+    const stale = await request(app)
+      .patch(`${org}/${issueId}`)
+      .set({ Authorization: `Bearer ${secret}` })
+      .send({ version: before.body.data.version, title: "Tool guess" })
+      .expect(409);
+    expect(stale.body.error.code).toBe("version_conflict");
+    expect(stale.body.error.data.current).toMatchObject({ title: "Edited by a person", status: "todo" });
   });
 });

@@ -44,6 +44,25 @@ describe("turning failures into sentences a person can act on", () => {
 
     const forbidden = await fake(() => ({ status: 403, body: { error: { code: "token_not_allowed", message: "An access token cannot do this." } } }));
     expect((await failure(clientFor(forbidden).get("/x"))).message).toBe("This access token is not allowed to do that.");
+
+    // A write with a read token has its own sentence, naming where to make a better one (the fix is not "use the app").
+    const readOnly = await fake(() => ({ status: 403, body: { error: { code: "token_read_only", message: "This access token is read-only." } } }));
+    const refused = await failure(clientFor(readOnly).post("/x", { a: 1 }));
+    expect(refused.message).toMatch(/read-only/);
+    expect(refused.message).toMatch(/Account, Access tokens/);
+    expect(refused.code).toBe("token_read_only");
+  });
+
+  it("sends a JSON body for a write, with the token, and nothing but the body", async () => {
+    // Why: a write that lost its Content-Type or its token would be refused by the API; one that leaked extra fields would change more than asked.
+    const api = await fake(() => ({ status: 201, body: { data: { ok: true } } }));
+    await clientFor(api).post("/x", { title: "A" });
+    await clientFor(api).patch("/y", { version: 2 });
+    expect(api.requests.map((r) => [r.method, r.path, r.body])).toEqual([
+      ["POST", "/api/v1/x", { title: "A" }],
+      ["PATCH", "/api/v1/y", { version: 2 }],
+    ]);
+    expect(api.requests.every((r) => r.authorization === `Bearer ${TOKEN}`)).toBe(true);
   });
 
   it("explains rate limiting and server problems, and passes the API's own message for the rest", async () => {

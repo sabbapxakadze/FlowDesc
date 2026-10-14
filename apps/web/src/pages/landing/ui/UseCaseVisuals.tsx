@@ -140,7 +140,7 @@ export function AiVisual() {
             </li>
           ))}
         </ul>
-        <p className="mt-2 text-xs text-[var(--color-text-muted)]">Read from FlowDesc through a read-only access token.</p>
+        <p className="mt-2 text-xs text-[var(--color-text-muted)]">Read from FlowDesc through an access token.</p>
       </div>
     </ExampleCard>
   );

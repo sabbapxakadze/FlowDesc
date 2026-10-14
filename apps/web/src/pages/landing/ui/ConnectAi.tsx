@@ -37,15 +37,17 @@ function CopyCommand() {
 }
 
 /**
- * "Use it from your AI app" (ADR 0073): FlowDesc has an MCP server, so an AI app such as Claude can read a person's projects and issues.
- * Three cards like "How it works", and only what is true today: read-only, started from the person's own computer with an access token they
- * make themselves and can revoke. Static: the command shows a placeholder, never a token, and nothing here calls the API.
+ * "Use it from your AI app" (ADR 0073, 0074): FlowDesc has an MCP server, so an AI app such as Claude can read a person's projects and issues
+ * and, with a token made for it, create an issue, change one and comment. Three cards like "How it works", and only what is true today: read
+ * only by default, one issue at a time, no deleting, started from the person's own computer with an access token they make themselves and can
+ * revoke. Static: the command shows a placeholder, never a token, and nothing here calls the API.
  */
 export function ConnectAi() {
   return (
     <section aria-labelledby="landing-ai" className="mx-auto mt-20 w-full max-w-6xl px-4 sm:mt-28 sm:px-6">
       <SectionHeading id="landing-ai" title="Use it from your AI app">
-        FlowDesc has an MCP server, so an AI app such as Claude can read your projects and issues. It only reads: it can never change anything.
+        FlowDesc has an MCP server, so an AI app such as Claude can read your projects and issues, and, if you allow it, create an issue, update one
+        and leave a comment. One issue at a time, and it can never delete anything.
       </SectionHeading>
       <ol className="mt-10 grid gap-4 md:grid-cols-3 md:gap-10">
         <li className="glass-card relative rounded-[var(--radius-card)] p-6 sm:p-7">
@@ -54,7 +56,8 @@ export function ConnectAi() {
           </span>
           <h3 className="relative mt-4 text-lg font-semibold">Make a token</h3>
           <p className="relative mt-2 text-[var(--color-text-muted)]">
-            In your account, open Access tokens and make a read-only one. It is shown once, and you can revoke it whenever you like.
+            In your account, open Access tokens and make one: read only, or with write access. It is shown once, and you can revoke it whenever you
+            like.
           </p>
           <span aria-hidden="true" className="absolute top-1/2 -right-8 hidden w-6 -translate-y-1/2 justify-center text-[var(--color-text-link)] md:flex">
             <ChevronRight size={26} />
@@ -77,12 +80,13 @@ export function ConnectAi() {
           </span>
           <h3 className="relative mt-4 text-lg font-semibold">Ask</h3>
           <p className="relative mt-2 text-[var(--color-text-muted)]">
-            &ldquo;What is overdue in WEB?&rdquo; &ldquo;What happened on WEB-12?&rdquo; &ldquo;How did our last sprints go?&rdquo;
+            &ldquo;What is overdue in WEB?&rdquo; &ldquo;What happened on WEB-12?&rdquo; Or, with write access: &ldquo;Add an issue for the broken
+            footer link.&rdquo;
           </p>
         </li>
       </ol>
       <p className="mx-auto mt-8 max-w-2xl text-center text-sm text-[var(--color-text-muted)]">
-        Read-only, and you stay in control: revoke the token and it stops at once. Works with Claude Code and Claude Desktop; setup details are on the{" "}
+        Read only unless you choose otherwise, and you stay in control: revoke the token and it stops at once. Works with Claude Code and Claude Desktop; setup details are on the{" "}
         <a href={PACKAGE_URL} target="_blank" rel="noreferrer" className={buttonVariants({ variant: "link" })}>
           flowdesc-mcp page on npm
         </a>

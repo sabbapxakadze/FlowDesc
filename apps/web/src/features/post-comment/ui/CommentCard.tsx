@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FileText, Pencil, Trash2 } from "lucide-react";
 import { inlineImageIds, type Attachment, type IssueEvent } from "@flowdesc/contracts";
-import { AttachmentLink, AttachmentThumbnail, InlineImage, issueKeys, previewKind } from "../../../entities/issue";
+import { AttachmentLink, AttachmentThumbnail, InlineImage, issueKeys, previewKind, ViaToken } from "../../../entities/issue";
 import { MentionedText, PersonName } from "../../../entities/member";
 import { Button, ErrorText, IconButton, Time } from "../../../shared/ui";
 import { formatFileSize } from "../../../shared/ui/lib/formatFileSize";
@@ -122,6 +122,7 @@ export function CommentCard({
               avatarSize="md"
             />
           </span>
+          {event.viaToken && <ViaToken />}
           <Time iso={event.createdAt} />
           {payload.edited && <span>(edited)</span>}
         </div>

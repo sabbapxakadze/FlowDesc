@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import express from "express";
 import rateLimit from "express-rate-limit";
 import request from "supertest";
-import { tokenMayCall } from "./token-access.js";
+import { tokenAccess, tokenMayCall } from "./token-access.js";
 
 const ORG = "/api/v1/organizations/11111111-1111-1111-1111-111111111111";
 const PROJECT = `${ORG}/projects/22222222-2222-2222-2222-222222222222`;
@@ -31,10 +31,52 @@ describe("which addresses a token may call (ADR 0070)", () => {
     }
   });
 
-  it("refuses every method but GET, even on an allowed address", () => {
-    // Why: this release is read-only. This is the line that keeps it so.
-    for (const method of ["POST", "PUT", "PATCH", "DELETE"]) {
-      expect(tokenMayCall(method, `${PROJECT}/issues`), method).toBe(false);
+  it("lets a read token do nothing but GET, and tells it apart from a closed address", () => {
+    // Why: read-only is the default. A write on one of the three write addresses is "read only" (the fix is a new token); anywhere else
+    // it is "not allowed" for every token.
+    const issue = `${PROJECT}/issues/33333333-3333-3333-3333-333333333333`;
+    for (const [method, path] of [
+      ["POST", `${PROJECT}/issues`],
+      ["PATCH", issue],
+      ["POST", `${issue}/comments`],
+    ] as const) {
+      expect(tokenAccess(method, path, "read"), `${method} ${path}`).toBe("read_only");
+    }
+    for (const method of ["PUT", "DELETE"]) {
+      expect(tokenAccess(method, `${PROJECT}/issues`, "read"), method).toBe("not_allowed");
+    }
+  });
+
+  it("lets a write token make an issue, change one and comment, and nothing else", () => {
+    // Why: write access is exactly three addresses (ADR 0074). Every other address and method stays closed even with write access.
+    const issue = `${PROJECT}/issues/33333333-3333-3333-3333-333333333333`;
+    for (const [method, path] of [
+      ["POST", `${PROJECT}/issues`],
+      ["POST", `${PROJECT}/issues/`],
+      ["PATCH", issue],
+      ["POST", `${issue}/comments?x=1`],
+    ] as const) {
+      expect(tokenAccess(method, path, "read_write"), `${method} ${path}`).toBe("allowed");
+    }
+    for (const [method, path] of [
+      ["DELETE", issue],
+      ["PUT", issue],
+      ["PATCH", `${issue}/move`],
+      ["PATCH", `${issue}/sprint`],
+      ["POST", `${issue}/labels`],
+      ["POST", `${issue}/attachments`],
+      ["PATCH", `${issue}/comments/44444444-4444-4444-4444-444444444444`],
+      ["DELETE", `${issue}/comments/44444444-4444-4444-4444-444444444444`],
+      ["PATCH", `${PROJECT}/issues`],
+      ["POST", issue],
+      ["POST", `${ORG}/projects`],
+      ["PATCH", PROJECT],
+      ["DELETE", PROJECT],
+      ["POST", `${ORG}/invitations`],
+      ["POST", "/api/v1/users/me/api-tokens"],
+      ["POST", `/evil${PROJECT}/issues`],
+    ] as const) {
+      expect(tokenAccess(method, path, "read_write"), `${method} ${path}`).toBe("not_allowed");
     }
   });
 

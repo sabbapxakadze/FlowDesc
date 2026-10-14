@@ -1,6 +1,6 @@
 # 0070 - An MCP server and personal access tokens
 
-Status: **Accepted. Slice 1 (tokens, API only) built** - 2026-10-13; the rest is not built. Builds on ADR 0050 (logs never carry credentials), ADR 0044 (demo guard) and ADR 0027 (audit log).
+Status: **Accepted. Slices 1 to 3b built** (2026-10-13); the write tools (slice 4) are decided and built in ADR 0074 (2026-10-14). Builds on ADR 0050 (logs never carry credentials), ADR 0044 (demo guard) and ADR 0027 (audit log).
 
 ## Context
 

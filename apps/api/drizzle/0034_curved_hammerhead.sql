@@ -1,0 +1,2 @@
+ALTER TABLE "issue_events" ADD COLUMN "via_api_token_id" uuid;--> statement-breakpoint
+ALTER TABLE "issue_events" ADD CONSTRAINT "issue_events_via_api_token_id_api_tokens_id_fk" FOREIGN KEY ("via_api_token_id") REFERENCES "public"."api_tokens"("id") ON DELETE set null ON UPDATE no action;

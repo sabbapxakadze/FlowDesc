@@ -173,7 +173,7 @@ export function buildTourSteps(projectKey: string | undefined): TourStep[] {
       target: "mcp-status",
       placement: "right",
       title: "Use it from an AI app",
-      body: "MCP lets an AI app such as Claude read your projects and issues, as you. This dot is green while one is using your access token and grey when none is. It can only read, never change anything.",
+      body: "MCP lets an AI app such as Claude use your projects and issues, as you. This dot is green while one is using your access token and grey when none is. A read-only token can only look; one with write access can also create, change and comment.",
     },
     {
       id: "access-tokens",

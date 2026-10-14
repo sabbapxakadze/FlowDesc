@@ -20,6 +20,12 @@ const LIFETIMES: readonly { value: Lifetime; label: string }[] = [
   { value: "365", label: "1 year" },
 ];
 
+type Access = CreateApiTokenRequest["scope"];
+const ACCESS: readonly { value: Access; label: string }[] = [
+  { value: "read", label: "Read only" },
+  { value: "read_write", label: "Read and write" },
+];
+
 /** Active, revoked or past its date. Kept out of the component so reading the clock is not part of rendering. */
 function stateOf(token: ApiToken): "active" | "revoked" | "expired" {
   if (token.revokedAt) return "revoked";
@@ -27,8 +33,8 @@ function stateOf(token: ApiToken): "active" | "revoked" | "expired" {
 }
 
 /**
- * Personal access tokens (ADR 0070): a long secret a person gives to an AI app so it can read their FlowDesc data as them, read-only
- * for now. The secret is shown once, right after it is made, and lives only in this component's mutation result: it is never put in
+ * Personal access tokens (ADR 0070, 0074): a long secret a person gives to an AI app so it can use their FlowDesc data as them: read only
+ * (the default), or also create an issue, change one and comment. The secret is shown once, right after it is made, and lives only in this component's mutation result: it is never put in
  * the list's cache or in storage, so leaving the page loses it (the server keeps only a hash and could not show it again anyway).
  * A demo copy has no tokens (the server refuses them), so it gets a note instead of a form.
  */
@@ -45,6 +51,7 @@ function TokensPanel() {
   const queryClient = useQueryClient();
   const tokens = useApiTokens();
   const [lifetime, setLifetime] = useState<Lifetime>("90");
+  const [access, setAccess] = useState<Access>("read");
   const [copied, setCopied] = useState(false);
   const {
     register,
@@ -61,6 +68,7 @@ function TokensPanel() {
     mutationFn: (data: CreateApiTokenRequest) => apiPost("/v1/users/me/api-tokens", data, createApiTokenResponseSchema),
     onSuccess: () => {
       reset();
+      setAccess("read"); // the safe choice is always where the next token starts
       setCopied(false);
       void queryClient.invalidateQueries({ queryKey: apiTokenKeys.list });
     },
@@ -79,8 +87,9 @@ function TokensPanel() {
   return (
     <div className="flex flex-col gap-5">
       <p className="text-sm text-[var(--color-text-muted)]">
-        A token lets an AI app (for example through the FlowDesc MCP server, coming next) read your projects and issues as you. Treat it like a
-        password. It can only read for now: it can never change anything, and it cannot manage your account.
+        A token lets an AI app (through the FlowDesc MCP server) use your projects and issues as you. Treat it like a password. A read-only token
+        can only look. A token with write access can also create issues, change them and add comments, one issue at a time. Neither can delete
+        anything or manage your account.
       </p>
 
       {created ? (
@@ -107,12 +116,24 @@ function TokensPanel() {
         </div>
       ) : (
         <form
-          onSubmit={handleSubmit((data) => create.mutate({ ...data, expiresInDays: Number(lifetime) as CreateApiTokenRequest["expiresInDays"] }))}
+          onSubmit={handleSubmit((data) =>
+            create.mutate({ ...data, scope: access, expiresInDays: Number(lifetime) as CreateApiTokenRequest["expiresInDays"] }),
+          )}
           className="flex max-w-md flex-col gap-3"
         >
           <Field label="Token name" error={errors.name?.message}>
             <Input placeholder="Claude on my laptop" autoComplete="off" {...register("name")} aria-invalid={errors.name ? true : undefined} />
           </Field>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-sm font-medium">Access</span>
+            <SegmentedControl label="Access" value={access} onChange={setAccess} options={ACCESS} />
+          </div>
+          {access === "read_write" && (
+            <p role="note" className="text-sm text-[var(--color-text-muted)]">
+              The AI app will be able to create issues, change them and add comments as you, one issue at a time, and the history will say
+              &ldquo;via token&rdquo;. It still cannot delete anything. Your AI app may ask you to approve each change; check its settings.
+            </p>
+          )}
           <div className="flex flex-wrap items-center gap-3">
             <span className="text-sm font-medium">Expires in</span>
             <SegmentedControl label="Expires in" value={lifetime} onChange={setLifetime} options={LIFETIMES} />
@@ -162,7 +183,7 @@ function TokenRow({ token }: { token: ApiToken }) {
         <div className="min-w-0">
           <p className="truncate font-medium">{token.name}</p>
           <p className="text-xs text-[var(--color-text-muted)]">
-            Read-only · created <Time iso={token.createdAt} /> ·{" "}
+            {token.scope === "read_write" ? "Read and write" : "Read-only"} · created <Time iso={token.createdAt} /> ·{" "}
             {token.lastUsedAt ? (
               <>
                 last used <Time iso={token.lastUsedAt} />

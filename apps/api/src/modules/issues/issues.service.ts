@@ -65,6 +65,8 @@ export async function createIssue(input: {
   title: string;
   description: string | null;
   reporterId: string;
+  /** The personal access token this request came in with, if any (ADR 0074). */
+  viaApiTokenId?: string;
 }) {
   await assertDemoHasRoomForIssue(input.organizationId); // a demo copy is capped (ADR 0044)
   const pictures = await checkedDescriptionImages({
@@ -130,6 +132,8 @@ export async function updateIssue(input: {
     assigneeId: string | null;
   }>;
   actorId: string;
+  /** The personal access token this request came in with, if any (ADR 0074). */
+  viaApiTokenId?: string;
 }) {
   // An assignee must belong to THIS organization. No foreign key can say so
   // (the link is through organization_members), and the id arrives from the
@@ -264,7 +268,14 @@ async function checkedInlineImages(input: {
   return ids;
 }
 
-export async function addComment(input: { organizationId: string; issueId: string; authorId: string; body: string }) {
+export async function addComment(input: {
+  organizationId: string;
+  issueId: string;
+  authorId: string;
+  body: string;
+  /** The personal access token this request came in with, if any (ADR 0074). */
+  viaApiTokenId?: string;
+}) {
   const inlineImages = await checkedInlineImages({
     organizationId: input.organizationId,
     issueId: input.issueId,
@@ -277,6 +288,7 @@ export async function addComment(input: { organizationId: string; issueId: strin
     body: input.body,
     mentionedUserIds: await mentionedMembers(input.organizationId, input.body),
     inlineImageIds: inlineImages,
+    viaApiTokenId: input.viaApiTokenId,
   });
   broadcastIssueCommented(input.issueId);
   broadcastNotifications(notifiedUserIds);

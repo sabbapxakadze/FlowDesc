@@ -3,9 +3,9 @@ import request from "supertest";
 import { eq } from "drizzle-orm";
 import { app } from "../../app.js";
 import { db } from "../../db/client.js";
-import { apiTokens, organizations } from "../../db/schema/index.js";
+import { apiTokens, issueEvents, organizationMembers, organizations, users } from "../../db/schema/index.js";
 import { resetDatabase } from "../../db/test-utils.js";
-import { hashToken } from "../auth/tokens.js";
+import { hashToken, signAccessToken } from "../auth/tokens.js";
 
 /**
  * Personal access tokens (ADR 0070), over real HTTP and the real database. Each test says what it protects.
@@ -26,8 +26,13 @@ const as = (s: Session) => ({ Authorization: `Bearer ${s.token}` });
 const bearer = (token: string) => ({ Authorization: `Bearer ${token}` });
 const org = (s: Session) => `/api/v1/organizations/${s.organizationId}`;
 
-async function makeToken(s: Session, name = "Claude on my laptop", expiresInDays: 30 | 90 | 365 = 90) {
-  const res = await request(app).post("/api/v1/users/me/api-tokens").set(as(s)).send({ name, scope: "read", expiresInDays }).expect(201);
+async function makeToken(
+  s: Session,
+  name = "Claude on my laptop",
+  expiresInDays: 30 | 90 | 365 = 90,
+  scope: "read" | "read_write" = "read",
+) {
+  const res = await request(app).post("/api/v1/users/me/api-tokens").set(as(s)).send({ name, scope, expiresInDays }).expect(201);
   return { token: res.body.token as string, id: res.body.data.id as string, body: res.body };
 }
 
@@ -59,13 +64,26 @@ describe("making and listing tokens", () => {
     expect(list.body.data[0]).not.toHaveProperty("tokenHash");
   });
 
-  it("refuses a bad request: no name, a scope that does not exist yet, an odd lifetime", async () => {
-    // Why: only "read" may be created until write tools exist, so nobody holds a token whose scope promises more than the server does.
+  it("refuses a bad request: no name, a scope that does not exist, an odd lifetime", async () => {
+    // Why: only the two real scopes may be created, so nobody holds a token whose scope means something the server does not know.
     const owner = await registerAndLogIn("owner@example.com", "Org A");
     const post = (body: object) => request(app).post("/api/v1/users/me/api-tokens").set(as(owner)).send(body);
     await post({ name: "  ", scope: "read", expiresInDays: 90 }).expect(400);
-    await post({ name: "x", scope: "read_write", expiresInDays: 90 }).expect(400);
+    await post({ name: "x", scope: "admin", expiresInDays: 90 }).expect(400);
     await post({ name: "x", scope: "read", expiresInDays: 9999 }).expect(400);
+  });
+
+  it("makes a token with write access only when asked, and the list says which is which", async () => {
+    // Why: write access is opt-in (ADR 0074). A token made with "read" must never be able to write.
+    const owner = await registerAndLogIn("owner@example.com", "Org A");
+    const writer = await makeToken(owner, "can write", 90, "read_write");
+    await makeToken(owner, "reads only");
+    expect(writer.body.data.scope).toBe("read_write");
+    const list = await request(app).get("/api/v1/users/me/api-tokens").set(as(owner)).expect(200);
+    expect(Object.fromEntries(list.body.data.map((t: { name: string; scope: string }) => [t.name, t.scope]))).toEqual({
+      "can write": "read_write",
+      "reads only": "read",
+    });
   });
 
   it("stops at 20 active tokens, and a revoked one frees a place", async () => {
@@ -157,6 +175,13 @@ describe("using a token", () => {
     const res = await request(app).get("/api/v1/users/me/context").set(bearer(token)).expect(200);
     expect(res.body.data.organization).toMatchObject({ id: owner.organizationId, name: "Org A", role: "owner" });
     expect(res.body.data.user).toMatchObject({ id: owner.userId, email: "owner@example.com" });
+    expect(res.body.data.scope).toBe("read");
+    const writer = await makeToken(owner, "writer", 90, "read_write");
+    const asWriter = await request(app).get("/api/v1/users/me/context").set(bearer(writer.token)).expect(200);
+    expect(asWriter.body.data.scope).toBe("read_write");
+    // A signed-in session has no token scope.
+    const asSession = await request(app).get("/api/v1/users/me/context").set(as(owner)).expect(200);
+    expect(asSession.body.data.scope).toBeNull();
   });
 
   it("cannot reach another organization", async () => {
@@ -179,23 +204,27 @@ describe("using a token", () => {
     await request(app).get(`${org(owner)}/projects`).set(bearer("fd_pat_")).expect(401);
   });
 
-  it("can only read: every write is refused, and the data is unchanged", async () => {
-    // Why: this release is read-only (ADR 0070), whatever route is tried.
+  it("a read token cannot write: the three write addresses say it is read-only, the rest say not allowed, and the data is unchanged", async () => {
+    // Why: read-only is the default and the safe choice (ADR 0074). A token made with "read" must never change anything, whatever route is tried.
     const owner = await registerAndLogIn("owner@example.com", "Org A");
     const projectId = await makeProject(owner);
     const { token } = await makeToken(owner);
+    const issues = `${org(owner)}/projects/${projectId}/issues`;
+    const someIssue = `${issues}/33333333-3333-3333-3333-333333333333`;
 
-    const created = await request(app)
-      .post(`${org(owner)}/projects/${projectId}/issues`)
-      .set(bearer(token))
-      .send({ title: "From a token" })
-      .expect(403);
-    expect(created.body.error.code).toBe("token_not_allowed");
-    await request(app).post(`${org(owner)}/projects`).set(bearer(token)).send({ name: "Other", key: "OTH" }).expect(403);
+    const created = await request(app).post(issues).set(bearer(token)).send({ title: "From a token" }).expect(403);
+    expect(created.body.error.code).toBe("token_read_only");
+    const changed = await request(app).patch(someIssue).set(bearer(token)).send({ version: 1, title: "x" }).expect(403);
+    expect(changed.body.error.code).toBe("token_read_only");
+    const commented = await request(app).post(`${someIssue}/comments`).set(bearer(token)).send({ body: "hi" }).expect(403);
+    expect(commented.body.error.code).toBe("token_read_only");
+
+    const other = await request(app).post(`${org(owner)}/projects`).set(bearer(token)).send({ name: "Other", key: "OTH" }).expect(403);
+    expect(other.body.error.code).toBe("token_not_allowed");
     await request(app).delete(`${org(owner)}/projects/${projectId}`).set(bearer(token)).expect(403);
 
-    const issues = await request(app).get(`${org(owner)}/projects/${projectId}/issues`).set(as(owner)).expect(200);
-    expect(issues.body.data).toEqual([]);
+    const after = await request(app).get(issues).set(as(owner)).expect(200);
+    expect(after.body.data).toEqual([]);
   });
 
   it("is kept away from accounts, tokens and the audit log", async () => {
@@ -225,5 +254,124 @@ describe("using a token", () => {
     const owner = await registerAndLogIn("owner@example.com", "Org A");
     await request(app).get("/api/v1/users/me/account").set(as(owner)).expect(200);
     await request(app).get(`${org(owner)}/audit-events`).set(as(owner)).expect(200);
+  });
+});
+
+describe("a token with write access (ADR 0074)", () => {
+  async function setup() {
+    const owner = await registerAndLogIn("owner@example.com", "Org A");
+    const projectId = await makeProject(owner);
+    const { token } = await makeToken(owner, "writer", 90, "read_write");
+    return { owner, projectId, token, issues: `${org(owner)}/projects/${projectId}/issues` };
+  }
+
+  it("creates an issue, changes it and comments, as its owner, and the timeline says each was made through a token", async () => {
+    // Why: the whole slice. And "via token" must come from the server, in the same transaction as the change, not from the client.
+    const { owner, token, issues } = await setup();
+
+    const created = await request(app).post(issues).set(bearer(token)).send({ title: "Made by an AI", description: "Details" }).expect(201);
+    const issue = created.body.data as { id: string; version: number; reporterId: string };
+    expect(issue.reporterId).toBe(owner.userId);
+
+    const updated = await request(app)
+      .patch(`${issues}/${issue.id}`)
+      .set(bearer(token))
+      .send({ version: issue.version, status: "in_progress", priority: "high" })
+      .expect(200);
+    expect(updated.body.data).toMatchObject({ status: "in_progress", priority: "high" });
+
+    await request(app).post(`${issues}/${issue.id}/comments`).set(bearer(token)).send({ body: "Looking at it" }).expect(201);
+    // Written by the owner at the keyboard, for comparison.
+    await request(app).post(`${issues}/${issue.id}/comments`).set(as(owner)).send({ body: "By hand" }).expect(201);
+
+    const events = await request(app).get(`${issues}/${issue.id}/events`).set(as(owner)).expect(200);
+    const seen = events.body.data.map((e: { type: string; viaToken: boolean; actorId: string }) => [e.type, e.viaToken, e.actorId === owner.userId]);
+    expect(seen).toEqual([
+      ["issue.created", true, true],
+      ["issue.updated", true, true],
+      ["issue.commented", true, true],
+      ["issue.commented", false, true],
+    ]);
+    // The read model never says which token.
+    expect(JSON.stringify(events.body)).not.toContain("viaApiTokenId");
+  });
+
+  it("keeps the marker off changes made from the app", async () => {
+    // Why: otherwise "via token" would mean nothing. A session's own events must read false.
+    const { owner, issues } = await setup();
+    const created = await request(app).post(issues).set(as(owner)).send({ title: "By hand" }).expect(201);
+    const events = await request(app).get(`${issues}/${created.body.data.id}/events`).set(as(owner)).expect(200);
+    expect(events.body.data.map((e: { viaToken: boolean }) => e.viaToken)).toEqual([false]);
+    const rows = await db.select().from(issueEvents);
+    expect(rows.every((row) => row.viaApiTokenId === null)).toBe(true);
+  });
+
+  it("answers a stale version with a conflict and the current issue, and changes nothing", async () => {
+    // Why: an AI must not silently overwrite what someone changed since it read the issue (same check as the app).
+    const { owner, token, issues } = await setup();
+    const created = await request(app).post(issues).set(as(owner)).send({ title: "Original" }).expect(201);
+    const issue = created.body.data as { id: string; version: number };
+    await request(app).patch(`${issues}/${issue.id}`).set(as(owner)).send({ version: issue.version, title: "Changed by a person" }).expect(200);
+
+    const res = await request(app).patch(`${issues}/${issue.id}`).set(bearer(token)).send({ version: issue.version, title: "AI guess" }).expect(409);
+    expect(res.body.error.code).toBe("version_conflict");
+    expect(res.body.error.data.current.title).toBe("Changed by a person");
+    const now = await request(app).get(`${issues}/${issue.id}`).set(as(owner)).expect(200);
+    expect(now.body.data.title).toBe("Changed by a person");
+  });
+
+  it("still cannot do anything else: no delete, move, sprint, label, file, comment edit or project change", async () => {
+    // Why: write access is exactly three addresses. Everything destructive or structural stays closed even to a token that may write.
+    const { owner, projectId, token, issues } = await setup();
+    const created = await request(app).post(issues).set(as(owner)).send({ title: "Keep me" }).expect(201);
+    const issue = created.body.data as { id: string; version: number };
+    const comment = await request(app).post(`${issues}/${issue.id}/comments`).set(as(owner)).send({ body: "Mine" }).expect(201);
+    const call = (method: "post" | "patch" | "delete", path: string) => request(app)[method](path).set(bearer(token));
+
+    for (const [method, path] of [
+      ["delete", `${issues}/${issue.id}`],
+      ["patch", `${issues}/${issue.id}/move`],
+      ["patch", `${issues}/${issue.id}/sprint`],
+      ["post", `${issues}/${issue.id}/labels`],
+      ["post", `${issues}/${issue.id}/attachments`],
+      ["patch", `${issues}/${issue.id}/comments/${comment.body.data.id}`],
+      ["delete", `${issues}/${issue.id}/comments/${comment.body.data.id}`],
+      ["post", `${org(owner)}/projects`],
+      ["patch", `${org(owner)}/projects/${projectId}`],
+      ["delete", `${org(owner)}/projects/${projectId}`],
+      ["post", `${org(owner)}/projects/${projectId}/sprints`],
+      ["post", `${org(owner)}/labels`],
+      ["post", `${org(owner)}/invitations`],
+    ] as const) {
+      const res = await call(method, path).send({ version: 1, status: "done" });
+      expect(res.status, `${method} ${path}`).toBe(403);
+      expect(res.body.error.code, `${method} ${path}`).toBe("token_not_allowed");
+    }
+
+    const after = await request(app).get(`${issues}/${issue.id}`).set(as(owner)).expect(200);
+    expect(after.body.data).toMatchObject({ title: "Keep me", status: "todo", version: issue.version });
+  });
+
+  it("still obeys its owner's role: a viewer's write token cannot write", async () => {
+    // Why: a token is only as strong as its owner. Being on the write list must not lift a viewer above what a viewer may do.
+    const { owner, issues } = await setup();
+    const [viewer] = await db.insert(users).values({ email: "viewer@example.com", passwordHash: "x", name: "Viewer" }).returning();
+    await db.insert(organizationMembers).values({ organizationId: owner.organizationId, userId: viewer!.id, role: "viewer" });
+    const session: Session = { token: signAccessToken(viewer!.id), organizationId: owner.organizationId, userId: viewer!.id };
+    const { token } = await makeToken(session, "viewer writer", 90, "read_write");
+
+    await request(app).get(issues).set(bearer(token)).expect(200);
+    await request(app).post(issues).set(bearer(token)).send({ title: "Not allowed" }).expect(403);
+    const after = await request(app).get(issues).set(as(owner)).expect(200);
+    expect(after.body.data).toEqual([]);
+  });
+
+  it("stops working for writes the moment it is revoked", async () => {
+    // Why: revoking is the brake, and it has to cover writing too.
+    const { owner, token, issues } = await setup();
+    const list = await request(app).get("/api/v1/users/me/api-tokens").set(as(owner)).expect(200);
+    await request(app).post(issues).set(bearer(token)).send({ title: "First" }).expect(201);
+    await request(app).delete(`/api/v1/users/me/api-tokens/${list.body.data[0].id}`).set(as(owner)).expect(204);
+    await request(app).post(issues).set(bearer(token)).send({ title: "Second" }).expect(401);
   });
 });

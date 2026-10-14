@@ -1,8 +1,9 @@
 # flowdesc-mcp
 
 An [MCP](https://modelcontextprotocol.io) server that lets an AI app (Claude Code, Claude Desktop and others) **read** your
-FlowDesc projects and issues. It runs on your own computer, talks to FlowDesc with a personal access token, and **cannot change
-anything**: every tool is read-only, and the FlowDesc API itself refuses writes from a token.
+FlowDesc projects and issues and, if you allow it, **create an issue, change one and comment**. It runs on your own computer and talks to
+FlowDesc with a personal access token. A token is **read-only unless you make it with write access**, a write changes **one issue at a
+time**, and nothing can **delete** anything: the FlowDesc API itself enforces all of this, not only this program.
 
 > Needs Node.js 22 or newer (tested on Node 24; 22 is not tested). MIT licence (this package only; the rest of the FlowDesc repository
 > has its own LICENSE). Start it with `npx -y flowdesc-mcp` (published on npm, with a provenance record that links each version to its
@@ -10,8 +11,8 @@ anything**: every tool is read-only, and the FlowDesc API itself refuses writes 
 
 ## 1. Get a token
 
-In FlowDesc open **Account**, then **Access tokens**, give it a name (for example "Claude on my laptop"), choose how long it lasts,
-and press **Create token**. Copy the secret (it starts with `fd_pat_`). It is shown **once**: FlowDesc keeps only a hash, so it cannot
+In FlowDesc open **Account**, then **Access tokens**, give it a name (for example "Claude on my laptop"), choose **Read only** (the default) or
+**Read and write**, choose how long it lasts, and press **Create token**. Copy the secret (it starts with `fd_pat_`). It is shown **once**: FlowDesc keeps only a hash, so it cannot
 show it again. Treat it like a password. You can revoke it on the same page at any time; it stops working immediately.
 
 ## 2. Connect your AI app
@@ -64,7 +65,7 @@ the Claude Code command; in the Claude Desktop JSON write the backslashes double
 
 ## What it can do
 
-Nine tools, all read-only:
+Twelve tools: nine only read, and three (the last three in the table) change one issue at a time and need a token with write access.
 
 | Tool | Answers |
 | --- | --- |
@@ -77,19 +78,23 @@ Nine tools, all read-only:
 | `get_backlog` | The backlog in order and the active sprint's issues. |
 | `get_analytics` | Throughput, cycle time, sprint velocity, or the status and label breakdown. |
 | `get_my_work` | Your open assigned issues, or how this week's due issues are going. |
+| `create_issue` | **Write.** Makes one issue in a project (status todo), with an optional description. |
+| `comment_on_issue` | **Write.** Adds one comment to one issue (`WEB-12`). |
+| `update_issue` | **Write.** Changes one issue: title, description, status, priority, due date, assignee (`me`, `unassigned`, an email or a full name). Version-checked: if someone changed the issue after it was read, nothing is saved and the answer says what it is now. |
 
-Try asking: "What is overdue in WEB?", "Summarise what happened on WEB-12", "How did our last sprints go?".
+Try asking: "What is overdue in WEB?", "Summarise what happened on WEB-12", "How did our last sprints go?". With a write token: "Add an issue to WEB for the broken footer link", "Move WEB-12 to in progress and assign it to me".
 
 ## Safety, plainly
 
-- **Read-only.** There is no tool that writes, and a token is refused on every write address by the FlowDesc API (not only here).
+- **Read-only is the default.** A token made with "Read only" is refused on every write address by the FlowDesc API (not only here). Write access is a choice you make when you create the token, and the token's scope never changes afterwards.
+- **Writes are small.** Three tools, one issue per call (no tool takes a list), a limit of 30 writes a minute per token, and no deleting, moving between sprints, labels, files, members or account changes. Everything a write makes or changes shows "via token" in the issue's history, and your AI app may ask you to approve each call (check its settings).
 - **It sees what you see.** A token acts as its owner and never gets more than their role; it cannot reach other organizations.
 - **Issue text is other people's text.** Titles, descriptions and comments can contain instructions aimed at an AI ("ignore your
-  rules and..."). The tools say that this is data, and read-only limits the harm (the worst case is that it reads something you could
-  read), but a model can still be steered by what it reads. Do not give a token to an AI app you do not trust.
+  rules and..."). The tools say that this is data. With a read-only token the worst case is that it reads something you could read; with write access it
+  could be steered into creating or changing an issue, so give write access only to apps you trust and watch.
 - **The token stays on your machine.** It is passed through the environment, never printed, and removed from any error message.
-  Anyone who has it can read your FlowDesc data until you revoke it, so do not paste it into chats or commit it.
-- The token's limits: it works for the time you chose (30 days, 90 days or a year), and each token may make 120 requests a minute.
+  Anyone who has it can read your FlowDesc data (and change it, with write access) until you revoke it, so do not paste it into chats or commit it.
+- The token's limits: it works for the time you chose (30 days, 90 days or a year), and each token may make 120 requests a minute, of which 30 can be writes.
 
 ## Troubleshooting
 
@@ -100,6 +105,8 @@ Try asking: "What is overdue in WEB?", "Summarise what happened on WEB-12", "How
 | `rejected the access token` | Wrong, revoked or expired. Create a new one on the Account page. |
 | `Could not reach FlowDesc` | Wrong `FLOWDESC_URL`, or no connection. |
 | `No project "X". Projects you can see: ...` | Use one of the listed keys. |
+| `This access token is read-only` | A write tool was used with a read-only token. Make a new token with **Read and write** (Account, Access tokens). |
+| `Someone changed this issue after it was read` | `update_issue` saved nothing because the issue changed in between. Read it again and decide. |
 | `Cut: the answer was N characters` | The answer was long. Ask for less: a smaller limit, a filter, the next page. |
 
 ## For developers

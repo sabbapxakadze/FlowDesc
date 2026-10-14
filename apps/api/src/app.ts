@@ -21,7 +21,7 @@ import { auditRouter } from "./modules/audit/audit.routes.js";
 import { profilesRouter } from "./modules/profiles/profiles.routes.js";
 import { myWorkRouter } from "./modules/my-work/my-work.routes.js";
 import { apiTokensRouter } from "./modules/api-tokens/api-tokens.routes.js";
-import { tokenRateLimiter } from "./middleware/rate-limit.js";
+import { tokenRateLimiter, tokenWriteRateLimiter } from "./middleware/rate-limit.js";
 
 /**
  * Split from index.ts so tests can exercise the real middleware chain
@@ -41,6 +41,7 @@ if (webApp) applySecurityHeaders(app, { html: webApp.html, appUrl: env.APP_URL }
 app.use(requestLogger);
 app.use(express.json());
 app.use("/api/v1", tokenRateLimiter);
+app.use("/api/v1", tokenWriteRateLimiter);
 app.use(cookieParser());
 
 // Health check is intentionally unversioned — it's infrastructure, not API

@@ -38,7 +38,7 @@ describe("the server as a child process", () => {
     closers.push(() => client.close());
 
     const { tools } = await client.listTools();
-    expect(tools).toHaveLength(9);
+    expect(tools).toHaveLength(12);
     const result = await client.callTool({ name: "whoami", arguments: {} });
     expect((result.content as { text: string }[])[0]!.text).toContain("Olivia Owner");
     expect(api.requests[0]!.authorization).toBe(`Bearer ${TOKEN}`);

@@ -54,6 +54,8 @@ function ActivityRow({ item, person }: { item: ProfileActivityItem; person: Prof
     actorName: person.name,
     type: item.type,
     payload: item.payload,
+    // The profile feed does not carry the "via token" marker (and does not show it), so it is simply not set here.
+    viaToken: false,
     createdAt: item.createdAt,
   };
   const { Icon, color } = eventStyle(event);

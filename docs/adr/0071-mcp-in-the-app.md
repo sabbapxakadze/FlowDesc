@@ -28,3 +28,7 @@ Status: **Accepted, built** - 2026-10-14. Builds on ADR 0070 (the MCP server and
 ## Amended 2026-10-14 (ADR 0073)
 
 The landing page's screenshots are taken with a freshly used token, so the MCP dot is green in them.
+
+## Amended 2026-10-14 (ADR 0074)
+
+The Access tokens form now offers **Read only** (default) and **Read and write**, the help dialog and the first tutorial step no longer say a token can only read, and the token list says which scope each token has. The pill is unchanged (it only looks at use, not at scope).

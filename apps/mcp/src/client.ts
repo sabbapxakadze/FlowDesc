@@ -54,6 +54,20 @@ export class FlowDescClient {
 
   /** GET `/api/v1` + path. Returns the parsed JSON body; anything else is a FlowDescError with a sentence a person can act on. */
   async get<T>(path: string, query: Query = {}): Promise<T> {
+    return this.send<T>("GET", path, query);
+  }
+
+  /** POST a JSON body (create an issue, add a comment). Needs a token made with write access. */
+  async post<T>(path: string, body: unknown): Promise<T> {
+    return this.send<T>("POST", path, {}, body);
+  }
+
+  /** PATCH a JSON body (change an issue). Needs a token made with write access. */
+  async patch<T>(path: string, body: unknown): Promise<T> {
+    return this.send<T>("PATCH", path, {}, body);
+  }
+
+  private async send<T>(method: "GET" | "POST" | "PATCH", path: string, query: Query, body?: unknown): Promise<T> {
     const url = new URL(`${this.baseUrl}/api/v1${path}`);
     for (const [key, value] of Object.entries(query)) {
       if (value === undefined) continue;
@@ -63,7 +77,13 @@ export class FlowDescClient {
     let response: Response;
     try {
       response = await this.fetchImpl(url, {
-        headers: { Authorization: `Bearer ${this.token}`, Accept: "application/json" },
+        method,
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+          Accept: "application/json",
+          ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+        },
+        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
         signal: AbortSignal.timeout(this.timeoutMs),
       });
     } catch (err) {
@@ -76,22 +96,22 @@ export class FlowDescClient {
     }
 
     const text = await response.text();
-    let body: unknown;
+    let answer: unknown;
     try {
-      body = text ? JSON.parse(text) : undefined;
+      answer = text ? JSON.parse(text) : undefined;
     } catch {
-      body = undefined;
+      answer = undefined;
     }
 
-    if (!response.ok) throw this.errorFor(response.status, body);
-    if (body === undefined) {
+    if (!response.ok) throw this.errorFor(response.status, answer);
+    if (answer === undefined) {
       throw new FlowDescError("FlowDesc answered with something that is not JSON. Check that FLOWDESC_URL points at FlowDesc.", response.status);
     }
-    return body as T;
+    return answer as T;
   }
 
   private errorFor(status: number, body: unknown): FlowDescError {
-    const error = (body as { error?: { code?: unknown; message?: unknown } } | undefined)?.error;
+    const error = (body as { error?: { code?: unknown; message?: unknown; data?: { current?: unknown } } } | undefined)?.error;
     const code = typeof error?.code === "string" ? error.code : undefined;
     const apiMessage = typeof error?.message === "string" ? this.redact(error.message) : undefined;
 
@@ -102,8 +122,27 @@ export class FlowDescClient {
         code,
       );
     }
+    if (status === 403 && code === "token_read_only") {
+      return new FlowDescError(
+        "This access token is read-only, so it cannot create or change anything. The person can make a token with write access in FlowDesc (Account, Access tokens) and update FLOWDESC_TOKEN.",
+        status,
+        code,
+      );
+    }
     if (status === 403 && code === "token_not_allowed") {
       return new FlowDescError("This access token is not allowed to do that.", status, code);
+    }
+    if (status === 409 && code === "version_conflict") {
+      // The API hands back the issue as it is now, so the model can decide whether its change still makes sense.
+      const current = error?.data?.current as Record<string, unknown> | undefined;
+      const now = current
+        ? ` It is now: ${JSON.stringify({ title: current.title, status: current.status, priority: current.priority, dueDate: current.dueDate, assigneeId: current.assigneeId })}.`
+        : "";
+      return new FlowDescError(
+        `Someone changed this issue after it was read, so nothing was saved.${now} Read it again with get_issue and decide whether the change is still right.`,
+        status,
+        code,
+      );
     }
     if (status === 429) {
       return new FlowDescError("FlowDesc is limiting this token (too many requests). Wait a minute and try again.", status, code);

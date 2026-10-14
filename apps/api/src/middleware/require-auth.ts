@@ -3,7 +3,7 @@ import { API_TOKEN_PREFIX } from "@flowdesc/contracts";
 import * as apiTokensRepository from "../modules/api-tokens/api-tokens.repository.js";
 import { hashToken, verifyAccessToken } from "../modules/auth/tokens.js";
 import { AppError } from "../shared/errors.js";
-import { tokenMayCall } from "./token-access.js";
+import { tokenAccess } from "./token-access.js";
 
 /**
  * "Who is making this request" — nothing about what they're allowed to
@@ -26,7 +26,11 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
     // Not found covers unknown, revoked and expired alike, and says nothing about which.
     const found = await apiTokensRepository.findUsableByHash(hashToken(token), now);
     if (!found) throw new AppError("unauthenticated", 401, "Invalid, revoked or expired access token.");
-    if (!tokenMayCall(req.method, req.originalUrl)) {
+    const access = tokenAccess(req.method, req.originalUrl, found.scope);
+    if (access === "read_only") {
+      throw new AppError("token_read_only", 403, "This access token is read-only. Make one with write access (Account, Access tokens).");
+    }
+    if (access === "not_allowed") {
       throw new AppError("token_not_allowed", 403, "An access token cannot do this. Use the app instead.");
     }
     await apiTokensRepository.touch(found.id, now);

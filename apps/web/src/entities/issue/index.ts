@@ -23,6 +23,7 @@ export { IssueCard } from "./ui/IssueCard";
 export { IssueRow } from "./ui/IssueRow";
 export { IssueSectionHeader } from "./ui/IssueSectionHeader";
 export { IssueSummary } from "./ui/IssueSummary";
+export { ViaToken } from "./ui/ViaToken";
 export { IssueCardFrame, IssueCardContent } from "./ui/IssueCardFace";
 export { SortableIssueCard } from "./ui/SortableIssueCard";
 export { AttachmentList } from "./ui/AttachmentList";

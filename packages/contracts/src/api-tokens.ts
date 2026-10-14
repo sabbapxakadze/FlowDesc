@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 /**
- * Personal access tokens (ADR 0070): what a person creates on their account to let an AI app (through the MCP server) read their
- * FlowDesc data. Only "read" can be created for now; "read_write" is added with the write tools.
+ * Personal access tokens (ADR 0070): what a person creates on their account to let an AI app (through the MCP server) use their
+ * FlowDesc data. "read" (the default) can only read; "read_write" may also create an issue, change one and comment (ADR 0074).
  */
 export const API_TOKEN_PREFIX = "fd_pat_";
 export const API_TOKEN_MAX_ACTIVE = 20;
@@ -10,7 +10,7 @@ export const API_TOKEN_LIFETIMES_DAYS = [30, 90, 365] as const;
 
 export const createApiTokenRequestSchema = z.object({
   name: z.string().trim().min(1, "Give the token a name.").max(80, "Use 80 characters or fewer."),
-  scope: z.literal("read"),
+  scope: z.enum(["read", "read_write"]),
   expiresInDays: z.union([z.literal(30), z.literal(90), z.literal(365)]),
 });
 export type CreateApiTokenRequest = z.infer<typeof createApiTokenRequestSchema>;
@@ -37,6 +37,8 @@ export type CreateApiTokenResponse = z.infer<typeof createApiTokenResponseSchema
 /** Who a token acts as and in which organization: the first thing a client asks, since the organization id is in every address. */
 export const tokenContextResponseSchema = z.object({
   data: z.object({
+    // Only meaningful when the request came in with a token; a signed-in session has no scope.
+    scope: z.enum(["read", "read_write"]).nullable(),
     user: z.object({ id: z.uuid(), name: z.string(), email: z.string() }),
     organization: z.object({ id: z.uuid(), name: z.string(), role: z.enum(["owner", "admin", "member", "viewer"]) }),
   }),

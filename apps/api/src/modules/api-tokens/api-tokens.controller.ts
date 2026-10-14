@@ -37,5 +37,6 @@ export async function revoke(req: Request, res: Response) {
 }
 
 export async function context(req: Request, res: Response) {
-  res.json({ data: await service.context(requireUser(req)) });
+  // `scope` is what the token in use may do (the MCP server shows it in whoami); null for a signed-in session.
+  res.json({ data: { ...(await service.context(requireUser(req))), scope: req.auth?.token?.scope ?? null } });
 }

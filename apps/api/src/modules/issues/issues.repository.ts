@@ -443,7 +443,7 @@ async function computeBisectedRank(
  */
 export async function writeIssueEvent(
   tx: Tx,
-  input: { issueId: string; actorId: string; type: string; payload: Record<string, unknown> },
+  input: { issueId: string; actorId: string; type: string; payload: Record<string, unknown>; viaApiTokenId?: string },
   options: { notify?: boolean; alsoNotifyUserIds?: string[]; notifyOnly?: string[] } = {},
 ): Promise<string[]> {
   const [event] = await tx.insert(issueEvents).values(input).returning({ id: issueEvents.id });
@@ -497,6 +497,8 @@ export async function createWithNotified(input: {
   mentionedUserIds?: string[];
   /** Draft pictures of this project the description shows: they become this issue's files. */
   inlineImageIds?: string[];
+  /** Set when the issue is made through a personal access token (ADR 0074): the created event says so. */
+  viaApiTokenId?: string;
 }) {
   return db.transaction(async (tx) => {
     const [updated] = await tx
@@ -543,6 +545,7 @@ export async function createWithNotified(input: {
         actorId: input.reporterId,
         type: "issue.created",
         payload: mentioned.length > 0 ? { title: issue.title, mentions: mentioned } : { title: issue.title },
+        viaApiTokenId: input.viaApiTokenId,
       },
       { alsoNotifyUserIds: mentioned },
     );
@@ -593,6 +596,8 @@ export async function update(input: {
   /** Draft pictures a CHANGED description shows (already checked by the service): they become this issue's files. */
   inlineImageIds?: string[];
   actorId: string;
+  /** Set when the change is made through a personal access token (ADR 0074): the updated event says so. */
+  viaApiTokenId?: string;
 }): Promise<
   | { status: "updated"; issue: typeof issues.$inferSelect; notifiedUserIds: string[] }
   | { status: "conflict"; current: typeof issues.$inferSelect }
@@ -658,6 +663,7 @@ export async function update(input: {
         {
           issueId: updated.id,
           actorId: input.actorId,
+          viaApiTokenId: input.viaApiTokenId,
           type: "issue.updated",
           // The assignee's name only travels with a real assignee change; `mentions` lists the people this edit's description newly mentions.
           payload: {
@@ -911,6 +917,8 @@ export async function addComment(input: {
   mentionedUserIds?: string[];
   /** Pictures the body shows (already checked by the service): linked to the comment in this same transaction (ADR 0062). */
   inlineImageIds?: string[];
+  /** Set when the comment is made through a personal access token (ADR 0074): the commented event says so. */
+  viaApiTokenId?: string;
 }) {
   return db.transaction(async (tx) => {
     const [comment] = await tx
@@ -929,6 +937,7 @@ export async function addComment(input: {
         actorId: input.authorId,
         type: "issue.commented",
         payload: { commentId: comment.id, body: comment.body, mentions: mentioned },
+        viaApiTokenId: input.viaApiTokenId,
       },
       { alsoNotifyUserIds: mentioned },
     );
@@ -1133,6 +1142,7 @@ export async function listEvents(organizationId: string, issueId: string) {
       actorName: users.name,
       type: issueEvents.type,
       payload: issueEvents.payload,
+      viaToken: sql<boolean>`${issueEvents.viaApiTokenId} IS NOT NULL`,
       createdAt: issueEvents.createdAt,
       commentRowId: comments.id,
       commentBody: comments.body,

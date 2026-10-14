@@ -220,13 +220,13 @@ test("the page says how it looks when shared, and the files for search engines a
 
 test("the Ask your AI way of working shows a drawn example, labelled as one", async ({ page }) => {
   // Why: the fifth tab (ADR 0073) shows a conversation that is drawn, not real; it must say so ("Example"), like the other pictures, and the
-  // words next to it must not promise more than the package does (it only reads).
+  // words next to it must not promise more than the package does (it can write, but only one issue at a time and never delete).
   await page.goto("/");
   const tabs = page.getByRole("list", { name: "Ways of working" });
   await tabs.getByRole("button", { name: "Ask your AI" }).click();
   await expect(tabs.getByRole("button", { name: "Ask your AI" })).toHaveAttribute("aria-pressed", "true");
   const open = page.getByRole("heading", { level: 3, name: "Ask your AI" }).locator("xpath=ancestor::div[2]");
-  await expect(open).toContainText("it can never change anything");
+  await expect(open).toContainText("It can never delete anything");
   await expect(open.getByText(/^Example: a question to an AI app/)).toBeVisible();
   await expect(open.getByText("What is overdue in WEB?")).toBeVisible();
 });

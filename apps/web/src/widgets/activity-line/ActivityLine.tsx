@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { IssueEvent } from "@flowdesc/contracts";
-import { describeEvent } from "../../entities/issue";
+import { describeEvent, ViaToken } from "../../entities/issue";
 import { PersonName } from "../../entities/member";
 import { formatDueDate, todayKey } from "../../shared/lib/dueDate";
 import {
@@ -169,6 +169,11 @@ export function ActivityLine({
       </span>
       <span className="min-w-0 flex-1">
         <PersonName organizationId={organizationId} userId={event.actorId} name={event.actorName} />{" "}
+        {event.viaToken && (
+          <>
+            <ViaToken />{" "}
+          </>
+        )}
         {parts.map((part, i) => (
           <span key={i}>
             {i > 0 && ", "}

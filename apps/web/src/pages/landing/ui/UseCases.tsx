@@ -38,7 +38,7 @@ const CASES: { id: string; title: string; text: string; Icon: LucideIcon; Visual
   {
     id: "ai",
     title: "Ask your AI",
-    text: "Connect an AI app such as Claude and ask about your projects in plain words. It reads your issues, sprints and numbers as you, and it can never change anything.",
+    text: "Connect an AI app such as Claude and ask about your projects in plain words. It reads your issues, sprints and numbers as you and, if you allow it, adds issues and comments. It can never delete anything.",
     Icon: Bot,
     Visual: AiVisual,
   },

@@ -138,6 +138,7 @@ export async function createIssue(req: Request, res: Response) {
     title: parsed.data.title,
     description: parsed.data.description ?? null,
     reporterId: req.ctx.userId,
+    viaApiTokenId: req.auth?.token?.id,
   });
 
   const body = createIssueResponseSchema.parse({ data: toWireFormat(issue) });
@@ -167,6 +168,7 @@ export async function updateIssue(req: Request, res: Response) {
     expectedVersion: version,
     changes,
     actorId: req.ctx.userId,
+    viaApiTokenId: req.auth?.token?.id,
   });
 
   if (result.status === "invalid_assignee") {
@@ -264,6 +266,7 @@ export async function createComment(req: Request, res: Response) {
     issueId: req.ctx.issueId,
     authorId: req.ctx.userId,
     body: parsed.data.body,
+    viaApiTokenId: req.auth?.token?.id,
   });
 
   const body = createCommentResponseSchema.parse({ data: toWireFormat(comment) });
