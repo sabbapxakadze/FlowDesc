@@ -1,4 +1,7 @@
 import type { IssueEvent } from "@flowdesc/contracts";
+
+/** What the sentences are written from. Not the whole event: a notification carries the same fields without `viaToken` (ADR 0074), and the sentence never mentions it. */
+type EventForSentence = Omit<IssueEvent, "viaToken">;
 import { PRIORITY_LABELS, STATUS_LABELS } from "../../../shared/ui";
 
 /**
@@ -13,7 +16,7 @@ import { PRIORITY_LABELS, STATUS_LABELS } from "../../../shared/ui";
  * (ADR 0033), a description that does reads "mentioned you in the description" (ADR 0063). Everyone else, and every other event, reads as
  * describeEvent does.
  */
-export function describeEventFor(event: IssueEvent, viewerId: string | undefined): string {
+export function describeEventFor(event: EventForSentence, viewerId: string | undefined): string {
   if (
     viewerId &&
     (event.type === "issue.commented" || event.type === "issue.comment_edited") &&
@@ -34,7 +37,7 @@ export function describeEventFor(event: IssueEvent, viewerId: string | undefined
   return describeEvent(event);
 }
 
-export function describeEvent(event: IssueEvent): string {
+export function describeEvent(event: EventForSentence): string {
   switch (event.type) {
     case "issue.created":
       return "created this issue";

@@ -11,7 +11,9 @@ import { issueEventSchema } from "./issue-event.js";
  */
 export const notificationSchema = z.object({
   id: z.uuid(),
-  event: issueEventSchema,
+  // Without `viaToken` (ADR 0074): the feed does not show it and the notifications read does not select it. Requiring it here made this
+  // endpoint answer 500, because the controller checks its own response against this schema.
+  event: issueEventSchema.omit({ viaToken: true }),
   issueId: z.uuid(),
   issueTitle: z.string(),
   issueNumber: z.number(),
