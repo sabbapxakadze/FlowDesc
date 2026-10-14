@@ -21,3 +21,4 @@ export * from "./oauth.js";
 export * from "./demo.js";
 export * from "./comment-markdown.js";
 export * from "./api-tokens.js";
+export * from "./bug-report.js";

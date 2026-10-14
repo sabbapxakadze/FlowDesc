@@ -72,6 +72,9 @@ export default defineConfig({
         // A dummy key: registration still calls Resend, which rejects it, and
         // the API only logs that. Nothing is ever delivered from a test.
         RESEND_API_KEY: "e2e-dummy-key",
+        // Nothing is sent: a message is only logged and counts as sent, so "Report a bug" (ADR 0075), which must tell the person when a send fails,
+        // can be tried end to end. That also means no browser test proves a real email arrives; that is checked by hand on the live site.
+        EMAIL_DRIVER: "log",
       },
     },
     {

@@ -27,20 +27,38 @@ function withFrame(body: string): string {
 </div>`;
 }
 
-async function sendEmail(input: { to: string; subject: string; html: string }): Promise<void> {
+/**
+ * Sends one email and says whether it was accepted. A failed send is logged, not thrown — see the callers in auth.service.ts for why
+ * (registration/reset-request shouldn't fail just because the email provider had a bad moment); a caller that must not lose the message
+ * (a bug report, ADR 0075) reads the answer. With EMAIL_DRIVER=log nothing is sent: the message is only logged (development and the
+ * browser tests, which have no real provider key).
+ */
+async function sendEmail(input: {
+  to: string;
+  subject: string;
+  html: string;
+  replyTo?: string;
+  attachments?: { filename: string; content: Buffer }[];
+}): Promise<boolean> {
+  if (env.EMAIL_DRIVER === "log") {
+    logger.info({ to: input.to, subject: input.subject, attachments: input.attachments?.map((a) => a.filename) ?? [] }, "email not sent (EMAIL_DRIVER=log)");
+    return true;
+  }
+
   const { error } = await resend.emails.send({
     from: env.EMAIL_FROM,
     to: input.to,
     subject: input.subject,
     html: withFrame(input.html),
+    ...(input.replyTo ? { replyTo: input.replyTo } : {}),
+    ...(input.attachments?.length ? { attachments: input.attachments } : {}),
   });
 
   if (error) {
-    // A failed send is logged, not thrown — see the callers in
-    // auth.service.ts for why (registration/reset-request shouldn't fail
-    // just because the email provider had a bad moment).
     logger.error({ err: error, to: input.to }, "failed to send email");
+    return false;
   }
+  return true;
 }
 
 export async function sendVerificationEmail(to: string, token: string): Promise<void> {
@@ -117,5 +135,30 @@ export async function sendPasswordResetEmail(to: string, token: string): Promise
     to,
     subject: "Reset your FlowDesc password",
     html: `<p>Someone requested a password reset for this FlowDesc account. If that was you:</p><p><a href="${link}">Reset password</a></p><p>This link expires in 1 hour. If you didn't request this, you can ignore this email.</p>`,
+  });
+}
+
+/**
+ * A bug report for the owner (ADR 0075). The reporter's name and address come from the database, not the form; the person's own text and the page they were on
+ * are escaped. Reply-To is the reporter, so answering is just replying. Returns false when the provider refused it.
+ */
+export async function sendBugReportEmail(input: {
+  to: string;
+  reporter: { name: string; email: string; organizationName: string };
+  description: string;
+  page?: string;
+  viewport?: string;
+  userAgent?: string;
+  attachments: { filename: string; content: Buffer }[];
+}): Promise<boolean> {
+  const line = (label: string, value: string | undefined) => (value ? `<tr><td style="padding:2px 12px 2px 0;color:#777777">${label}</td><td style="padding:2px 0">${escapeHtml(value)}</td></tr>` : "");
+  const firstLine = input.description.split(/\r?\n/)[0]!.slice(0, 60);
+  return sendEmail({
+    to: input.to,
+    replyTo: input.reporter.email,
+    // One line, whatever the name or the text contained: a line break in a subject must never become a new header.
+    subject: `Bug report from ${input.reporter.name}: ${firstLine}`.replace(/[\r\n]+/g, " "),
+    attachments: input.attachments,
+    html: `<p style="margin:0 0 6px"><strong>Bug report</strong></p><p style="white-space:pre-wrap;margin:0 0 16px">${escapeHtml(input.description)}</p><table role="presentation" cellpadding="0" cellspacing="0" style="font-size:13px">${line("From", `${input.reporter.name} <${input.reporter.email}>`)}${line("Organization", input.reporter.organizationName)}${line("Page", input.page)}${line("Window", input.viewport)}${line("Browser", input.userAgent)}${line("Screenshots", String(input.attachments.length))}</table>`,
   });
 }

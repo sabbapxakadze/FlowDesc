@@ -21,6 +21,7 @@ import { auditRouter } from "./modules/audit/audit.routes.js";
 import { profilesRouter } from "./modules/profiles/profiles.routes.js";
 import { myWorkRouter } from "./modules/my-work/my-work.routes.js";
 import { apiTokensRouter } from "./modules/api-tokens/api-tokens.routes.js";
+import { bugReportsRouter } from "./modules/bug-reports/bug-reports.routes.js";
 import { tokenRateLimiter, tokenWriteRateLimiter } from "./middleware/rate-limit.js";
 
 /**
@@ -61,6 +62,7 @@ app.use("/api/v1", auditRouter);
 app.use("/api/v1", profilesRouter);
 app.use("/api/v1", myWorkRouter);
 app.use("/api/v1", apiTokensRouter);
+app.use("/api/v1", bugReportsRouter);
 
 // An address under /api that no route answered is a JSON 404, never the web app's page (the page's fallback skips /api too).
 app.use("/api", (_req, _res, next) => next(new AppError("not_found", 404, "No such API route.")));

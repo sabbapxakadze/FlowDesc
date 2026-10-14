@@ -19,6 +19,11 @@ const envSchema = z.object({
     .min(32, "JWT_SECRET must be at least 32 characters — this signs every access token"),
   RESEND_API_KEY: z.string().min(1, "RESEND_API_KEY is required to send verification/reset emails"),
   EMAIL_FROM: z.email("EMAIL_FROM must be a real email address"),
+  // "log" sends nothing: each message is only written to the log (development, and the browser tests that have no real provider key). Anything
+  // else (the default) sends through the provider.
+  EMAIL_DRIVER: z.enum(["resend", "log"]).default("resend"),
+  // Where a "Report a bug" email (ADR 0075) goes. Defaults to EMAIL_FROM, which on the live site is support@flowdesc.app and is forwarded to the owner.
+  BUG_REPORT_TO: z.email("BUG_REPORT_TO must be a real email address").optional(),
   // The *frontend's* origin — verification/reset emails link back to the
   // web app (/verify-email, /reset-password), not the API.
   APP_URL: z.url("APP_URL must be a full URL, e.g. http://localhost:5173"),

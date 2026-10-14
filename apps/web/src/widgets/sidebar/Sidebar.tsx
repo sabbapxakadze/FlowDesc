@@ -8,6 +8,7 @@ import { isUuid, personPath, projectPath } from "../../shared/lib/paths";
 import { useSearchPalette } from "../../shared/search-palette/useSearchPalette";
 import { TourButton } from "../../features/app-tour";
 import { McpStatus } from "../../features/mcp-status";
+import { ReportBug } from "../../features/report-bug";
 import { Avatar, cn, LogoMark, Skeleton, ThemeSwitch } from "../../shared/ui";
 
 const LINK =
@@ -166,7 +167,10 @@ export function Sidebar({ actions }: { actions?: ReactNode }) {
           <div data-tour="theme-switch">
             <ThemeSwitch variant="sidebar" />
           </div>
-          <McpStatus />
+          <div className="flex items-center gap-1.5">
+            <McpStatus />
+            <ReportBug />
+          </div>
         </div>
         {user && (
           <div className="flex items-center justify-between gap-2 px-2.5 pt-2 text-sm">

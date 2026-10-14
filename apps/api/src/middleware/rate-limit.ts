@@ -114,3 +114,15 @@ export const tokenWriteRateLimiter = rateLimit({
   keyGenerator: (req) => `write:${createHash("sha256").update(req.headers.authorization ?? "").digest("hex")}`,
   handler: tooManyRequests,
 });
+
+// "Report a bug" sends an email to the owner with up to three pictures (ADR 0075): five an hour per signed-in person. Keyed by the person, so it's
+// independent of the proxy setup; it runs after requireAuth, which is what sets req.auth.
+export const bugReportRateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: skipInTest,
+  keyGenerator: (req) => `bug-report:${req.auth?.userId ?? "anonymous"}`,
+  handler: tooManyRequests,
+});
