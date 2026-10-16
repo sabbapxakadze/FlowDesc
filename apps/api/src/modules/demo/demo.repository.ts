@@ -1,6 +1,6 @@
 import { and, count, eq, gt, inArray, isNotNull, lt } from "drizzle-orm";
 import { db } from "../../db/client.js";
-import { issues, organizationMembers, organizations, users } from "../../db/schema/index.js";
+import { demoStarts, issues, organizationMembers, organizations, users } from "../../db/schema/index.js";
 
 /**
  * Deletes every demo organization whose time is up, and the people made for it (ADR 0044). The organization goes first: deleting it
@@ -36,6 +36,11 @@ export async function countLiveDemos(now: Date): Promise<number> {
     .from(organizations)
     .where(and(isNotNull(organizations.demoExpiresAt), gt(organizations.demoExpiresAt, now)));
   return row?.total ?? 0;
+}
+
+/** One row per click on "Try the demo" (ADR 0076): nothing personal, and it outlives the copy. */
+export async function recordStart(outcome: "started" | "busy"): Promise<void> {
+  await db.insert(demoStarts).values({ outcome });
 }
 
 export async function isDemoOrganization(organizationId: string): Promise<boolean> {

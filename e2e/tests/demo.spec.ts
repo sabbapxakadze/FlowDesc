@@ -8,6 +8,26 @@ import { test, expect } from "../support/fixtures";
 
 const TOUR_CARD = "[data-tour-card]";
 
+test("the demo bar has a get-in-touch link to the same address as the landing page, and fits a phone", async ({ page }) => {
+  // Why: people inside the demo are the people the owner wants to hear from (ADR 0076). The link must go to the address the landing page shows,
+  // not a copy that can drift, and the longer bar must not run off the side of a phone.
+  await page.goto("/");
+  const landingEmail = await page.getByRole("link", { name: /@/ }).first().getAttribute("href");
+  await page.getByRole("button", { name: "Try the demo" }).first().click();
+  const bar = page.getByTestId("demo-bar");
+  await expect(bar).toContainText("This is a demo with sample data");
+  const touch = bar.getByRole("link", { name: "Built by Saba. Get in touch" });
+  await expect(touch).toHaveAttribute("href", /^mailto:[^?]+\?subject=FlowDesc%20demo$/);
+  expect(await touch.getAttribute("href")).toContain(landingEmail!.replace("mailto:", ""));
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const box = await bar.boundingBox();
+  const link = await touch.boundingBox();
+  expect(box!.x + box!.width).toBeLessThanOrEqual(390);
+  expect(link!.x + link!.width).toBeLessThanOrEqual(390 - 8); // inside the screen, with its padding
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
 test("the landing page offers the demo and says it is deleted", async ({ page }) => {
   // Why: the button must be there (the server says the demo is on), and the visitor must be told up front that the copy does not last.
   await page.goto("/");

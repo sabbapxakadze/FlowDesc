@@ -23,7 +23,7 @@ const pool = new pg.Pool({ connectionString, max: 2 });
 /** Same table list as the API tests' resetDatabase (apps/api/src/db/test-utils.ts). */
 export async function resetDatabase() {
   await pool.query(
-    "TRUNCATE TABLE organizations, projects, users, organization_members, sessions, auth_tokens, issues, issue_events, labels, issue_labels, comments, sprints, notifications, attachments, invitations, audit_events, oauth_identities RESTART IDENTITY CASCADE",
+    "TRUNCATE TABLE organizations, projects, users, organization_members, sessions, auth_tokens, issues, issue_events, labels, issue_labels, comments, sprints, notifications, attachments, invitations, audit_events, oauth_identities, demo_starts RESTART IDENTITY CASCADE",
   );
 }
 

@@ -5,7 +5,7 @@ import { app } from "../../app.js";
 import { env } from "../../config/env.js";
 import { db } from "../../db/client.js";
 import { resetDatabase } from "../../db/test-utils.js";
-import { organizations, users } from "../../db/schema/index.js";
+import { demoStarts, organizations, users } from "../../db/schema/index.js";
 import * as demoRepository from "./demo.repository.js";
 
 /**
@@ -38,6 +38,47 @@ async function firstProject(d: Demo) {
   const res = await request(app).get(`${base(d)}/projects`).set(as(d)).expect(200);
   return res.body.data[0] as { id: string };
 }
+
+describe("demo: counting starts (ADR 0076)", () => {
+  const rows = () => db.select().from(demoStarts);
+
+  it("writes one row per start, with nothing personal in it, and keeps it after the copy is deleted", async () => {
+    // Why: this is the only record of how many demos there were, since each copy is deleted. It must outlive the clean-up and hold no email,
+    // address, user or organization (the copy is gone, and the row must stay harmless).
+    const first = await startDemo();
+    await startDemo();
+    expect((await rows()).map((r) => r.outcome)).toEqual(["started", "started"]);
+    expect(Object.keys((await rows())[0]!).sort()).toEqual(["createdAt", "id", "outcome"]);
+
+    await db.update(organizations).set({ demoExpiresAt: new Date(Date.now() - 60_000) }).where(eq(organizations.id, first.organizationId));
+    await startDemo(); // the clean-up removes the expired copy
+    expect(await db.select().from(organizations)).toHaveLength(2);
+    expect(await rows()).toHaveLength(3);
+  });
+
+  it("counts a refusal because the demo is busy, separately", async () => {
+    // Why: "busy" tells the owner people were turned away, which a count of started demos alone would hide.
+    env.DEMO_MAX_ACTIVE = 1;
+    await startDemo();
+    await request(app).post("/api/v1/demo/start").expect(503);
+    expect((await rows()).map((r) => r.outcome).sort()).toEqual(["busy", "started"]);
+  });
+
+  it("counts nothing when the demo is switched off", async () => {
+    // Why: nobody tried a demo, so there is nothing to count.
+    env.DEMO_ENABLED = undefined;
+    await request(app).post("/api/v1/demo/start").expect(404);
+    expect(await rows()).toHaveLength(0);
+  });
+
+  it("never stops a demo because the count could not be written", async () => {
+    // Why: a statistic is not worth a broken front door. If the table is unreachable, the visitor still gets their demo.
+    vi.spyOn(demoRepository, "recordStart").mockRejectedValue(new Error("the table is gone"));
+    const demo = await startDemo();
+    expect(demo.token).toBeTruthy();
+    expect(await rows()).toHaveLength(0);
+  });
+});
 
 describe("demo: switching it on and off", () => {
   it("says whether the demo is offered, and for how long a copy lives", async () => {

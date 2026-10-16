@@ -1,8 +1,5 @@
 import { Mail, Phone, type LucideIcon } from "lucide-react";
-
-const EMAIL = "phkhakadze.saba49@gmail.com";
-const PHONE_SHOWN = "+995 591917297";
-const PHONE_LINK = "tel:+995591917297";
+import { CONTACT_EMAIL as EMAIL, CONTACT_PHONE_LINK as PHONE_LINK, CONTACT_PHONE_SHOWN as PHONE_SHOWN } from "../../../shared/lib/contact";
 
 const CONTACTS: { label: string; value: string; href: string; Icon: LucideIcon }[] = [
   { label: "Email", value: EMAIL, href: `mailto:${EMAIL}`, Icon: Mail },

@@ -4,7 +4,8 @@ import { formatTimeLeft } from "../../entities/demo";
 import { useEnterDemo } from "../../features/try-demo";
 import { useAuth } from "../../shared/auth/useAuth";
 import { useTimezone } from "../../shared/lib/timezone";
-import { Button } from "../../shared/ui";
+import { CONTACT_EMAIL } from "../../shared/lib/contact";
+import { Button, buttonVariants } from "../../shared/ui";
 
 /**
  * A slim bar at the top of the app for someone inside a "Try the demo" copy (ADR 0044), and nothing for a real organization: it says the data
@@ -53,6 +54,12 @@ function Countdown({ expiresAt }: { expiresAt: number }) {
             </Button>
           </>
         )}
+        <a
+          href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("FlowDesc demo")}`}
+          className={buttonVariants({ variant: "link" })}
+        >
+          Built by Saba. Get in touch
+        </a>
       </div>
     </div>
   );
