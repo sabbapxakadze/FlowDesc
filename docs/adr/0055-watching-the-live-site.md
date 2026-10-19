@@ -26,3 +26,15 @@ A run of either workflow by the SCHEDULE (the owner ran both by hand on 2026-10-
 ## What needs the owner
 
 `DATABASE_URL` and `BACKUP_PASSPHRASE` as repository secrets and one manual run of the backup; a Sentry account (free) and its DSN as `SENTRY_DSN` in Render, if error tracking is wanted; passphrase kept in a password manager.
+
+## Amended 2026-10-19: a keep-alive Worker was added
+
+The decision against keep-alive pings (decision 2 above, and ADR 0049) no longer holds. The owner added a **Cloudflare Worker** (in the Cloudflare dashboard, not in this repository) that sends a request to the site **every 10 minutes**, so the free Render server stays awake and a visitor does not wait for it to start. The owner reports that the site is always up and that people no longer wait for a cold start.
+
+What this changes and what it does not:
+
+- **The daily GitHub check stays.** It is the read-only smoke check (headers, private endpoints, no leaked files); the Worker only keeps the server awake and says nothing about whether the site is correct.
+- **The cost the old decision named is real:** a server awake all month uses Render's free instance hours. About 744 hours is one server for 31 days; whether that fits the free allowance, and whether anything else in the workspace uses hours, was **not checked** (the owner should read Render's usage page). If the hours run out, Render suspends the service until the month resets.
+- **The database is not kept awake.** The health check deliberately does not touch Neon (render.yaml), so Neon's free database can still go to sleep; the owner reports it wakes fast enough that nobody notices. That is an observation, not a measurement.
+- **Not checked from this repository:** which address the Worker requests, its Cloudflare setup, and that it really runs every 10 minutes. This section records the owner's description. The one live request made while writing it (a health check answered 200 in about 0.4 s, the home page in 0.13 s) fits an awake server and proves nothing about "always".
+- Render's own limit for an idle free service is, from memory, 15 minutes, so a request every 10 minutes is inside it. Not verified.

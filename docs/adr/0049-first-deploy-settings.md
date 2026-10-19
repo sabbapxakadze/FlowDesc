@@ -40,3 +40,7 @@ The service is live on Render's free plan at `https://flowdesk-yotg.onrender.com
 ## Not verified
 
 Everything about Render itself: that its native build handles this pnpm workspace and `corepack enable`, the build's memory use on 512 MB, how its proxy forwards `X-Forwarded-For`, and how Neon behaves when it wakes. Of the list above, the first deploy settled: the native pnpm build, the connection to Neon (TLS, `channel_binding`), the migrations on Neon and `RENDER_EXTERNAL_URL`. Still open: the build's memory use on 512 MB under a larger bundle, how Render's proxy forwards `X-Forwarded-For` (the rate limits depend on it, `TRUST_PROXY=1`), and what a cold start after sleep and Neon's wake do to the first request.
+
+## Amended 2026-10-19
+
+The first deploy used no keep-alive pings. The owner has since added a Cloudflare Worker that requests the site every 10 minutes so the free server stays awake; see the amendment in ADR 0055 for what that changes and what was not checked.
