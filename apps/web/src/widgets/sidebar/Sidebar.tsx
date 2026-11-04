@@ -1,11 +1,12 @@
 import type { ReactNode } from "react";
-import { LogOut, Search } from "lucide-react";
+import { LogOut, Search, Sparkles } from "lucide-react";
 import { Link, NavLink, useMatch } from "react-router";
 import { useProjects } from "../../entities/project";
 import { useMembers, useMyRole } from "../../entities/member";
 import { useAuth } from "../../shared/auth/useAuth";
 import { isUuid, personPath, projectPath } from "../../shared/lib/paths";
 import { useSearchPalette } from "../../shared/search-palette/useSearchPalette";
+import { useAsk, useAskEnabled } from "../../features/ask-flowdesc";
 import { TourButton } from "../../features/app-tour";
 import { McpStatus } from "../../features/mcp-status";
 import { ReportBug } from "../../features/report-bug";
@@ -76,6 +77,8 @@ export function Sidebar({ actions }: { actions?: ReactNode }) {
   const currentProjectRef = useMatch("/projects/:projectKey/*")?.params.projectKey;
   const onIssuePage = useMatch("/projects/:projectKey/issues/*") !== null;
   const { setOpen: setSearchOpen } = useSearchPalette();
+  const ask = useAsk();
+  const askEnabled = useAskEnabled();
   const role = useMyRole(organization?.id ?? "");
   // Name and photo come from the member list, so an edit shows here without logging in again.
   const { data: members } = useMembers(organization?.id ?? "");
@@ -116,6 +119,21 @@ export function Sidebar({ actions }: { actions?: ReactNode }) {
           </span>
           <kbd className="text-xs opacity-70">Ctrl K</kbd>
         </button>
+        {askEnabled && (
+          <button
+            type="button"
+            data-tour="ask"
+            // The panel treats a click on this as "not outside" (this button toggles it), and a phone's menu drawer closes when it is pressed.
+            data-panel-trigger
+            data-closes-drawer
+            aria-expanded={ask.open}
+            onClick={() => ask.setOpen((current) => !current)}
+            className={cn(LINK, "w-full gap-2 text-left", ask.open && LINK_ACTIVE)}
+          >
+            <Sparkles aria-hidden className="h-4 w-4" />
+            Ask FlowDesc
+          </button>
+        )}
         <SideLink to="/labels">Labels</SideLink>
         <SideLink to="/members">Members</SideLink>
         {canManageProject && <SideLink to="/audit-log">Audit log</SideLink>}

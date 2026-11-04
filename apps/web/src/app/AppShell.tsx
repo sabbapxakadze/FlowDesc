@@ -2,6 +2,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { Menu, X } from "lucide-react";
 import { Outlet, useLocation } from "react-router";
 import { FirstTour } from "../features/app-tour";
+import { AskPanel, AskProvider } from "../features/ask-flowdesc";
 import { useAuth } from "../shared/auth/useAuth";
 import { IconButton, LogoMark } from "../shared/ui";
 import { DemoBar } from "../widgets/demo-bar";
@@ -49,10 +50,12 @@ function useIsDesktop(): boolean {
  */
 export function AppShell() {
   return (
-    <>
+    // The Ask chat lives here, above the layout: the sidebar's row opens it and the panel shows it, and it ends when the shell goes (sign-out).
+    <AskProvider>
       <FirstTour />
       <AppShellLayout />
-    </>
+      <AskPanel />
+    </AskProvider>
   );
 }
 
@@ -117,9 +120,9 @@ function AppShellLayout() {
           role="dialog"
           aria-modal="true"
           aria-label="Navigation"
-          // A click on any link inside the drawer navigates, so close it.
+          // A click on any link inside the drawer navigates, so close it (so does the row that opens the Ask panel).
           onClick={(e) => {
-            if ((e.target as HTMLElement).closest("a")) setDrawerOpen(false);
+            if ((e.target as HTMLElement).closest("a, [data-closes-drawer]")) setDrawerOpen(false);
           }}
         >
           <div className="absolute inset-0 bg-black/50" onClick={() => setDrawerOpen(false)} />
