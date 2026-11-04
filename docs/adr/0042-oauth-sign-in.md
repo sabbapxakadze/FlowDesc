@@ -60,3 +60,7 @@ Verified by tests: every row of the decision table, the state checks (missing co
 - Starting the flow with a plain link (`GET .../start`): cannot carry the access token for "connect".
 - A table for pending attempts: the signed cookie needs no cleanup and no storage.
 - A library such as Passport: the flow is small, and each provider call is explicit and testable here.
+
+## Amended 2026-10-19: Testing mode does not limit sign-in here
+
+The note above ("Google runs in Testing mode, so only named test users can sign in") was written before the rule was researched, and it is wrong for this app. Google's page on the app audience (https://support.google.com/cloud/answer/15549945) says that basic sign-in scopes (name, email, profile, OpenID Connect) need no test-user listing, show no warning and do not expire; the test-user list, the cap of 100 and the 7-day expiry apply to other scopes. FlowDesc asks only for `openid email profile` (`apps/api/src/lib/oauth/google.ts`), and the owner reports that Google and GitHub sign-in both work for other people while the consent screen is still marked Testing. **Not verified by me:** that behaviour (I did not sign in as another person), and what Google's page leaves unsaid about the exact error a non-listed user would get for other scopes. If a broader scope is ever requested, publish the consent screen first.

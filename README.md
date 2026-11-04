@@ -106,7 +106,7 @@ The live site is one Render web service (`render.yaml` records its settings) wit
 
 - **The server stays awake; the database may not.** Render's free plan would stop the server after about 15 quiet minutes, so a Cloudflare Worker requests the site every 10 minutes. Neon's free database can still go to sleep; in my use it wakes fast enough not to be noticed, but I have not measured that. Whether Render's free instance hours cover an always-awake server has not been checked (see [ADR 0055](docs/adr/0055-watching-the-live-site.md)).
 - **Email works.** It is sent through Resend from `support@flowdesc.app` (the domain was verified on 2026-10-12), and I checked a password-reset email end to end. The other emails use the same sender.
-- **Google sign-in is in testing mode:** only listed test users can use it. GitHub sign-in is not limited that way, but I have only tried it with my own account.
+- **Google and GitHub sign-in both work for anyone** (the owner has tried them with other accounts). Google's consent screen is still marked "Testing", which would limit sign-in to listed test users, except that FlowDesc asks only for the basic sign-in permissions (`openid email profile`), and [Google's page](https://support.google.com/cloud/answer/15549945) says those need no test-user listing.
 - **File storage and error tracking depend on free-tier services** whose limits I have not confirmed (see `docs/roadmap.md` for what was and was not checked).
 - **Security notes** (what was reviewed, what is accepted, how to rotate each secret) are in `docs/security.md`.
 

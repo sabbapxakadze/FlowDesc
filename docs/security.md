@@ -35,7 +35,7 @@ None is in the repository. All live in Render's Environment page (and the provid
 - **GitHub, Settings:** the repository is public, so anything ever committed is public. In Settings, Code security, check whether Dependabot alerts, Dependabot security updates and secret scanning are on (I believe they are free for public repositories; not verified), and whether private vulnerability reporting is on. Branch rules and required checks are planned for the very end (ADR 0047).
 - **Render:** who has access to the workspace, that pull request previews are off (a preview of someone's pull request would run their code with your environment), and that the service's environment variables are marked secret.
 - **Neon:** who has access to the project, and that the connection string in Render is the one for the role you expect.
-- **Google Cloud:** the OAuth client's authorized redirect URI is only the production one; the consent screen is in Testing with only the listed test users.
+- **Google Cloud:** the OAuth client's authorized redirect URI is only the production one; the consent screen is in Testing. The test-user list does not limit who can sign in, because the app asks only for the basic sign-in scopes (`openid email profile`), which Google's own page says need no listing (https://support.google.com/cloud/answer/15549945; the owner confirmed sign-in works for other accounts). If a scope beyond those is ever added, Testing mode would then limit it to the listed test users (at most 100), with grants expiring after 7 days, until the app is published and, for sensitive scopes, verified.
 - **Accounts:** two-factor sign-in on GitHub, Render, Neon, Google and Resend, because each one holds a key to the live app.
 
 ## Added with ADR 0055 (watching the live site)
