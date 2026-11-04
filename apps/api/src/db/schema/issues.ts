@@ -31,7 +31,7 @@ export const issuePriority = pgEnum("issue_priority", ["none", "low", "medium", 
 // board_rank (ADR 0007): the value only ever matters to Postgres itself
 // (the @@ match and ts_rank in issues.repository.ts's search()), never
 // something application code reads or constructs.
-const tsvectorType = customType<{ data: string }>({
+export const tsvectorType = customType<{ data: string }>({
   dataType() {
     return "tsvector";
   },

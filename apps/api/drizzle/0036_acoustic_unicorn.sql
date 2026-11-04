@@ -1,0 +1,2 @@
+ALTER TABLE "comments" ADD COLUMN "search_vector" "tsvector" GENERATED ALWAYS AS (to_tsvector('english', regexp_replace(regexp_replace(coalesce(body, ''), '![[][^]]*[]][(]attachment:[0-9a-fA-F-]{36}[)]', ' ', 'g'), '@[[]([^]]*)[]][(]user:[0-9a-fA-F-]{36}[)]', '\1', 'g'))) STORED;--> statement-breakpoint
+CREATE INDEX "comments_search_vector_idx" ON "comments" USING gin ("search_vector");
