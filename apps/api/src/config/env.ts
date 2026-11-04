@@ -24,6 +24,16 @@ const envSchema = z.object({
   EMAIL_DRIVER: z.enum(["resend", "log"]).default("resend"),
   // Where a "Report a bug" email (ADR 0075) goes. Defaults to EMAIL_FROM, which on the live site is support@flowdesc.app and is forwarded to the owner.
   BUG_REPORT_TO: z.email("BUG_REPORT_TO must be a real email address").optional(),
+  // Ask FlowDesc (ADR 0077). Unset: no AI, the endpoint says so and the panel is hidden. "cloudflare" calls Workers AI (needs the account id and token
+  // below, which stay on the server). "fake" answers from a fixed script, for tests and for trying the panel without an account; refused in production.
+  AI_DRIVER: z.enum(["cloudflare", "fake"]).optional(),
+  CLOUDFLARE_ACCOUNT_ID: z.string().regex(/^[0-9a-f]{32}$/i, "CLOUDFLARE_ACCOUNT_ID must be the 32-character account id").optional(),
+  CLOUDFLARE_AI_TOKEN: z.string().min(10).optional(),
+  // A Workers AI text model. It goes into the request address, so only `@cf/` plus path words are accepted.
+  AI_MODEL: z
+    .string()
+    .regex(/^@cf\/\w[\w.-]*(\/\w[\w.-]*)+$/, "AI_MODEL must look like @cf/meta/llama-3.1-8b-instruct-fp8-fast")
+    .default("@cf/meta/llama-3.1-8b-instruct-fp8-fast"),
   // The *frontend's* origin — verification/reset emails link back to the
   // web app (/verify-email, /reset-password), not the API.
   APP_URL: z.url("APP_URL must be a full URL, e.g. http://localhost:5173"),
@@ -77,6 +87,14 @@ const envSchema = z.object({
 }).superRefine((value, ctx) => {
   if (value.OAUTH_FAKE === "true" && value.NODE_ENV === "production") {
     ctx.addIssue({ code: "custom", message: "OAUTH_FAKE must not be enabled in production", path: ["OAUTH_FAKE"] });
+  }
+  if (value.AI_DRIVER === "cloudflare") {
+    for (const name of ["CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_AI_TOKEN"] as const) {
+      if (!value[name]) ctx.addIssue({ code: "custom", message: `${name} is required when AI_DRIVER is cloudflare`, path: [name] });
+    }
+  }
+  if (value.AI_DRIVER === "fake" && value.NODE_ENV === "production") {
+    ctx.addIssue({ code: "custom", message: "AI_DRIVER=fake must not be used in production", path: ["AI_DRIVER"] });
   }
   if (value.STORAGE_DRIVER === "s3") {
     for (const name of ["S3_ENDPOINT", "S3_REGION", "S3_BUCKET", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY"] as const) {

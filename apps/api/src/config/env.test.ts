@@ -33,6 +33,30 @@ describe("config/env - parseEnv", () => {
     expect(parsed.success && parsed.data.APP_URL).toBe("https://flowdesk-abc.onrender.com");
   });
 
+  it("Ask FlowDesc's AI is off unless a driver is set; 'cloudflare' needs both its account id and token, and 'fake' is refused in production (ADR 0077)", () => {
+    // Why: a half-set provider must crash at boot (not at the first question), and a fake that answers real people with canned text must never run live.
+    const withApp = { ...base, APP_URL: "http://localhost:5173" };
+    const off = parseEnv(withApp);
+    expect(off.success && [off.data.AI_DRIVER, off.data.AI_MODEL]).toEqual([undefined, "@cf/meta/llama-3.1-8b-instruct-fp8-fast"]);
+
+    const account = "0123456789abcdef0123456789abcdef";
+    expect(parseEnv({ ...withApp, AI_DRIVER: "cloudflare" }).success).toBe(false);
+    expect(parseEnv({ ...withApp, AI_DRIVER: "cloudflare", CLOUDFLARE_ACCOUNT_ID: account }).success).toBe(false);
+    expect(parseEnv({ ...withApp, AI_DRIVER: "cloudflare", CLOUDFLARE_ACCOUNT_ID: account, CLOUDFLARE_AI_TOKEN: "t".repeat(40) }).success).toBe(true);
+
+    expect(parseEnv({ ...withApp, AI_DRIVER: "fake" }).success).toBe(true);
+    expect(parseEnv({ ...withApp, AI_DRIVER: "fake", NODE_ENV: "production" }).success).toBe(false);
+    expect(parseEnv({ ...withApp, AI_DRIVER: "openai" }).success).toBe(false);
+  });
+
+  it("refuses an account id or a model name that could change the address the AI is called at", () => {
+    // Why: both go into the request address, so a stray path or query in a setting must stop the server at boot.
+    const withApp = { ...base, APP_URL: "http://localhost:5173" };
+    expect(parseEnv({ ...withApp, CLOUDFLARE_ACCOUNT_ID: "../x" }).success).toBe(false);
+    expect(parseEnv({ ...withApp, AI_MODEL: "@cf/meta/../../x" }).success).toBe(false);
+    expect(parseEnv({ ...withApp, AI_MODEL: "@cf/mistral/mistral-7b-instruct-v0.1" }).success).toBe(true);
+  });
+
   it("STORAGE_DRIVER defaults to local and DB_POOL_MAX to 10; an unknown driver is refused", () => {
     const ok = parseEnv({ ...base, APP_URL: "http://localhost:5173" });
     expect(ok.success && [ok.data.STORAGE_DRIVER, ok.data.DB_POOL_MAX]).toEqual(["local", 10]);
