@@ -7,7 +7,10 @@ import { createIssueViaApi } from "../support/api";
  * code had 200 to 280 ms main-thread stalls at the start and at the drop (measured 2026-10-05); now about 70 ms. The
  * limit is set between the two (150 ms), so a slow machine does not fail it but losing the memoisation does.
  */
-test.use({ reducedMotion: "no-preference", viewport: { width: 1400, height: 900 } });
+// Tracing is off for this test only. A trace takes a snapshot of the whole page on every mouse action, inside the page, on the same thread the long-task
+// observer is watching: with 60 moves over 80 cards that was a large part of the measured stall (found 2026-11-04 by profiling: `captureSnapshot` is the test
+// tool's own code), and it grows as cards get richer, so the number drifted toward the limit on CI without the app getting slower.
+test.use({ reducedMotion: "no-preference", viewport: { width: 1400, height: 900 }, trace: "off" });
 
 test("dragging a card in an 80-issue column never blocks the page for long", async ({ loggedInPage: page }) => {
   const titles = Array.from({ length: 80 }, (_, i) => `Issue${i + 1}`);
