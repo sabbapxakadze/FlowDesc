@@ -12,7 +12,8 @@ A collaborative project-management app for small engineering teams: organization
 - **Analytics from an append-only event log.** Measured at 20,000 issues: sprint velocity went from 3.9 s to about 19 ms (a query-planner fix), and deleting a project from 9 s to 0.6 s (a missing index).
 - **Multi-tenant isolation in two layers:** the middleware checks membership, and every query that reads tenant data filters by organization, with tests that try to cross organizations.
 - **An MCP server on npm** (`flowdesc-mcp`, published from GitHub Actions with provenance): AI apps can read projects and issues and, with a token made for it, create, update and comment, one issue at a time. Read-only by default, tokens are hashed and revocable, and every change an AI makes is marked "via token".
-- **More than 740 unit and API tests and more than 280 browser tests**, run on GitHub in four parallel shards.
+- **Ask FlowDesc:** a chat panel inside the app that answers questions from your organization's own issues and comments, with links to the issues it used (see [Ask FlowDesc](#ask-flowdesc-an-assistant-inside-the-app)). A free model, no keys for users, and hard limits on cost and on what a planted instruction can do.
+- **More than 820 unit and API tests and more than 280 browser tests**, run on GitHub in four parallel shards.
 
 The live site runs on free hosting, so a few things are different from a paid product (see [What to know](#what-to-know-about-the-live-site)).
 
@@ -23,12 +24,28 @@ The live site runs on free hosting, so a few things are different from a paid pr
 - **Insight:** analytics computed from the issue history: throughput, cycle time, sprint velocity and breakdowns, with ranges kept in the address.
 - **Finding things:** full-text search (a Postgres index, not a search service) and a command palette on Ctrl+K.
 - **Accounts:** email and password, Google and GitHub sign-in, renewed sessions with inactivity sign-out, and a guided tour for new people.
-- **AI:** personal access tokens and an MCP server (below).
+- **AI:** an assistant panel inside the app ("Ask FlowDesc"), personal access tokens and an MCP server (below).
 - **Feedback:** a "Report a bug" button emails a description and screenshots to the owner.
 
 | Issues | Analytics |
 |---|---|
 | ![Issues](apps/web/public/landing/issues-light.jpg) | ![Analytics](apps/web/public/landing/analytics-light.jpg) |
+
+## Ask FlowDesc: an assistant inside the app
+
+A chat panel (bottom-right on a computer, full screen on a phone) that answers in plain words from **your organization's issues and comments**, for example "What is overdue?", "What happened on WEB-12?" or "Is there anything about the pricing page?". Each answer comes with links to the issues it was built from. It needs no account with an AI company: the server holds the one key.
+
+**How it works (retrieval-augmented generation).** The server does not give the model your data to learn from, and the model has no tools. For each question it (1) *retrieves* a few relevant issues and comments with Postgres full-text search, filtered to your organization, (2) puts them in a prompt as clearly marked data, (3) asks a free Llama model on [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/) to answer from only that, and (4) cleans the answer before it is shown. Questions about the workspace itself ("what is overdue?", "what statuses do we have?", "assigned to me", "due this week") are answered from the database's own counts and lists, with no model at all.
+
+**What keeps it safe** (details in [`docs/security.md`](docs/security.md) and [ADR 0077](docs/adr/0077-ask-flowdesc.md)):
+
+- Issue and comment text is other people's text. It is fenced by a random per-request marker and flattened to single lines, and the model is told it is data, never instructions. The model has no tools, so a planted "do this" has nothing to act with.
+- The answer is shown as plain text: links, images, HTML and Markdown link targets are stripped on the server, and a citation only links to an issue the server actually sent. Nothing is ever rendered as HTML.
+- The organization comes from the verified membership, never from the question, and tests try to read another organization's issues through the question.
+- Limits: 10 questions per person per hour and 30 a day, 5 in a demo copy, 20 an hour per address, and a whole-site budget of 300 questions and 8,000 Neurons a day (under Cloudflare's free 10,000), after which Ask "rests" until 00:00 UTC. A usage table keeps counts only: **no question, source or answer text is stored or logged.**
+- Greetings and "help" get a fixed reply and cost nothing. The chat lives only in the browser tab; "Copy chat" takes it with you.
+
+**What it is not.** Search is by keywords (stems, any word), not by meaning, so a question that shares no word with an issue may find nothing; a meaning-based search is a possible later phase. Answers can be wrong, and the panel says so. The tests use a fake model; the real service was called once to check the connection and its answers have not been measured on real data. It is off on a server until three settings are added (`AI_DRIVER=cloudflare`, `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_AI_TOKEN`); with them missing the sidebar row is hidden.
 
 ## Use it from an AI app (MCP)
 
@@ -130,6 +147,7 @@ Each decision is a short record in [`docs/adr/`](docs/adr). The ones I would sta
 | [0053](docs/adr/0053-object-storage.md) | Files in an S3-compatible bucket behind one small interface, tested against a fake S3. |
 | [0055](docs/adr/0055-watching-the-live-site.md) | Watching the live site: a smoke check, uptime, weekly encrypted backups, error tracking, and (amended) a keep-alive Worker. |
 | [0070](docs/adr/0070-mcp-server-and-access-tokens.md), [0074](docs/adr/0074-mcp-write-tools.md) | An MCP server and access tokens; write tools that change one issue at a time, with a "via token" marker. |
+| [0077](docs/adr/0077-ask-flowdesc.md) | An in-app assistant: retrieval from the organization's own issues, a model with no tools, untrusted text fenced, answers cleaned, and hard limits on use and cost. |
 
 More: [`docs/architecture.md`](docs/architecture.md), [`docs/roadmap.md`](docs/roadmap.md) (what is done and what was checked), [`docs/learning-log.md`](docs/learning-log.md).
 

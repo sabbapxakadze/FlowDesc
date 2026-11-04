@@ -28,6 +28,13 @@ export function buildTourSteps(projectKey: string | undefined): TourStep[] {
       body: "Press Ctrl K (Cmd K on a Mac) from anywhere to find an issue by words from its title or description.",
     },
     {
+      id: "ask",
+      target: "ask",
+      placement: "right",
+      title: "Ask FlowDesc",
+      body: "Ask in plain words about your issues and comments, for example what is overdue or what happened on WEB-12. It answers with links to the issues it used. Answers can be wrong, so check them. This step is skipped while Ask is switched off.",
+    },
+    {
       id: "my-work",
       target: "my-work",
       placement: "right",

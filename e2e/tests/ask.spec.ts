@@ -206,3 +206,33 @@ test("'hi' gets a friendly list of what to ask, and does not use up a question",
   await expect(log).not.toContainText("could not find anything");
   await expect(panelOf(page)).toContainText("10 of 10 questions left this hour");
 });
+
+test("the Tutorial has a step for Ask FlowDesc after Search, and skips it when Ask is switched off", async ({ loggedInPage: page }) => {
+  // Why: the Tutorial must describe what is on screen. With Ask on, the step points at the sidebar row; with Ask off, the row is not there and the
+  // tour must go straight on instead of getting stuck on a missing part (ADR 0040).
+  const card = page.locator("[data-tour-card]");
+  const title = card.getByRole("heading");
+  await page.getByRole("button", { name: "Tutorial" }).click();
+  await expect(card).toBeVisible();
+  const next = card.getByRole("button", { name: /^(Next|Done)$/ });
+  await next.click(); // Your projects
+  await next.click(); // Search everything
+  await expect(title).toHaveText("Search everything");
+  await next.click();
+  await expect(title).toHaveText("Ask FlowDesc");
+  await expect(page.locator("[data-tour-spot]")).toHaveCount(1);
+  await page.keyboard.press("Escape");
+
+  await page.route("**/api/v1/ask/info", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: { enabled: false, maxQuestionLength: 500 } }) }),
+  );
+  await page.reload();
+  await expect(page.getByRole("link", { name: "Labels" })).toBeVisible();
+  await page.getByRole("button", { name: "Tutorial" }).click();
+  await expect(card).toBeVisible();
+  await next.click();
+  await next.click();
+  await expect(title).toHaveText("Search everything");
+  await next.click();
+  await expect(title).toHaveText("My work"); // no Ask step in between
+});

@@ -48,6 +48,8 @@ services:
       - key: DATABASE_URL
         sync: false # the Neon DIRECT connection string (hostname without "-pooler")
       # Optional, ADR 0055: add SENTRY_DSN in the dashboard to switch error tracking on (not set today).
+      # Optional, ADR 0077: Ask FlowDesc stays off until all three are set in the dashboard (the token is a secret, never put it here).
+      #   AI_DRIVER=cloudflare, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_TOKEN. Limits have defaults (ASK_* in apps/api/.env.example).
       - key: RESEND_API_KEY
         sync: false # a real Resend sending key, set in the dashboard (emails that fail are logged, not thrown)
       - key: JWT_SECRET

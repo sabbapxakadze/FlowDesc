@@ -108,6 +108,8 @@ What Cloudflare returns when the daily allowance is used up (the pricing page sa
 - **Small talk (2026-11-04):** "hi" got "I could not find anything". A message that is ONLY a greeting, a thank-you or a request for help ("hi", "what can you do?", "thanks") now gets a fixed reply with example questions, before the limits: no search, no model, no usage row, so it is free and never refused. The whole message must be small talk, so "help with the login bug" is still searched. Phase B would not have fixed this.
 - **A test that was not testing:** the log-privacy test threw on a circular log argument and skipped it. It now reads every argument, applying pino's own request and response reduction first; a deliberate `logger.info({ question })` makes it fail.
 
+- **Slice 5 (2026-11-04), docs:** README (a section, a highlight, the decisions table), `docs/security.md` (a section: injection, plain-text output, tenants, who may ask, cost, what is stored, the key, the third party, what is not covered), CLAUDE.md, a Tutorial step that points at the sidebar row (the tour skips a step whose target is not on screen, so it disappears while Ask is off), and `render.yaml` comments for the three settings. The README says what is and is not verified.
+
 ## Sources read on 2026-11-04
 
 - Cloudflare Workers AI pricing: <https://developers.cloudflare.com/workers-ai/platform/pricing/>
