@@ -17,3 +17,4 @@ export * from "./audit-events.js";
 export * from "./oauth-identities.js";
 export * from "./api-tokens.js";
 export * from "./demo-starts.js";
+export * from "./ai-requests.js";

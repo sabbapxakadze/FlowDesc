@@ -20,7 +20,8 @@ function build(): AiProvider | null {
 }
 
 export function getAiProvider(): AiProvider | undefined {
-  cached ??= build();
+  // `=== undefined`, not `??=`: "no provider" is stored as null, and `null ??= build()` would build one again on every call.
+  if (cached === undefined) cached = build();
   return cached ?? undefined;
 }
 

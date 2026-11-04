@@ -20,6 +20,11 @@ if (!process.env.TEST_DATABASE_URL) {
   );
 }
 process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
+// The tests load the owner's real .env, which may hold the live Cloudflare token for Ask FlowDesc (ADR 0077). A test must never reach the real service
+// (it spends the free daily allowance), so the AI settings are dropped here: Ask is off unless a test sets a fake provider itself.
+delete process.env.AI_DRIVER;
+delete process.env.CLOUDFLARE_ACCOUNT_ID;
+delete process.env.CLOUDFLARE_AI_TOKEN;
 // The demo endpoint is on for the tests (they switch it off by changing `env.DEMO_ENABLED` where they need to).
 process.env.DEMO_ENABLED = "true";
 // Same reasoning: never let a test run write into the real dev uploads

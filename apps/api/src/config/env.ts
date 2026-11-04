@@ -34,6 +34,15 @@ const envSchema = z.object({
     .string()
     .regex(/^@cf\/\w[\w.-]*(\/\w[\w.-]*)+$/, "AI_MODEL must look like @cf/meta/llama-3.1-8b-instruct-fp8-fast")
     .default("@cf/meta/llama-3.1-8b-instruct-fp8-fast"),
+  // The limits on Ask FlowDesc (ADR 0077, decision 6). The panel shows what is left; the server enforces them. A demo copy gets ASK_LIMIT_PER_DEMO in all
+  // (each demo click makes a new person, so per-person limits alone could be dodged); an address gets ASK_LIMIT_PER_ADDRESS_HOUR (in memory); the whole site
+  // gets ASK_DAILY_QUESTIONS and ASK_DAILY_NEURONS per UTC day (Cloudflare's free allowance is 10,000 Neurons a day and resets at 00:00 UTC).
+  ASK_LIMIT_PER_HOUR: z.coerce.number().int().min(1).max(1000).default(10),
+  ASK_LIMIT_PER_DAY: z.coerce.number().int().min(1).max(10_000).default(30),
+  ASK_LIMIT_PER_DEMO: z.coerce.number().int().min(1).max(1000).default(5),
+  ASK_LIMIT_PER_ADDRESS_HOUR: z.coerce.number().int().min(1).max(10_000).default(20),
+  ASK_DAILY_QUESTIONS: z.coerce.number().int().min(1).max(100_000).default(300),
+  ASK_DAILY_NEURONS: z.coerce.number().int().min(1).max(10_000).default(8000),
   // The *frontend's* origin — verification/reset emails link back to the
   // web app (/verify-email, /reset-password), not the API.
   APP_URL: z.url("APP_URL must be a full URL, e.g. http://localhost:5173"),

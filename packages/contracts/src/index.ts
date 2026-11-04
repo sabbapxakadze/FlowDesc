@@ -22,3 +22,4 @@ export * from "./demo.js";
 export * from "./comment-markdown.js";
 export * from "./api-tokens.js";
 export * from "./bug-report.js";
+export * from "./ask.js";

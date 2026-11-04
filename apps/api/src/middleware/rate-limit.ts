@@ -126,3 +126,18 @@ export const bugReportRateLimiter = rateLimit({
   keyGenerator: (req) => `bug-report:${req.auth?.userId ?? "anonymous"}`,
   handler: tooManyRequests,
 });
+
+// Ask FlowDesc (ADR 0077): one address gets a few questions an hour however many demo copies it starts (each copy is a new person with their own limit).
+// In memory like the others, so a restart resets it; the per-person, per-demo and whole-site limits live in the database. The limit is read at each request.
+export const askAddressRateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: () => env.ASK_LIMIT_PER_ADDRESS_HOUR,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: skipInTest,
+  handler: (req, res) => {
+    res.status(429).json({
+      error: { code: "ask_limit_address", message: "Too many questions from this connection. Please try again later.", requestId: req.id },
+    });
+  },
+});

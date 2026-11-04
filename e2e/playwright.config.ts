@@ -75,6 +75,9 @@ export default defineConfig({
         // Nothing is sent: a message is only logged and counts as sent, so "Report a bug" (ADR 0075), which must tell the person when a send fails,
         // can be tried end to end. That also means no browser test proves a real email arrives; that is checked by hand on the live site.
         EMAIL_DRIVER: "log",
+        // Ask FlowDesc (ADR 0077): the browser tests use the fake provider, never the real service. This server loads apps/api/.env too, which may hold the
+        // live Cloudflare token, so the driver is set here explicitly (the fake answers with fixed text and spends nothing).
+        AI_DRIVER: "fake",
       },
     },
     {
