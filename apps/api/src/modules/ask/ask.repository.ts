@@ -107,6 +107,33 @@ export function listInProgress(organizationId: string, limit: number): Promise<I
   return idList(and(eq(issues.organizationId, organizationId), eq(issues.status, "in_progress")), [desc(issues.updatedAt), asc(issues.id)], limit);
 }
 
+export type Overview = {
+  byStatus: Record<"todo" | "in_progress" | "done", number>;
+  byPriority: Record<"none" | "low" | "medium" | "high" | "urgent", number>;
+  projects: { name: string; key: string; issues: number }[];
+};
+
+/** Counts for the whole organization (and only it): issues by status, by priority, and per project. The answer to "what statuses do we have?" and "how many issues?". */
+export async function overviewCounts(organizationId: string, maxProjects: number): Promise<Overview> {
+  const [statuses, priorities, perProject] = await Promise.all([
+    db.select({ value: issues.status, n: count() }).from(issues).where(eq(issues.organizationId, organizationId)).groupBy(issues.status),
+    db.select({ value: issues.priority, n: count() }).from(issues).where(eq(issues.organizationId, organizationId)).groupBy(issues.priority),
+    db
+      .select({ name: projects.name, key: projects.key, n: count(issues.id) })
+      .from(projects)
+      .leftJoin(issues, and(eq(issues.projectId, projects.id), eq(issues.organizationId, organizationId)))
+      .where(eq(projects.organizationId, organizationId))
+      .groupBy(projects.id, projects.name, projects.key)
+      .orderBy(asc(projects.name))
+      .limit(maxProjects),
+  ]);
+  const byStatus = { todo: 0, in_progress: 0, done: 0 };
+  for (const row of statuses) byStatus[row.value] = row.n;
+  const byPriority = { none: 0, low: 0, medium: 0, high: 0, urgent: 0 };
+  for (const row of priorities) byPriority[row.value] = row.n;
+  return { byStatus, byPriority, projects: perProject.map((p) => ({ name: p.name, key: p.key, issues: p.n })) };
+}
+
 /** The fields a source needs, for these issue ids and only those that belong to this organization. In no particular order: the caller orders them. */
 export async function loadIssueCards(organizationId: string, ids: string[]): Promise<IssueCardRow[]> {
   if (ids.length === 0) return [];

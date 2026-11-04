@@ -266,3 +266,25 @@ describe("the size of what is read", () => {
     }
   });
 });
+
+describe("questions about the workspace itself", () => {
+  it("states the statuses, the counts and the projects of this organization only", async () => {
+    // Why: "what statuses do we have?" is answered from counts. They must be this organization's own: another organization's numbers must never appear.
+    const a = await makeOrg("a@example.com", "Org A", "WEB");
+    const b = await makeOrg("b@example.com", "Org B", "OTH");
+    await addIssue(a, "One");
+    await addIssue(a, "Two", { status: "in_progress" });
+    await addIssue(a, "Three", { status: "done" });
+    for (let i = 0; i < 7; i++) await addIssue(b, `Other ${i}`);
+
+    const result = await ask(a, "What statuses do we have?");
+    expect(result.sources).toEqual([]);
+    expect(result.facts).toContain("The statuses an issue can have are: Todo, In progress and Done.");
+    expect(result.facts).toContain("Issues by status: Todo 1, In progress 1, Done 1 (3 in total).");
+    expect(result.facts.join("\n")).toContain("WEB project (WEB) 3 issues");
+    const all = result.facts.join("\n");
+    expect(all).not.toContain("OTH");
+    expect(all).not.toContain("Org B");
+    expect(all).not.toContain("7");
+  });
+});

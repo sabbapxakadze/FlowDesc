@@ -16,6 +16,8 @@ export const LIMITS = {
   keyed: 3,
   /** Most issues taken from each fixed question type's list. */
   perIntent: 5,
+  /** Most projects named in an overview. */
+  projectsInOverview: 10,
   /** Characters of an issue's description kept. */
   description: 600,
   commentsPerSource: 3,
@@ -79,7 +81,7 @@ export async function retrieveSources(input: { organizationId: string; userId: s
 
   // 2. The fixed question types, each answered with the app's own definitions.
   const week = weekOf(today);
-  const lists: Record<Intent, { label: string; run: () => Promise<repository.IdList>; why: string }> = {
+  const lists: Record<Exclude<Intent, "overview">, { label: string; run: () => Promise<repository.IdList>; why: string }> = {
     overdue: { label: `Overdue issues (due before ${today}, not done)`, run: () => repository.listOverdue(organizationId, today, LIMITS.perIntent), why: "overdue" },
     dueToday: { label: `Issues due today (${today}), not done`, run: () => repository.listDueBetween(organizationId, today, today, LIMITS.perIntent), why: "due today" },
     dueWeek: {
@@ -94,12 +96,27 @@ export async function retrieveSources(input: { organizationId: string; userId: s
     },
     inProgress: { label: "Issues in progress", run: () => repository.listInProgress(organizationId, LIMITS.perIntent), why: "in progress" },
   };
-  const results = await Promise.all(parsed.intents.map((intent) => lists[intent].run()));
-  parsed.intents.forEach((intent, i) => {
+  const listIntents = parsed.intents.filter((intent): intent is Exclude<Intent, "overview"> => intent !== "overview");
+  const results = await Promise.all(listIntents.map((intent) => lists[intent].run()));
+  listIntents.forEach((intent, i) => {
     const list = results[i]!;
     facts.push(listFact(lists[intent].label, list.total, list.ids.length));
     for (const id of list.ids) add(id, lists[intent].why);
   });
+
+  // The workspace itself: which statuses exist and how many issues there are. These are facts, not issues, so they add no sources.
+  if (parsed.intents.includes("overview")) {
+    const o = await repository.overviewCounts(organizationId, LIMITS.projectsInOverview);
+    const total = o.byStatus.todo + o.byStatus.in_progress + o.byStatus.done;
+    facts.push("The statuses an issue can have are: Todo, In progress and Done.");
+    facts.push(`Issues by status: Todo ${o.byStatus.todo}, In progress ${o.byStatus.in_progress}, Done ${o.byStatus.done} (${total} in total).`);
+    facts.push(`Issues by priority: None ${o.byPriority.none}, Low ${o.byPriority.low}, Medium ${o.byPriority.medium}, High ${o.byPriority.high}, Urgent ${o.byPriority.urgent}.`);
+    facts.push(
+      o.projects.length === 0
+        ? "There are no projects yet."
+        : `Projects: ${o.projects.map((p) => `${p.name} (${p.key}) ${p.issues} issue${p.issues === 1 ? "" : "s"}`).join("; ")}.`,
+    );
+  }
 
   // 3. Text matches fill what is left. Skipped when nothing searchable remains once keys and question types are taken out.
   if (/[\p{L}\p{N}]/u.test(parsed.text)) {

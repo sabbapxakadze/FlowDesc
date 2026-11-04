@@ -165,3 +165,44 @@ for (const width of [390, 360]) {
     expect(await panel.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
   });
 }
+
+test("on a desktop the panel is a compact card in the bottom-right corner, not the full height", async ({ loggedInPage: page }) => {
+  // Why: the owner did not like a panel stretched over the whole height. It must sit in the corner, stay inside the window and grow no taller than its maximum.
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await askRow(page).click();
+  const card = await panelOf(page).boundingBox();
+  expect(card).not.toBeNull();
+  expect(card!.width).toBe(400);
+  expect(card!.height).toBeLessThanOrEqual(640 + 1);
+  expect(card!.height).toBeLessThan(900 - 100);
+  expect(Math.round(card!.x + card!.width)).toBe(1280 - 16);
+  expect(Math.round(card!.y + card!.height)).toBe(900 - 16);
+});
+
+test("Copy chat puts the questions and answers on the clipboard", async ({ loggedInPage: page, context }) => {
+  // Why: there is no saved history (ADR 0077), so this is the way to take an answer with you; it must hold what was on the screen, in order.
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await setup(page);
+  await askRow(page).click();
+  await expect(panelOf(page).getByRole("button", { name: "Copy chat" })).toHaveCount(0); // nothing to copy yet
+  await box(page).fill("alpha login");
+  await box(page).press("Enter");
+  await expect(panelOf(page).getByRole("log")).toContainText("This is a fake answer.");
+  await panelOf(page).getByRole("button", { name: "Copy chat" }).click();
+  await expect(panelOf(page).getByRole("button", { name: "Chat copied" })).toBeVisible();
+  // The Windows clipboard turns each line break into \r\n when it is read back, so compare with plain \n.
+  const text = (await page.evaluate(() => navigator.clipboard.readText())).replace(/\r\n/g, "\n");
+  expect(text).toBe("You: alpha login\n\nFlowDesc: This is a fake answer.\nSources: WEB-1 Alpha login broken");
+});
+
+test("'hi' gets a friendly list of what to ask, and does not use up a question", async ({ loggedInPage: page }) => {
+  // Why: "hi" used to be answered "I could not find anything" (the owner's second real try). A greeting is free, so the count must not move.
+  await askRow(page).click();
+  await box(page).fill("hi");
+  await box(page).press("Enter");
+  const log = panelOf(page).getByRole("log");
+  await expect(log).toContainText("I answer questions about your issues and comments");
+  await expect(log).toContainText("What is overdue?");
+  await expect(log).not.toContainText("could not find anything");
+  await expect(panelOf(page)).toContainText("10 of 10 questions left this hour");
+});

@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
-import { Sparkles, X } from "lucide-react";
+import { ArrowUp, Check, Copy, Sparkles, X } from "lucide-react";
 import { ASK_MAX_QUESTION, type AskSource } from "@flowdesc/contracts";
 import { issuePath } from "../../../shared/lib/paths";
 import { Button, cn, IconButton, SidePanel, STATUS_DOT_CLASSES, STATUS_LABELS, Textarea, useExitPresence } from "../../../shared/ui";
-import { describeLimits, parseSourceKey, splitAnswer } from "../lib/answer";
+import { chatToText, describeLimits, parseSourceKey, splitAnswer } from "../lib/answer";
 import { MAX_QUESTIONS_PER_CHAT, type AskMessage } from "../model/ask-context";
 import { useAsk, useAskEnabled } from "../model/useAsk";
 
@@ -46,7 +46,7 @@ export function AskPanel() {
 
   if (!rendered) return null;
   return (
-    <SidePanel label="Ask FlowDesc" closing={closing} onClose={() => setOpen(false)}>
+    <SidePanel label="Ask FlowDesc" variant="card" closing={closing} onClose={() => setOpen(false)}>
       <AskContent onClose={() => setOpen(false)} />
     </SidePanel>
   );
@@ -58,6 +58,16 @@ function AskContent({ onClose }: { onClose: () => void }) {
   const input = useRef<HTMLTextAreaElement>(null);
   const end = useRef<HTMLDivElement>(null);
   const chatFull = questionsAsked >= MAX_QUESTIONS_PER_CHAT;
+  const [copy, setCopy] = useState<"idle" | "done" | "failed">("idle");
+  const copyChat = async () => {
+    try {
+      await navigator.clipboard.writeText(chatToText(messages));
+      setCopy("done");
+    } catch {
+      setCopy("failed"); // no permission, or an insecure page
+    }
+    window.setTimeout(() => setCopy("idle"), 2500);
+  };
 
   // Focus the box when the panel opens, but not on a touch screen: it would raise the keyboard over the answer before the person has chosen to type.
   // (A timer, because the panel moves focus to itself after this runs.)
@@ -93,25 +103,43 @@ function AskContent({ onClose }: { onClose: () => void }) {
   return (
     <>
       <header className="flex shrink-0 items-center gap-2 border-b border-[var(--color-border-default)] px-4 py-3">
-        <Sparkles aria-hidden="true" size={16} className="text-[var(--color-text-muted)]" />
+        <Avatar />
         <h2 className="font-display flex-1 text-lg">Ask FlowDesc</h2>
         {messages.length > 0 && (
           <Button type="button" variant="link" size="sm" disabled={pending} onClick={clear}>
             New chat
           </Button>
         )}
+        {messages.length > 0 && (
+          <IconButton label={copy === "done" ? "Chat copied" : copy === "failed" ? "Could not copy" : "Copy chat"} onClick={() => void copyChat()}>
+            {copy === "done" ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}
+          </IconButton>
+        )}
         <IconButton label="Close Ask FlowDesc" onClick={onClose}>
           <X size={16} aria-hidden="true" />
         </IconButton>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[var(--color-bg-lane)] px-4 py-4">
         {messages.length === 0 ? (
           <div className="flex flex-col gap-4 text-sm">
-            <p>Ask about your organization&rsquo;s issues and comments, in plain words. You can use issue keys such as WEB-12.</p>
-            <div className="flex flex-col items-start gap-2">
+            <div className="flex items-start gap-2">
+              <Avatar />
+              <p className={cn(CARD, "max-w-[88%]")}>
+                Hi! Ask me about your organization&rsquo;s issues and comments, in plain words. You can use issue keys such as WEB-12.
+              </p>
+            </div>
+            <div className="flex flex-col items-end gap-2">
               {EXAMPLES.map((example) => (
-                <Button key={example} type="button" variant="secondary" size="sm" disabled={pending} onClick={() => submit(example)}>
+                <Button
+                  key={example}
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="rounded-full"
+                  disabled={pending}
+                  onClick={() => submit(example)}
+                >
                   {example}
                 </Button>
               ))}
@@ -124,9 +152,20 @@ function AskContent({ onClose }: { onClose: () => void }) {
               <Message key={message.id} message={message} />
             ))}
             {pending && (
-              <p role="status" className="text-sm text-[var(--color-text-muted)]">
-                Looking through your issues…
-              </p>
+              <div className="flex items-start gap-2">
+                <Avatar />
+                <p role="status" className={cn(CARD, "flex items-center gap-1.5 text-[var(--color-text-muted)]")}>
+                  <span className="sr-only">Looking through your issues…</span>
+                  {[0, 150, 300].map((delay) => (
+                    <span
+                      key={delay}
+                      aria-hidden="true"
+                      style={{ animationDelay: `${delay}ms` }}
+                      className="h-1.5 w-1.5 animate-pulse rounded-full bg-current motion-reduce:animate-none"
+                    />
+                  ))}
+                </p>
+              </div>
             )}
             <div ref={end} />
           </div>
@@ -146,21 +185,29 @@ function AskContent({ onClose }: { onClose: () => void }) {
           </p>
         ) : (
           <>
-            <div className="flex items-end gap-2">
+            {/* A pill: the box and the round send button share one rounded border, which lights up when the box has focus. */}
+            <div className="flex items-end gap-2 rounded-[1.5rem] border border-[var(--color-border-input)] bg-[var(--color-bg-surface)] py-1.5 pr-1.5 pl-4 focus-within:border-[var(--color-border-focus)] focus-within:outline-2 focus-within:outline-offset-1 focus-within:outline-[var(--color-border-focus)]">
               {/* 16px on a phone: a smaller size makes iOS zoom the page in when the box is focused. */}
               <Textarea
                 ref={input}
                 aria-label="Your question"
-                rows={2}
+                rows={1}
                 maxLength={ASK_MAX_QUESTION}
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
                 onKeyDown={onKeyDown}
                 placeholder="Ask about your issues…"
-                className="min-h-[2.75rem] flex-1 resize-none text-base sm:text-sm"
+                className="max-h-32 min-h-[2.25rem] flex-1 resize-none self-center border-0 bg-transparent px-0 py-1.5 text-base focus:border-0 focus-visible:outline-0 sm:text-sm"
               />
-              <Button type="submit" variant="create" pending={pending} disabled={draft.trim() === "" || pending}>
-                Ask
+              <Button
+                type="submit"
+                variant="create"
+                aria-label="Ask"
+                pending={pending}
+                disabled={draft.trim() === "" || pending}
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full p-0"
+              >
+                <ArrowUp aria-hidden="true" size={18} />
               </Button>
             </div>
             <div className="flex items-center justify-between gap-2 text-xs text-[var(--color-text-muted)]">
@@ -191,47 +238,77 @@ function Privacy() {
 function Message({ message }: { message: AskMessage }) {
   if (message.kind === "question") {
     return (
-      <p className="max-w-[85%] self-end rounded-[var(--radius-card)] bg-[var(--color-bg-action-primary)] px-3 py-2 text-sm break-words whitespace-pre-wrap text-[var(--color-text-on-action)]">
+      <p className="max-w-[85%] self-end rounded-[1.25rem] rounded-br-md bg-[var(--color-bg-action-primary)] px-3.5 py-2 text-sm break-words whitespace-pre-wrap text-[var(--color-text-on-action)]">
         {message.text}
       </p>
     );
   }
   if (message.kind === "problem") {
     return (
-      <p role="alert" className="text-sm break-words text-[var(--color-text-danger)]">
-        {message.text}
-      </p>
+      <div className="flex items-start gap-2">
+        <Avatar />
+        <p role="alert" className={cn(CARD, "max-w-[88%] border-[var(--color-text-danger)] text-[var(--color-text-danger)]")}>
+          {message.text}
+        </p>
+      </div>
     );
   }
   return <Answer text={message.text} sources={message.sources} />;
+}
+
+/**
+ * FlowDesc's side of the chat: a white card with a hairline border and a soft shadow on the tinted conversation area, its top-left corner square so it
+ * points at the avatar. Relaxed line height, because answers are sentences to read, not labels.
+ */
+const CARD =
+  "min-w-0 rounded-2xl rounded-tl-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-4 py-3 text-sm leading-relaxed break-words whitespace-pre-wrap shadow-sm";
+
+/** FlowDesc's mark beside its messages. Decorative: the message text says who is speaking by being in the log. */
+function Avatar() {
+  return (
+    <span
+      aria-hidden="true"
+      className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-bg-action-create)] text-[var(--color-text-on-action-strong)]"
+    >
+      <Sparkles size={14} />
+    </span>
+  );
 }
 
 function Answer({ text, sources }: { text: string; sources: AskSource[] }) {
   const { setOpen } = useAsk();
   const parts = splitAnswer(text, sources);
   return (
-    <div className="flex flex-col gap-2 text-sm">
-      <p className="break-words whitespace-pre-wrap">
-        {parts.map((part, index) =>
-          part.kind === "text" ? (
-            <span key={index}>{part.text}</span>
-          ) : (
-            <Chip key={index} source={part.source} compact onFollow={() => setOpen(false)} />
-          ),
-        )}
-      </p>
-      {sources.length > 0 && (
-        <div>
-          <p className="mb-1 text-xs text-[var(--color-text-muted)]">Sources</p>
-          <ul className="flex flex-col gap-1">
-            {sources.map((source) => (
-              <li key={source.n}>
-                <Chip source={source} onFollow={() => setOpen(false)} />
-              </li>
-            ))}
-          </ul>
+    <div className="flex items-start gap-2.5">
+      <Avatar />
+      <div className="min-w-0 max-w-[92%] flex-1">
+        <p className="mb-1 text-xs font-medium text-[var(--color-text-muted)]">FlowDesc</p>
+        <div className={cn(CARD, "flex flex-col gap-3 whitespace-normal")}>
+          <p className="break-words whitespace-pre-wrap">
+            {parts.map((part, index) =>
+              part.kind === "text" ? (
+                <span key={index}>{part.text}</span>
+              ) : (
+                <Chip key={index} source={part.source} compact onFollow={() => setOpen(false)} />
+              ),
+            )}
+          </p>
+          {sources.length > 0 && (
+            <div className="border-t border-[var(--color-border-default)] pt-3">
+              <p className="mb-2 text-[0.6875rem] font-medium tracking-wide text-[var(--color-text-muted)] uppercase">
+                Sources <span aria-hidden="true">&middot; {sources.length}</span>
+              </p>
+              <ul className="flex flex-col gap-1.5">
+                {sources.map((source) => (
+                  <li key={source.n} className="min-w-0">
+                    <Chip source={source} onFollow={() => setOpen(false)} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -245,13 +322,16 @@ function Chip({ source, compact = false, onFollow }: { source: AskSource; compac
     <>
       <span aria-hidden="true" className={cn("h-2 w-2 shrink-0 rounded-full", STATUS_DOT_CLASSES[source.status])} />
       <span className="font-medium">{source.key}</span>
-      <span className="truncate">{source.title}</span>
-      <span className="sr-only">, {STATUS_LABELS[source.status]}</span>
+      <span className="min-w-0 flex-1 truncate">{source.title}</span>
+      <span className="shrink-0 text-[var(--color-text-muted)]">
+        <span className="sr-only">, </span>
+        {STATUS_LABELS[source.status]}
+      </span>
     </>
   );
   const classes = compact
-    ? "mx-0.5 inline-flex min-w-5 items-center justify-center rounded-full border border-[var(--color-border-input)] px-1 text-xs leading-5 align-baseline no-underline hover:bg-[var(--color-border-default)]"
-    : "inline-flex max-w-full items-center gap-2 rounded-[var(--radius-control)] border border-[var(--color-border-default)] px-2 py-1 text-xs no-underline hover:bg-[var(--color-border-default)]";
+    ? "mx-0.5 inline-flex min-w-5 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-bg-action-create)_16%,transparent)] px-1 text-xs leading-5 font-medium align-baseline text-[var(--color-text-link)] no-underline hover:bg-[color-mix(in_srgb,var(--color-bg-action-create)_30%,transparent)]"
+    : "flex w-full items-center gap-2 rounded-lg border border-[var(--color-border-default)] px-2.5 py-1.5 text-xs no-underline transition-colors hover:border-[var(--color-border-input)] hover:bg-[var(--color-bg-lane)]";
   const label = compact ? `Source ${source.n}: ${source.key}, ${source.title}` : undefined;
   if (!parsed) {
     return (

@@ -8,7 +8,7 @@ import * as authRepository from "../auth/auth.repository.js";
 import * as demoRepository from "../demo/demo.repository.js";
 import { cleanAnswer } from "./ask.answer.js";
 import { buildMessages } from "./ask.prompt.js";
-import { cleanQuestion } from "./ask.question.js";
+import { cleanQuestion, HELP_REPLY, smallTalk, THANKS_REPLY } from "./ask.question.js";
 import { retrieveSources } from "./ask.retrieval.js";
 import { secondsUntilNextUtcDay, startOfUtcDay, todayIn } from "./ask.time.js";
 import * as usage from "./ask.usage.repository.js";
@@ -124,6 +124,13 @@ export async function ask(input: { organizationId: string; userId: string; quest
   const { organizationId, userId } = input;
   const now = input.now ?? new Date();
 
+  // A greeting, a thank-you or "help": a fixed reply, no search, no model, and no row in the usage table, so it is free and counts toward nothing.
+  // (It still passed the sign-in, membership and per-address checks to get here. It is not an abuse route: it writes nothing and calls nothing.)
+  const chat = smallTalk(question);
+  if (chat) {
+    return { answer: chat === "help" ? HELP_REPLY : THANKS_REPLY, sources: [], limits: await limitsFor(userId, await demoRepository.isDemoUser(userId), now) };
+  }
+
   if (inFlight.has(userId)) throw new AppError("ask_busy", 429, "Wait for your previous question to finish.");
   inFlight.add(userId);
   try {
@@ -142,7 +149,7 @@ export async function ask(input: { organizationId: string; userId: string; quest
 
       // Nothing to read: no model call, nothing spent. The facts ("Nothing is overdue.") are an answer on their own; with no facts either, say so.
       if (retrieved.sources.length === 0) {
-        const answer = retrieved.facts.length > 0 ? retrieved.facts.join("\n") : "I could not find anything about that in your workspace.";
+        const answer = retrieved.facts.length > 0 ? retrieved.facts.join("\n") : "I could not find anything about that in your issues or comments. Try words from an issue's title or description, an issue key such as WEB-12, or ask what is overdue, due today or this week, assigned to you, in progress, or which statuses and projects you have.";
         await usage.finish(requestId, "no_sources", 0, null);
         finished = true;
         logger.info({ userId, outcome: "no_sources" }, "ask answered without the model");

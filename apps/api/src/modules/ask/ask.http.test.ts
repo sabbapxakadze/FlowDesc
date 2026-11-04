@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import pino from "pino";
 import request from "supertest";
 import { eq } from "drizzle-orm";
 import { app } from "../../app.js";
@@ -80,7 +81,7 @@ describe("asking a question", () => {
     const o = await makeOrg("o@example.com", "Org A", "WEB");
     await addIssue(o, "Pricing page");
     const res = await post(o, "zzzqqq nothing like this exists").expect(200);
-    expect(res.body.data).toMatchObject({ answer: "I could not find anything about that in your workspace.", sources: [], limits: { remaining: 9 } });
+    expect(res.body.data).toMatchObject({ answer: expect.stringContaining("I could not find anything about that"), sources: [], limits: { remaining: 9 } });
     expect(fake.calls).toHaveLength(0);
     expect((await rows()).map((r) => r.outcome)).toEqual(["no_sources"]);
   });
@@ -94,6 +95,36 @@ describe("asking a question", () => {
     const missing = await post(o, "What happened on WEB-99?").expect(200);
     expect(missing.body.data.answer).toBe("No issue with the key WEB-99 exists in this workspace.");
     expect(fake.calls).toHaveLength(0);
+  });
+
+  it("answers 'what statuses do we have?' from the counts, without the model", async () => {
+    // Why: this was answered "I could not find anything" (the owner's first real try). It is a question about the workspace, so the counts are the answer.
+    const o = await makeOrg("o@example.com", "Org A", "WEB");
+    await addIssue(o, "On track");
+    const res = await post(o, "What statuses do we have?").expect(200);
+    expect(res.body.data.answer).toContain("The statuses an issue can have are: Todo, In progress and Done.");
+    expect(res.body.data.answer).toContain("Todo 1, In progress 0, Done 0");
+    expect(res.body.data.sources).toEqual([]);
+    expect(fake.calls).toHaveLength(0);
+  });
+
+  it("answers a greeting or 'help' with what it can do: free, no model, no usage row, even after the limit is reached", async () => {
+    // Why: "hi" was answered "I could not find anything" (the owner's second real try). Small talk costs nothing, so it must not count or be refused.
+    env.ASK_LIMIT_PER_HOUR = 1;
+    const o = await makeOrg("o@example.com", "Org A", "WEB");
+    await addIssue(o, "Pricing page");
+    const hi = await post(o, "hi").expect(200);
+    expect(hi.body.data.answer).toContain("What is overdue?");
+    expect(hi.body.data.sources).toEqual([]);
+    expect(hi.body.data.limits).toEqual({ remaining: 1, limit: 1, window: "hour" }); // nothing was used
+    expect((await post(o, "What can you do?").expect(200)).body.data.answer).toContain("What is in progress?");
+    expect((await post(o, "thanks").expect(200)).body.data.answer).toContain("welcome");
+    expect(fake.calls).toHaveLength(0);
+    expect(await rows()).toHaveLength(0);
+
+    await post(o, "pricing").expect(200); // the one real question the limit allows
+    await post(o, "pricing").expect(429); // the next real one is refused...
+    await post(o, "hello").expect(200); // ...but a greeting still is not
   });
 
   it("is off when no provider is set, and the info address says so", async () => {
@@ -358,7 +389,25 @@ describe("what is kept", () => {
     await addIssue(o, "Xylophone quartz ledger", "Confidential harpsichord details");
     setAiProviderForTests(createFakeProvider(() => "The xylophone harpsichord answer [S1]."));
     const written: string[] = [];
-    for (const level of ["info", "warn", "error", "debug"] as const) vi.spyOn(logger, level).mockImplementation(((...args: unknown[]) => void written.push(JSON.stringify(args))) as never);
+    // A log argument can hold a circular object (a request, a socket): the replacer drops repeats so every argument is still read, instead of throwing and being skipped.
+    // The request logger hands pino the raw request and response objects, and pino reduces them (method, address, status, headers) before anything is printed.
+    // The spy sees them before that, so the same reduction is applied here: what is checked is what would really be written.
+    const printed = (arg: unknown) => {
+      if (typeof arg !== "object" || arg === null) return arg;
+      const entry = arg as Record<string, unknown>;
+      return { ...entry, ...(entry.req ? { req: pino.stdSerializers.req(entry.req as never) } : {}), ...(entry.res ? { res: pino.stdSerializers.res(entry.res as never) } : {}) };
+    };
+    const readable = (args: unknown[]) => {
+      const seen = new WeakSet<object>();
+      return JSON.stringify(args.map(printed), (_key, value: unknown) => {
+        if (typeof value === "object" && value !== null) {
+          if (seen.has(value)) return "[repeat]";
+          seen.add(value);
+        }
+        return value;
+      });
+    };
+    for (const level of ["info", "warn", "error", "debug"] as const) vi.spyOn(logger, level).mockImplementation(((...args: unknown[]) => void written.push(readable(args))) as never);
 
     await post(o, "Tell me about the xylophone quartz ledger").expect(200);
 
@@ -366,7 +415,7 @@ describe("what is kept", () => {
     expect(Object.keys((await rows())[0]!).sort()).toEqual(["createdAt", "id", "neurons", "outcome", "sourcesCount", "userId"]);
     for (const text of ["xylophone", "quartz", "harpsichord", "Confidential"]) {
       expect(all.toLowerCase(), text).not.toContain(text.toLowerCase());
-      expect(written.join(" ").toLowerCase(), text).not.toContain(text.toLowerCase());
+      expect(written.filter((w) => w.toLowerCase().includes(text.toLowerCase())).map((w) => w.slice(0, 400)), text).toEqual([]);
     }
     expect(written.join(" ")).toContain("ask answered"); // it does log that something happened
   });

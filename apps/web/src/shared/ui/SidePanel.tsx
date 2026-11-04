@@ -37,11 +37,14 @@ export function SidePanel({
   label,
   onClose,
   closing = false,
+  variant = "side",
   children,
 }: {
   label: string;
   onClose: () => void;
   closing?: boolean;
+  /** `side`: the full-height panel at the right edge. `card`: a compact card in the bottom-right corner, as tall as its content up to a maximum (Ask FlowDesc). Both are a full-screen sheet on a phone. */
+  variant?: "side" | "card";
   children: ReactNode;
 }) {
   const ref = useRef<HTMLElement>(null);
@@ -112,7 +115,11 @@ export function SidePanel({
         aria-label={label}
         tabIndex={-1}
         inert={closing}
-        className={`fixed inset-0 z-40 flex flex-col overflow-hidden bg-[var(--color-bg-surface)] text-[var(--color-text-default)] shadow-xl focus:outline-none sm:inset-y-3 sm:right-3 sm:left-auto sm:w-[480px] sm:rounded-[var(--radius-card)] sm:border sm:border-[var(--color-border-default)] ${
+        className={`fixed inset-0 z-40 flex flex-col overflow-hidden bg-[var(--color-bg-surface)] text-[var(--color-text-default)] shadow-xl focus:outline-none sm:left-auto sm:rounded-[var(--radius-card)] sm:border sm:border-[var(--color-border-default)] ${
+          variant === "card"
+            ? "sm:inset-y-auto sm:right-4 sm:bottom-4 sm:max-h-[min(40rem,calc(100dvh-2rem))] sm:min-h-[min(26rem,calc(100dvh-2rem))] sm:w-[400px]"
+            : "sm:inset-y-3 sm:right-3 sm:w-[480px]"
+        } ${
           closing ? "motion-slide-out-right" : "motion-slide-in-right"
         }`}
       >

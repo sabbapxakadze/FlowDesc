@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cleanQuestion, clip, parseQuestion, plainText, weekOf } from "./ask.question.js";
+import { cleanQuestion, clip, parseQuestion, plainText, smallTalk, weekOf } from "./ask.question.js";
 
 /**
  * Reading a question (ADR 0077). Pure functions, so every pattern is tested on its own: what it must catch and, as important, what it must leave alone.
@@ -97,5 +97,38 @@ describe("small helpers", () => {
     expect(clip("short", 10)).toBe("short");
     expect(clip("abcdefghij", 5)).toBe("abcd…");
     expect(clip("abcdefghij", 5)).toHaveLength(5);
+  });
+});
+
+describe("questions about the workspace itself", () => {
+  const overview = (q: string) => parseQuestion(q).intents.includes("overview");
+
+  it("catches the ways people ask what statuses, priorities, projects or how many issues there are", () => {
+    // Why: "what statuses do we have?" is not about any issue's text, so a text search finds nothing and the person was told "I could not find anything".
+    for (const q of ["What statuses do we have?", "which status can an issue have", "how many issues are there?", "give me an overview", "What projects do we have?", "which priorities exist"]) {
+      expect(overview(q), q).toBe(true);
+    }
+  });
+
+  it("leaves ordinary text questions alone", () => {
+    // Why: "status" inside a sentence about an issue ("the status page is broken") must still be searched as text, not turned into a count.
+    for (const q of ["the status page is broken", "why is the project plan late", "who fixed the priority bug"]) {
+      expect(overview(q), q).toBe(false);
+    }
+  });
+});
+
+describe("small talk", () => {
+  it("catches a message that is only a greeting, a thanks or a request for help", () => {
+    // Why: "hi" was answered "I could not find anything" (the owner's second real try). These get a fixed, free reply.
+    for (const q of ["hi", "Hi!", "hello", "Hey there", "good morning", "help", "What can you do?", "what can I ask", "who are you?"]) expect(smallTalk(q), q).toBe("help");
+    for (const q of ["thanks", "Thank you!", "ok", "great"]) expect(smallTalk(q), q).toBe("thanks");
+  });
+
+  it("leaves real questions alone, even when they start with a greeting or the word help", () => {
+    // Why: the whole message must be small talk. Otherwise "help with the login bug" would never be searched.
+    for (const q of ["help with the login bug", "hello, what is overdue?", "hi WEB-12", "what can you tell me about pricing", "who is assigned to login", "thanks for fixing WEB-4 so what is left"]) {
+      expect(smallTalk(q), q).toBeNull();
+    }
   });
 });

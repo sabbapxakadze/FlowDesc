@@ -32,3 +32,15 @@ export function describeLimits(limits: AskLimits): string {
   const when = limits.window === "hour" ? "this hour" : limits.window === "day" ? "today" : "in this demo";
   return `${limits.remaining} of ${limits.limit} question${limits.limit === 1 ? "" : "s"} left ${when}`;
 }
+
+/** The chat as plain text for "Copy chat": each question and answer, with the issues an answer used. No ids, only what is on the screen. */
+export function chatToText(messages: Array<{ kind: "question" | "answer" | "problem"; text: string; sources?: AskSource[] }>): string {
+  return messages
+    .map((m) => {
+      if (m.kind === "question") return `You: ${m.text}`;
+      const who = m.kind === "answer" ? "FlowDesc" : "FlowDesc (problem)";
+      const sources = m.sources && m.sources.length > 0 ? `\nSources: ${m.sources.map((s) => `${s.key} ${s.title}`).join("; ")}` : "";
+      return `${who}: ${m.text}${sources}`;
+    })
+    .join("\n\n");
+}

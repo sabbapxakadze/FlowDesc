@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AskSource } from "@flowdesc/contracts";
-import { describeLimits, parseSourceKey, splitAnswer } from "./answer";
+import { chatToText, describeLimits, parseSourceKey, splitAnswer } from "./answer";
 
 const sources: AskSource[] = [
   { n: 1, key: "WEB-1", title: "One", status: "todo" },
@@ -39,5 +39,17 @@ describe("describeLimits", () => {
     expect(describeLimits({ remaining: 7, limit: 10, window: "hour" })).toBe("7 of 10 questions left this hour");
     expect(describeLimits({ remaining: 0, limit: 30, window: "day" })).toBe("0 of 30 questions left today");
     expect(describeLimits({ remaining: 3, limit: 5, window: "demo" })).toBe("3 of 5 questions left in this demo");
+  });
+});
+
+describe("chatToText", () => {
+  // Why: "Copy chat" must give back what the person saw, in order, with who said it and which issues an answer used.
+  it("writes questions and answers in order with their sources", () => {
+    const text = chatToText([
+      { kind: "question", text: "What is overdue?" },
+      { kind: "answer", text: "WEB-1 [S1]", sources },
+      { kind: "problem", text: "Try again later." },
+    ]);
+    expect(text).toBe("You: What is overdue?\n\nFlowDesc: WEB-1 [S1]\nSources: WEB-1 One; WEB-2 Two\n\nFlowDesc (problem): Try again later.");
   });
 });

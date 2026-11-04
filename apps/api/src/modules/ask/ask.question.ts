@@ -6,7 +6,7 @@
  * matches none of them still gets text search. A wrong match costs a few extra sources, never a wrong action: nothing here changes data.
  */
 
-export type Intent = "overdue" | "dueToday" | "dueWeek" | "assignedToMe" | "inProgress";
+export type Intent = "overdue" | "dueToday" | "dueWeek" | "assignedToMe" | "inProgress" | "overview";
 
 export type ParsedQuestion = {
   /** Issue keys named in the question, upper-cased, first five, in order ("WEB-12"). */
@@ -28,7 +28,45 @@ const PATTERNS: { intent: Intent; pattern: RegExp }[] = [
   { intent: "assignedToMe", pattern: /\b(assigned to me|(?:my|mine) (?:open )?(?:issues?|tasks?|work|tickets?)|on my plate|i am assigned|i'm assigned)\b/gi },
   // "working on" is left out on purpose: "who is working on login?" is a text question, not a request for everything in progress.
   { intent: "inProgress", pattern: /\b(in[- ]progress|currently in progress)\b/gi },
+  // Questions about the workspace itself ("what statuses do we have?", "how many issues are there?", "which projects?"): answered from counts, not from issue text.
+  {
+    intent: "overview",
+    pattern:
+      /\b(statuses|status (options|values|list)|what status(es)?|which status(es)?|workflow|how many (open |total )?(issues?|tasks?|tickets?)|overview|(?:what|which|list( of)?|how many) projects?|(?:what|which) priorit(?:y|ies)|priorit(?:y|ies) (levels|options))\b/gi,
+  },
 ];
+
+const GREETING_OR_HELP =
+  /^(hi|hello|hey|hiya|yo|hola|sup|howdy|good (morning|afternoon|evening)|help|help me|what can you do|what do you do|what can i ask( you)?|how does this work|how do i use this|who are you|what are you)( there| flowdesc| everyone)?$/;
+const THANKS = /^(thanks|thank you|thx|ty|ok|okay|cool|great|nice|got it)( a lot| so much)?$/;
+
+/**
+ * A message that is only a greeting, a thank-you or a request for help ("hi", "what can you do?", "thanks"). The WHOLE message has to be one, so
+ * "help with the login bug" and "hello, what is overdue?" are still real questions. These get a fixed reply and cost nothing (no search, no model).
+ */
+export function smallTalk(question: string): "help" | "thanks" | null {
+  const plain = cleanQuestion(question)
+    .toLowerCase()
+    .replace(/[!?.,:;]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (GREETING_OR_HELP.test(plain)) return "help";
+  if (THANKS.test(plain)) return "thanks";
+  return null;
+}
+
+export const HELP_REPLY = [
+  "Hi! I answer questions about your issues and comments. You can ask things like:",
+  "- What is overdue?",
+  "- What is in progress?",
+  "- What is assigned to me?",
+  "- What is due today, or this week?",
+  "- What statuses and projects do we have?",
+  "- What happened on WEB-12? (use an issue key)",
+  "- Or use words from an issue, such as \"login\" or \"pricing\".",
+].join("\n");
+
+export const THANKS_REPLY = "You're welcome! Ask another question any time.";
 
 /** Control characters out, runs of white space made one space, and the ends trimmed. */
 export function cleanQuestion(question: string): string {
