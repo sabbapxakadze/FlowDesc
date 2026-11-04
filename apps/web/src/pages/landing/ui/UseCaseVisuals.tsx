@@ -1,5 +1,6 @@
-import { Bell, CalendarClock, Paperclip } from "lucide-react";
+import { Bell, CalendarClock, Paperclip, Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
+import { cn, STATUS_DOT_CLASSES } from "../../../shared/ui";
 
 /**
  * The small pictures next to each way of working (ADR 0067). They are drawn examples, not the live app and not real figures: each says
@@ -109,6 +110,47 @@ export function ProgressVisual() {
             {name}
           </span>
         ))}
+      </div>
+    </ExampleCard>
+  );
+}
+
+/** The Ask FlowDesc panel inside the app: a question, an answer with numbered sources and the issues it used. Drawn, not a real conversation (ADR 0077). */
+export function AskVisual() {
+  const sources = [
+    { n: 1, key: "WEB-25", title: "Fix layout shift on the homepage hero image", status: "Todo", dot: "todo" as const },
+    { n: 2, key: "WEB-18", title: "Set up redirects from the old blog URLs", status: "In progress", dot: "in_progress" as const },
+  ];
+  return (
+    <ExampleCard caption="Example: a question asked inside FlowDesc">
+      <div className="flex justify-end">
+        <p className="rounded-2xl rounded-br-sm bg-[var(--color-bg-action-primary)] px-3 py-2 text-[var(--color-text-on-action)]">What is overdue in WEB?</p>
+      </div>
+      <div className="mt-3 flex items-start gap-2">
+        <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-bg-action-create)] text-[var(--color-text-on-action-strong)]">
+          <Sparkles size={14} aria-hidden="true" />
+        </span>
+        <div className="min-w-0 flex-1 rounded-2xl rounded-tl-sm border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] p-3 shadow-sm">
+          <p>
+            Two issues are past their due date: the layout shift{" "}
+            <span className="mx-0.5 inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--color-bg-lane)] px-1 text-xs font-medium text-[var(--color-text-link)]">1</span> and the old
+            blog redirects{" "}
+            <span className="mr-0 ml-0.5 inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--color-bg-lane)] px-1 text-xs font-medium text-[var(--color-text-link)]">2</span>.
+          </p>
+          <div className="mt-3 border-t border-[var(--color-border-default)] pt-2">
+            <p className="mb-1.5 text-[0.6875rem] font-medium tracking-wide text-[var(--color-text-muted)] uppercase">Sources</p>
+            <ul className="flex flex-col gap-1.5">
+              {sources.map((source) => (
+                <li key={source.key} className="flex items-center gap-2 rounded-lg border border-[var(--color-border-default)] px-2 py-1 text-xs">
+                  <span className={cn("h-2 w-2 shrink-0 rounded-full", STATUS_DOT_CLASSES[source.dot])} />
+                  <b className="font-medium">{source.key}</b>
+                  <span className="min-w-0 flex-1 truncate">{source.title}</span>
+                  <span className="shrink-0 text-[var(--color-text-muted)]">{source.status}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
       </div>
     </ExampleCard>
   );

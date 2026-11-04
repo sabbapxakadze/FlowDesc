@@ -1,9 +1,10 @@
-import { Bot, ListChecks, Timer, TrendingUp, UserCheck, type LucideIcon } from "lucide-react";
+import { Bot, ListChecks, MessageCircleQuestion, Timer, TrendingUp, UserCheck, type LucideIcon } from "lucide-react";
 import { useState, type ComponentType } from "react";
 import { withViewTransition } from "../../../shared/lib/motion";
 import { Button, cn } from "../../../shared/ui";
 import { SectionHeading } from "./SectionHeading";
-import { AiVisual, BacklogVisual, HandoverVisual, ProgressVisual, SprintVisual } from "./UseCaseVisuals";
+import { useAskEnabled } from "../../../features/ask-flowdesc";
+import { AiVisual, AskVisual, BacklogVisual, HandoverVisual, ProgressVisual, SprintVisual } from "./UseCaseVisuals";
 
 /** Ways of working the app supports today, written as what a person does, not as claims about who uses it. */
 const CASES: { id: string; title: string; text: string; Icon: LucideIcon; Visual: ComponentType }[] = [
@@ -45,13 +46,27 @@ const CASES: { id: string; title: string; text: string; Icon: LucideIcon; Visual
 ];
 
 /**
- * Five ways of working as a row of pills, one open at a time (ADR 0067). The pills are buttons inside a list (so the section still has
+ * Shown only when the server says Ask FlowDesc is switched on (the same public, read-only answer the app uses to show its sidebar row), so the page
+ * never advertises something a server does not have. It sits before "Ask your AI", which stays last.
+ */
+const ASK_CASE: (typeof CASES)[number] = {
+  id: "ask",
+  title: "Ask your project",
+  text: "Ask in plain words, right inside FlowDesc: what is overdue, what is in progress, what happened on WEB-12. Every answer links the issues it came from. It only reads, and answers can be wrong, so check the sources.",
+  Icon: MessageCircleQuestion,
+  Visual: AskVisual,
+};
+
+/**
+ * Five ways of working (six when Ask is on) as a row of pills, one open at a time (ADR 0067). The pills are buttons inside a list (so the section still has
  * its five items) and say which is open with `aria-pressed`, like the product preview's pills; the open one's text is announced politely when it
  * changes. The picture is a drawn example and is hidden from assistive technology.
  */
 export function UseCases() {
+  const askOn = useAskEnabled();
+  const cases = askOn ? [...CASES.slice(0, -1), ASK_CASE, CASES[CASES.length - 1]!] : CASES;
   const [selected, setSelected] = useState(CASES[0]!.id);
-  const current = CASES.find((item) => item.id === selected) ?? CASES[0]!;
+  const current = cases.find((item) => item.id === selected) ?? cases[0]!;
   return (
     <section aria-labelledby="landing-use-cases" className="mx-auto mt-20 w-full max-w-6xl px-4 sm:mt-28 sm:px-6">
       <SectionHeading id="landing-use-cases" title="What people use it for">
@@ -60,8 +75,8 @@ export function UseCases() {
       {/* On a phone the pills are a tidy two-column grid (the odd one out spans both columns) instead of a ragged stack of wrapped pills; from
           `sm` up they are the centred row they always were. */}
       <ul aria-label="Ways of working" className="mt-10 grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:justify-center">
-        {CASES.map(({ id, title, Icon }, index) => (
-          <li key={id} className={index === CASES.length - 1 && CASES.length % 2 === 1 ? "col-span-2 sm:col-span-1" : undefined}>
+        {cases.map(({ id, title, Icon }, index) => (
+          <li key={id} className={index === cases.length - 1 && cases.length % 2 === 1 ? "col-span-2 sm:col-span-1" : undefined}>
             <Button
               type="button"
               size="md"

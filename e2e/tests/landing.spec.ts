@@ -101,7 +101,7 @@ test("the page has its sections, in order, with a sensible heading structure", a
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
   await expect(page.getByRole("region", { name: "What you get" }).getByRole("listitem")).toHaveCount(8);
   await expect(page.getByRole("region", { name: "How it works" }).getByRole("listitem")).toHaveCount(3);
-  await expect(page.getByRole("region", { name: "What people use it for" }).getByRole("listitem")).toHaveCount(5);
+  await expect(page.getByRole("region", { name: "What people use it for" }).getByRole("listitem")).toHaveCount(6); // five, plus Ask your project while the server has Ask on
   await expect(page.getByRole("region", { name: "Use it from your AI app" }).getByRole("listitem")).toHaveCount(3);
 });
 
@@ -155,12 +155,12 @@ test("on a phone the page does not scroll sideways, and the theme choice is reme
 });
 
 test("the landing page only asks the server whether the demo is offered", async ({ page }) => {
-  // Why: it is public and static. The only thing it may ask the server is whether "Try the demo" is on (a public, read-only answer, ADR 0044), besides
+  // Why: it is public and static. The only things it may ask the server are whether "Try the demo" is on (ADR 0044) and whether Ask FlowDesc is on (ADR 0077): public, read-only answers, besides
   // the app's usual silent session check on load; nothing else on it may need the server.
   const calls: string[] = [];
   page.on("request", (request) => {
     const url = request.url();
-    if (url.includes("/api/v1/") && !url.endsWith("/api/v1/auth/refresh") && !url.includes("/auth/oauth/providers") && !url.endsWith("/api/v1/demo/info")) calls.push(url);
+    if (url.includes("/api/v1/") && !url.endsWith("/api/v1/auth/refresh") && !url.includes("/auth/oauth/providers") && !url.endsWith("/api/v1/demo/info") && !url.endsWith("/api/v1/ask/info")) calls.push(url);
   });
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
@@ -247,22 +247,45 @@ test("the AI section shows a placeholder command, never a token, and its Copy bu
   await expect(section.getByRole("link", { name: /flowdesc-mcp page on npm/ })).toHaveAttribute("href", "https://www.npmjs.com/package/flowdesc-mcp");
 });
 
+test("Ask your project shows a drawn example of the panel, labelled as one, and only while the server has Ask on", async ({ page }) => {
+  // Why: the landing page must not advertise a feature a server does not have (ADR 0077), and the picture is drawn, not real, so it says "Example".
+  await page.goto("/");
+  const tabs = page.getByRole("list", { name: "Ways of working" });
+  await tabs.getByRole("button", { name: "Ask your project" }).click();
+  await expect(tabs.getByRole("button", { name: "Ask your project" })).toHaveAttribute("aria-pressed", "true");
+  const open = page.getByRole("heading", { level: 3, name: "Ask your project" }).locator("xpath=ancestor::div[2]");
+  await expect(open).toContainText("answers can be wrong");
+  await expect(open.getByText(/^Example: a question asked inside FlowDesc/)).toBeVisible();
+  await expect(open.getByText("What is overdue in WEB?")).toBeVisible();
+  // Ask your AI stays last.
+  await expect(tabs.getByRole("button").last()).toHaveText("Ask your AI");
+
+  await page.route("**/api/v1/ask/info", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: { enabled: false, maxQuestionLength: 500 } }) }),
+  );
+  await page.reload();
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await expect(tabs.getByRole("button", { name: "Run a sprint" })).toBeVisible();
+  await expect(tabs.getByRole("button", { name: "Ask your project" })).toHaveCount(0);
+  await expect(tabs.getByRole("button")).toHaveCount(5);
+});
+
 test("on a phone each way of working fits inside the screen, and the pills are a tidy grid", async ({ page }) => {
   // Why: the landing page clips what overflows its edge (the document never scrolls sideways), so the usual "no sideways scroll" check cannot see
   // a card that is wider than the screen with its text cut off. This measures the elements themselves, for every tab. It also pins the pill layout:
-  // two columns, the odd one out across both.
+  // two columns (with five pills the odd one out spans both; with Ask on there are six).
   await page.setViewportSize({ width: 390, height: 800 });
   await page.goto("/");
   const section = page.getByRole("region", { name: "What people use it for" });
   await section.scrollIntoViewIfNeeded();
   const tabs = section.getByRole("list", { name: "Ways of working" }).getByRole("button");
   const count = await tabs.count();
-  expect(count).toBe(5);
+  expect(count).toBe(6); // Ask your project is shown because the e2e server has Ask on
 
   const boxes = await Promise.all(Array.from({ length: count }, async (_, i) => (await tabs.nth(i).boundingBox())!));
   expect(Math.round(boxes[0]!.y)).toBe(Math.round(boxes[1]!.y)); // 1 and 2 share a row
   expect(Math.round(boxes[2]!.y)).toBe(Math.round(boxes[3]!.y)); // 3 and 4 share a row
-  expect(boxes[4]!.width).toBeGreaterThan(boxes[0]!.width * 1.8); // the fifth spans both columns
+  expect(Math.round(boxes[4]!.y)).toBe(Math.round(boxes[5]!.y)); // 5 and 6 share a row (six pills fill three rows of two)
 
   for (let i = 0; i < count; i++) {
     await tabs.nth(i).click();

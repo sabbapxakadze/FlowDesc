@@ -110,6 +110,8 @@ What Cloudflare returns when the daily allowance is used up (the pricing page sa
 
 - **Slice 5 (2026-11-04), docs:** README (a section, a highlight, the decisions table), `docs/security.md` (a section: injection, plain-text output, tenants, who may ask, cost, what is stored, the key, the third party, what is not covered), CLAUDE.md, a Tutorial step that points at the sidebar row (the tour skips a step whose target is not on screen, so it disappears while Ask is off), and `render.yaml` comments for the three settings. The README says what is and is not verified.
 
+- **Slice 6 (2026-11-04), the landing page:** a sixth way of working, "Ask your project", before "Ask your AI" (which stays last): short copy (it only reads, answers can be wrong, check the sources) and a drawn example of the panel, labelled "Example" like the other pictures. **It is shown only while the server says Ask is on** (the landing page asks `GET /ask/info`, the same public answer the app uses for its sidebar row), so the public page never advertises a feature a server does not have; with Ask off there are five ways, as before. Browser tests: the tab and its Example label, Ask your AI last, five ways with Ask off, six pills in three rows of two on a phone with no element past the edge, and the page's "only asks the server" test now allows exactly the two public info answers. Looked at in light, dark and at 360 px. **Not done:** a real screenshot of the panel (the picture is drawn, because a real one would need a live model answer), and a sixth pill sits alone on a second row on a wide desktop.
+
 ## Sources read on 2026-11-04
 
 - Cloudflare Workers AI pricing: <https://developers.cloudflare.com/workers-ai/platform/pricing/>
