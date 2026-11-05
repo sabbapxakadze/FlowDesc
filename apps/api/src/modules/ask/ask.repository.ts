@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gte, inArray, lt, lte, ne, or, sql, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, isNull, lt, lte, ne, or, sql, type SQL } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { issues, projects, users } from "../../db/schema/index.js";
 
@@ -105,6 +105,43 @@ export function listAssignedTo(organizationId: string, userId: string, limit: nu
 
 export function listInProgress(organizationId: string, limit: number): Promise<IdList> {
   return idList(and(eq(issues.organizationId, organizationId), eq(issues.status, "in_progress")), [desc(issues.updatedAt), asc(issues.id)], limit);
+}
+
+/** Open issues nobody is assigned to, the most recently changed first. */
+export function listUnassigned(organizationId: string, limit: number): Promise<IdList> {
+  return idList(and(eq(issues.organizationId, organizationId), isNull(issues.assigneeId), ne(issues.status, "done")), [desc(issues.updatedAt), asc(issues.id)], limit);
+}
+
+/** Open issues of priority urgent or high, urgent first, then the soonest due (no due date last). */
+export function listUrgent(organizationId: string, limit: number): Promise<IdList> {
+  return idList(
+    and(eq(issues.organizationId, organizationId), inArray(issues.priority, ["urgent", "high"]), ne(issues.status, "done")),
+    [sql`case when ${issues.priority} = 'urgent' then 0 else 1 end`, sql`${issues.dueDate} asc nulls last`, desc(issues.updatedAt), asc(issues.id)],
+    limit,
+  );
+}
+
+/** The issues changed most recently, whatever their status. */
+export function listRecent(organizationId: string, limit: number): Promise<IdList> {
+  return idList(eq(issues.organizationId, organizationId), [desc(issues.updatedAt), asc(issues.id)], limit);
+}
+
+export type PersonLoad = { name: string; open: number };
+
+/** How many open (not done) issues each person has, the most first, and how many open issues have nobody. Only this organization's issues are counted. */
+export async function workloadCounts(organizationId: string, limit: number): Promise<{ people: PersonLoad[]; unassigned: number }> {
+  const [people, unassigned] = await Promise.all([
+    db
+      .select({ name: users.name, open: count(issues.id) })
+      .from(issues)
+      .innerJoin(users, eq(users.id, issues.assigneeId))
+      .where(and(eq(issues.organizationId, organizationId), ne(issues.status, "done")))
+      .groupBy(users.id, users.name)
+      .orderBy(desc(count(issues.id)), asc(users.name))
+      .limit(limit),
+    db.select({ n: count() }).from(issues).where(and(eq(issues.organizationId, organizationId), isNull(issues.assigneeId), ne(issues.status, "done"))),
+  ]);
+  return { people: people.map((p) => ({ name: p.name, open: p.open })), unassigned: unassigned[0]?.n ?? 0 };
 }
 
 export type Overview = {

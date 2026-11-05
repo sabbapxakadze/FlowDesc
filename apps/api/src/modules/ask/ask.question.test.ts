@@ -132,3 +132,24 @@ describe("small talk", () => {
     }
   });
 });
+
+describe("the A.5 question types", () => {
+  const has = (q: string, intent: string) => (parseQuestion(q).intents as string[]).includes(intent);
+
+  it("catches the usual wordings of workload, recent, urgent and unassigned", () => {
+    // Why: these are the questions the owner tried and the model answered badly; each now has an exact answer from the database.
+    for (const q of ["Who has the most open issues?", "who is the busiest", "show the workload", "issues per person", "who is working on what"]) expect(has(q, "workload"), q).toBe(true);
+    for (const q of ["What changed recently?", "what's new", "latest updates", "what happened lately"]) expect(has(q, "recent"), q).toBe(true);
+    for (const q of ["What is urgent?", "show high priority issues", "top-priority work"]) expect(has(q, "urgent"), q).toBe(true);
+    for (const q of ["What is unassigned?", "which issues are not assigned", "issues without an assignee", "nobody is assigned to what"]) expect(has(q, "unassigned"), q).toBe(true);
+  });
+
+  it("leaves topic questions alone", () => {
+    // Why: "who is working on login?" names a topic and must still be searched as text; "urgent" inside a sentence about a bug is a text question too in spirit,
+    // but a wrong match only adds a few sources, so what matters is that the NAMED topics below are not turned into a workload or a list.
+    expect(has("who is working on login?", "workload")).toBe(false);
+    expect(has("what changed in WEB-12", "recent")).toBe(false);
+    expect(has("the new logo is the priority", "urgent")).toBe(false);
+    expect(has("assigned to me", "unassigned")).toBe(false);
+  });
+});

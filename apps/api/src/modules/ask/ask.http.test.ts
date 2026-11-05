@@ -11,7 +11,7 @@ import { AiProviderError, createFakeProvider, type AiProvider } from "../../lib/
 import { setAiProviderForTests } from "../../lib/ai-provider.js";
 import { logger } from "../../lib/logger.js";
 import { signAccessToken } from "../auth/tokens.js";
-import { ask as askService } from "./ask.service.js";
+import { ask as askService, UNCITED_NOTE } from "./ask.service.js";
 
 /**
  * Ask FlowDesc over real HTTP and the real database (ADR 0077). The model is a fake that records exactly what it would have been sent, so every case is free and
@@ -125,6 +125,29 @@ describe("asking a question", () => {
     await post(o, "pricing").expect(200); // the one real question the limit allows
     await post(o, "pricing").expect(429); // the next real one is refused...
     await post(o, "hello").expect(200); // ...but a greeting still is not
+  });
+
+  it("adds a note under a model answer that cites none of its sources, and none when it cites one", async () => {
+    // Why: a small model sometimes answers without pointing at what it was given. The person must be told to check, and the server (not the model) adds the note.
+    const o = await makeOrg("o@example.com", "Org A", "WEB");
+    await addIssue(o, "Pricing page");
+    setAiProviderForTests(createFakeProvider(() => "Pricing is on the roadmap."));
+    const bare = await post(o, "pricing").expect(200);
+    expect(bare.body.data.answer).toBe(`Pricing is on the roadmap.\n\n${UNCITED_NOTE}`);
+
+    setAiProviderForTests(createFakeProvider(() => "Pricing is on the roadmap [S1]."));
+    const cited = await post(o, "pricing").expect(200);
+    expect(cited.body.data.answer).toBe("Pricing is on the roadmap [S1].");
+  });
+
+  it("answers 'who has the most open issues?' from the counts, without the model", async () => {
+    // Why: a count is exact, so it comes from the database; a small model would guess.
+    const o = await makeOrg("o@example.com", "Org A", "WEB");
+    await addIssue(o, "Pricing page");
+    const res = await post(o, "Who has the most open issues?").expect(200);
+    expect(res.body.data.answer).toContain("Open issues with nobody assigned: 1.");
+    expect(res.body.data.sources).toEqual([]);
+    expect(fake.calls).toHaveLength(0);
   });
 
   it("is off when no provider is set, and the info address says so", async () => {

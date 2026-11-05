@@ -6,7 +6,7 @@
  * matches none of them still gets text search. A wrong match costs a few extra sources, never a wrong action: nothing here changes data.
  */
 
-export type Intent = "overdue" | "dueToday" | "dueWeek" | "assignedToMe" | "inProgress" | "overview";
+export type Intent = "overdue" | "dueToday" | "dueWeek" | "assignedToMe" | "inProgress" | "overview" | "workload" | "recent" | "urgent" | "unassigned";
 
 export type ParsedQuestion = {
   /** Issue keys named in the question, upper-cased, first five, in order ("WEB-12"). */
@@ -28,6 +28,15 @@ const PATTERNS: { intent: Intent; pattern: RegExp }[] = [
   { intent: "assignedToMe", pattern: /\b(assigned to me|(?:my|mine) (?:open )?(?:issues?|tasks?|work|tickets?)|on my plate|i am assigned|i'm assigned)\b/gi },
   // "working on" is left out on purpose: "who is working on login?" is a text question, not a request for everything in progress.
   { intent: "inProgress", pattern: /\b(in[- ]progress|currently in progress)\b/gi },
+  // Who has how much open work. Deliberately NOT "who is working on <something>": that names a topic and stays a text question.
+  {
+    intent: "workload",
+    pattern:
+      /\b(workload|busiest|who (?:has|have) the most (?:open )?(?:work|issues?|tasks?|tickets?)|who (?:has|have) (?:got )?(?:the )?most (?:open )?(?:work|issues?|tasks?|tickets?)|(?:open )?(?:issues?|tasks?|work) (?:per|by) (?:person|member|assignee|people)|who is working on what)\b/gi,
+  },
+  { intent: "recent", pattern: /\b(recent(?:ly)? (?:changes?|changed|updated|activity|issues?)|what changed (?:lately|recently)|what'?s new|latest (?:changes?|updates?|issues?)|what happened (?:lately|recently)|updated (?:lately|recently))\b/gi },
+  { intent: "urgent", pattern: /\b(urgent|high[- ]priority|top[- ]priority|highest priority)\b/gi },
+  { intent: "unassigned", pattern: /\b(unassigned|not assigned|(?:no ?body|no ?one) (?:is )?assigned|without (?:an )?assignee)\b/gi },
   // Questions about the workspace itself ("what statuses do we have?", "how many issues are there?", "which projects?"): answered from counts, not from issue text.
   {
     intent: "overview",
@@ -60,6 +69,9 @@ export const HELP_REPLY = [
   "- What is overdue?",
   "- What is in progress?",
   "- What is assigned to me?",
+  "- What is urgent, or unassigned?",
+  "- Who has the most open issues?",
+  "- What changed recently?",
   "- What is due today, or this week?",
   "- What statuses and projects do we have?",
   "- What happened on WEB-12? (use an issue key)",

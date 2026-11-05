@@ -21,6 +21,8 @@ import * as usage from "./ask.usage.repository.js";
 
 /** The answer is capped at this many tokens, a cost choice (ADR 0077, decision 6). */
 export const MAX_ANSWER_TOKENS = 400;
+/** Added under a model answer that cites none of its sources. */
+export const UNCITED_NOTE = "Note: this answer does not point to a specific issue, so please check the sources below.";
 const RETENTION_DAYS = 30;
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
@@ -177,7 +179,10 @@ export async function ask(input: { organizationId: string; userId: string; quest
       await usage.finish(requestId, "answered", sources.length, response.usage?.neurons ?? null);
       finished = true;
       logger.info({ userId, outcome: "answered", sources: sources.length, neurons: response.usage?.neurons }, "ask answered");
-      return { answer: cleaned.text, sources, limits: await limitsFor(userId, isDemo, now) };
+      // A small model sometimes answers without pointing at anything it was given. That is not forbidden, but the person should know to check: the note is
+      // added here, by the server, so it cannot be left out by the model (and it is not a citation, so no chip is made for it).
+      const answer = cleaned.cited.length === 0 ? `${cleaned.text}\n\n${UNCITED_NOTE}` : cleaned.text;
+      return { answer, sources, limits: await limitsFor(userId, isDemo, now) };
     } catch (err) {
       // An unexpected failure (retrieval, the database) must not leave the row "started" forever: it would count as running and cost-bearing.
       if (!finished) await usage.finish(requestId, "provider_error", 0, null).catch(() => undefined);

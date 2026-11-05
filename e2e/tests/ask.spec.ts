@@ -192,7 +192,10 @@ test("Copy chat puts the questions and answers on the clipboard", async ({ logge
   await expect(panelOf(page).getByRole("button", { name: "Chat copied" })).toBeVisible();
   // The Windows clipboard turns each line break into \r\n when it is read back, so compare with plain \n.
   const text = (await page.evaluate(() => navigator.clipboard.readText())).replace(/\r\n/g, "\n");
-  expect(text).toBe("You: alpha login\n\nFlowDesc: This is a fake answer.\nSources: WEB-1 Alpha login broken");
+  // The fake model cites nothing, so the server adds its "check the sources" note (A.5) to the answer, and the copy carries it.
+  expect(text).toBe(
+    "You: alpha login\n\nFlowDesc: This is a fake answer.\n\nNote: this answer does not point to a specific issue, so please check the sources below.\nSources: WEB-1 Alpha login broken",
+  );
 });
 
 test("'hi' gets a friendly list of what to ask, and does not use up a question", async ({ loggedInPage: page }) => {

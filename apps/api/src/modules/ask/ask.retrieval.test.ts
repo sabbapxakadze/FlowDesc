@@ -28,7 +28,13 @@ async function makeOrg(email: string, organizationName: string, key: string): Pr
   return { ...org, projectId: project.body.data.id as string, key };
 }
 
-type Extra = { description?: string; status?: "todo" | "in_progress" | "done"; dueDate?: string; assignee?: string | null };
+type Extra = {
+  description?: string;
+  status?: "todo" | "in_progress" | "done";
+  dueDate?: string;
+  assignee?: string | null;
+  priority?: "none" | "low" | "medium" | "high" | "urgent";
+};
 async function addIssue(o: Org, title: string, extra: Extra = {}) {
   const created = await request(app).post(`${base(o)}/issues`).set(as(o)).send({ title, description: extra.description }).expect(201);
   const issue = created.body.data as { id: string; number: number; version: number };
@@ -36,6 +42,7 @@ async function addIssue(o: Org, title: string, extra: Extra = {}) {
   if (extra.status) changes.status = extra.status;
   if (extra.dueDate) changes.dueDate = extra.dueDate;
   if (extra.assignee !== undefined) changes.assigneeId = extra.assignee;
+  if (extra.priority) changes.priority = extra.priority;
   if (Object.keys(changes).length > 0) {
     await request(app).patch(`${base(o)}/issues/${issue.id}`).set(as(o)).send({ version: issue.version, ...changes }).expect(200);
   }
@@ -286,5 +293,65 @@ describe("questions about the workspace itself", () => {
     expect(all).not.toContain("OTH");
     expect(all).not.toContain("Org B");
     expect(all).not.toContain("7");
+  });
+});
+
+describe("more fixed question types (A.5)", () => {
+  it("unassigned: open issues nobody has, never a done one or another organization's", async () => {
+    // Why: "what is unassigned?" must be an exact list. A done issue is not open work, and another organization's issue must never be named.
+    const a = await makeOrg("a@example.com", "Org A", "WEB");
+    const b = await makeOrg("b@example.com", "Org B", "OTH");
+    const open = await addIssue(a, "Nobody has this");
+    await addIssue(a, "Someone has this", { assignee: a.userId });
+    await addIssue(a, "Finished and unowned", { status: "done" });
+    await addIssue(b, "Other org unowned");
+
+    const result = await ask(a, "What is unassigned?");
+    expect(result.sources.map((s) => s.key)).toEqual([open.key]);
+    expect(result.facts).toContain("Open issues that nobody is assigned to: 1 in total.");
+  });
+
+  it("urgent: urgent before high, done and lower priorities left out, another organization never listed", async () => {
+    // Why: "what is urgent?" means urgent or high priority and still open, most urgent first.
+    const a = await makeOrg("a@example.com", "Org A", "WEB");
+    const b = await makeOrg("b@example.com", "Org B", "OTH");
+    const high = await addIssue(a, "High one", { priority: "high" });
+    const urgent = await addIssue(a, "Urgent one", { priority: "urgent" });
+    await addIssue(a, "Medium one", { priority: "medium" });
+    await addIssue(a, "Urgent but done", { priority: "urgent", status: "done" });
+    await addIssue(b, "Other org urgent", { priority: "urgent" });
+
+    const result = await ask(a, "What is urgent?");
+    expect(result.sources.map((s) => s.key)).toEqual([urgent.key, high.key]);
+  });
+
+  it("recent: the most recently changed first, whatever the status, and only this organization's", async () => {
+    // Why: "what changed recently?" is ordered by the last change, and a finished issue counts (finishing is a change).
+    const a = await makeOrg("a@example.com", "Org A", "WEB");
+    const b = await makeOrg("b@example.com", "Org B", "OTH");
+    const first = await addIssue(a, "Oldest");
+    const second = await addIssue(a, "Middle", { status: "done" });
+    const third = await addIssue(a, "Newest");
+    await addIssue(b, "Other org, newest of all");
+
+    const result = await ask(a, "What changed recently?");
+    expect(result.sources.map((s) => s.key)).toEqual([third.key, second.key, first.key]);
+  });
+
+  it("workload: open issues per person, done ones not counted, and another organization's work never added", async () => {
+    // Why: "who has the most open issues?" is a count. A done issue is not work, and the other organization's assigned issues (its owner has the same name here)
+    // must not raise the number: a total of 7 instead of 2 would mean the organization filter is missing.
+    const a = await makeOrg("a@example.com", "Org A", "WEB");
+    const b = await makeOrg("b@example.com", "Org B", "OTH");
+    await addIssue(a, "One", { assignee: a.userId });
+    await addIssue(a, "Two", { assignee: a.userId, status: "in_progress" });
+    await addIssue(a, "Finished", { assignee: a.userId, status: "done" });
+    await addIssue(a, "Nobody");
+    for (let i = 0; i < 5; i++) await addIssue(b, `Other ${i}`, { assignee: b.userId });
+
+    const result = await ask(a, "Who has the most open issues?");
+    expect(result.sources).toEqual([]);
+    expect(result.facts).toContain("Open issues per person (not done), most first: Olivia Owner 2.");
+    expect(result.facts).toContain("Open issues with nobody assigned: 1.");
   });
 });

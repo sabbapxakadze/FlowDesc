@@ -16,6 +16,8 @@ export const LIMITS = {
   keyed: 3,
   /** Most issues taken from each fixed question type's list. */
   perIntent: 5,
+  /** Most people named in a workload answer. */
+  peopleInWorkload: 10,
   /** Most projects named in an overview. */
   projectsInOverview: 10,
   /** Characters of an issue's description kept. */
@@ -81,7 +83,7 @@ export async function retrieveSources(input: { organizationId: string; userId: s
 
   // 2. The fixed question types, each answered with the app's own definitions.
   const week = weekOf(today);
-  const lists: Record<Exclude<Intent, "overview">, { label: string; run: () => Promise<repository.IdList>; why: string }> = {
+  const lists: Record<Exclude<Intent, "overview" | "workload">, { label: string; run: () => Promise<repository.IdList>; why: string }> = {
     overdue: { label: `Overdue issues (due before ${today}, not done)`, run: () => repository.listOverdue(organizationId, today, LIMITS.perIntent), why: "overdue" },
     dueToday: { label: `Issues due today (${today}), not done`, run: () => repository.listDueBetween(organizationId, today, today, LIMITS.perIntent), why: "due today" },
     dueWeek: {
@@ -95,14 +97,28 @@ export async function retrieveSources(input: { organizationId: string; userId: s
       why: "assigned to the person asking",
     },
     inProgress: { label: "Issues in progress", run: () => repository.listInProgress(organizationId, LIMITS.perIntent), why: "in progress" },
+    unassigned: { label: "Open issues that nobody is assigned to", run: () => repository.listUnassigned(organizationId, LIMITS.perIntent), why: "unassigned" },
+    urgent: { label: "Open issues of urgent or high priority (urgent first)", run: () => repository.listUrgent(organizationId, LIMITS.perIntent), why: "urgent or high priority" },
+    recent: { label: "Issues changed most recently", run: () => repository.listRecent(organizationId, LIMITS.perIntent), why: "changed recently" },
   };
-  const listIntents = parsed.intents.filter((intent): intent is Exclude<Intent, "overview"> => intent !== "overview");
+  const listIntents = parsed.intents.filter((intent): intent is Exclude<Intent, "overview" | "workload"> => intent !== "overview" && intent !== "workload");
   const results = await Promise.all(listIntents.map((intent) => lists[intent].run()));
   listIntents.forEach((intent, i) => {
     const list = results[i]!;
     facts.push(listFact(lists[intent].label, list.total, list.ids.length));
     for (const id of list.ids) add(id, lists[intent].why);
   });
+
+  // Who has how much open work: counts per person, stated as facts (a person's name is shown to every member of the organization already).
+  if (parsed.intents.includes("workload")) {
+    const load = await repository.workloadCounts(organizationId, LIMITS.peopleInWorkload);
+    facts.push(
+      load.people.length === 0
+        ? "Open issues per person: nobody has an open issue assigned."
+        : `Open issues per person (not done), most first: ${load.people.map((p) => `${p.name} ${p.open}`).join(", ")}.`,
+    );
+    facts.push(`Open issues with nobody assigned: ${load.unassigned}.`);
+  }
 
   // The workspace itself: which statuses exist and how many issues there are. These are facts, not issues, so they add no sources.
   if (parsed.intents.includes("overview")) {
