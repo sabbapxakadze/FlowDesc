@@ -48,6 +48,12 @@ export async function searchByText(organizationId: string, question: string, lim
   return result.rows.map((row) => row.issue_id);
 }
 
+/** The keys of this organization's projects ("WEB", "API"), so a question can name an issue as "web12" or "web 12". Only this organization's projects. */
+export async function projectKeys(organizationId: string): Promise<string[]> {
+  const rows = await db.select({ key: projects.key }).from(projects).where(eq(projects.organizationId, organizationId)).orderBy(asc(projects.key)).limit(200);
+  return rows.map((r) => r.key);
+}
+
 /** The ids of the issues named by key ("WEB-12"), in the order asked. A key that names nothing in this organization is simply absent. */
 export async function findByKeys(organizationId: string, keys: { projectKey: string; number: number }[]): Promise<{ key: string; id: string }[]> {
   if (keys.length === 0) return [];

@@ -355,3 +355,33 @@ describe("more fixed question types (A.5)", () => {
     expect(result.facts).toContain("Open issues with nobody assigned: 1.");
   });
 });
+
+describe("an issue named without the dash", () => {
+  it("finds WEB-12 from web12, web 12 and WEB_12, and still says when a dashed key does not exist", async () => {
+    // Why: the owner typed "web12" and Ask behaved as if no issue was named. The loose forms must reach the same issue as WEB-12.
+    const o = await makeOrg("o@example.com", "Org A", "WEB");
+    let target = { key: "", id: "" };
+    for (let i = 1; i <= 12; i++) {
+      const made = await addIssue(o, i === 12 ? "The twelfth thing" : `Filler number ${i}`);
+      if (i === 12) target = made;
+    }
+    expect(target.key).toBe("WEB-12");
+    for (const q of ["what is web12?", "tell me about web 12", "status of WEB_12", "WEB-12", "web - 12 please"]) {
+      expect(await keys(o, q), q).toEqual(["WEB-12"]);
+    }
+    // A dashed key that names nothing is stated as a fact, as before; a loose one that names nothing is left alone (it may not have been a key).
+    expect((await ask(o, "what is WEB-99?")).facts).toContain("No issue with the key WEB-99 exists in this workspace.");
+    expect((await ask(o, "what is web99?")).facts.filter((f) => f.includes("WEB-99"))).toEqual([]);
+  });
+
+  it("does not use another organization's project key", async () => {
+    // Why: the project keys that make "web12" understood are this organization's own. Organization B's project OTH must not turn "oth1" into an issue lookup
+    // for organization A, and B's issue must never be found.
+    const a = await makeOrg("a@example.com", "Org A", "WEB");
+    const b = await makeOrg("b@example.com", "Org B", "OTH");
+    await addIssue(a, "A thing");
+    await addIssue(b, "Secret of org B");
+    expect(await keys(a, "what is oth1?")).toEqual([]);
+    expect(await keys(a, "what is OTH-1?")).toEqual([]);
+  });
+});

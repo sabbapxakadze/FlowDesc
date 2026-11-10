@@ -66,7 +66,9 @@ function listFact(label: string, total: number, shown: number): string {
 export async function retrieveSources(input: { organizationId: string; userId: string; question: string; today: string }): Promise<Retrieved> {
   if (!DAY.test(input.today)) throw new Error("retrieveSources needs today as YYYY-MM-DD");
   const { organizationId, userId, today } = input;
-  const parsed = parseQuestion(cleanQuestion(input.question));
+  // The organization's project keys let "web12" and "web 12" be understood as WEB-12. Only asked when the question has a digit, so most questions cost nothing extra.
+  const projectKeys = /\d/.test(input.question) ? await repository.projectKeys(organizationId) : [];
+  const parsed = parseQuestion(cleanQuestion(input.question), projectKeys);
 
   const candidates: { id: string; why: string }[] = [];
   const facts: string[] = [];
@@ -77,7 +79,8 @@ export async function retrieveSources(input: { organizationId: string; userId: s
   // 1. Issues named by key. A key that names nothing is a fact the model needs, or it would be tempted to describe an issue that does not exist.
   const keyed = await repository.findByKeys(organizationId, parsed.keys);
   for (const k of parsed.keys) {
-    if (!keyed.some((f) => f.key === `${k.projectKey}-${k.number}`)) facts.push(`No issue with the key ${k.projectKey}-${k.number} exists in this workspace.`);
+    // Only for a key typed in full: "web99" (loose) that names nothing is probably not a key at all, so it is left alone and stays in the text search.
+    if (!k.loose && !keyed.some((f) => f.key === `${k.projectKey}-${k.number}`)) facts.push(`No issue with the key ${k.projectKey}-${k.number} exists in this workspace.`);
   }
   for (const found of keyed.slice(0, LIMITS.keyed)) add(found.id, `named in the question (${found.key})`);
 

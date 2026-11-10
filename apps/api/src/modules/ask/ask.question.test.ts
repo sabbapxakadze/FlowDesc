@@ -10,8 +10,8 @@ describe("issue keys in a question", () => {
   it("finds keys in any case, once each, and the first five at most", () => {
     // Why: "what happened on WEB-12?" must fetch that issue directly; lower case is how people type; a key repeated must not take two places.
     expect(parseQuestion("What happened on WEB-12 and web-3, and again WEB-12?").keys).toEqual([
-      { projectKey: "WEB", number: 12 },
-      { projectKey: "WEB", number: 3 },
+      { projectKey: "WEB", number: 12, loose: false },
+      { projectKey: "WEB", number: 3, loose: false },
     ]);
     const many = parseQuestion("A-1 B-2 C-3 D-4 E-5 F-6 G-7").keys;
     expect(many.map((k) => k.projectKey)).toEqual(["A", "B", "C", "D", "E"]);
@@ -20,12 +20,47 @@ describe("issue keys in a question", () => {
   it("does not take ordinary hyphenated words, zero, or too many digits for a key", () => {
     // Why: "built-in", "x-ray-9" style words and "WEB-0" must not become lookups; a number past nine digits cannot exist (the by-number address refuses it).
     expect(parseQuestion("Is the built-in editor ready? Check WEB-0 and WEB-1234567890").keys).toEqual([]);
-    expect(parseQuestion("covid-19 plans").keys).toEqual([{ projectKey: "COVID", number: 19 }]); // looks like a key, so it is looked up: a miss costs nothing
+    expect(parseQuestion("covid-19 plans").keys).toEqual([{ projectKey: "COVID", number: 19, loose: false }]); // looks like a key, so it is looked up: a miss costs nothing
   });
 
   it("takes keys out of the text left to search", () => {
     // Why: the key is looked up on its own; searching "web" and "12" as words would only add noise.
     expect(parseQuestion("what happened on WEB-12 last week?").text).toBe("what happened on last week?");
+  });
+});
+
+describe("a key typed without the dash", () => {
+  const keysOf = (q: string, known: string[] = ["WEB", "API"]) => parseQuestion(q, known).keys.map((k) => `${k.projectKey}-${k.number}${k.loose ? " (loose)" : ""}`);
+
+  it("understands web12, web 12, WEB_12, WEB#12 and web - 12 when WEB is a real project", () => {
+    // Why: the owner typed "web12" and Ask answered as if no issue was named. These are the forms people actually type.
+    for (const q of ["what is web12?", "what is web 12?", "what is WEB_12?", "what is WEB#12?", "what is web - 12?", "what is Web-12?"]) {
+      expect(keysOf(q)[0], q).toMatch(/^WEB-12/);
+    }
+    expect(keysOf("compare api7 and web 12")).toEqual(["API-7 (loose)", "WEB-12 (loose)"]);
+  });
+
+  it("understands a copied dash: an en dash, an em dash or a non-breaking hyphen", () => {
+    // Why: pasting a key from a chat or a document often swaps the hyphen for a typographic dash, and the key then looks different but means the same.
+    for (const dash of ["–", "—", "‑", "−"]) expect(keysOf(`what is WEB${dash}12?`), dash).toEqual(["WEB-12"]); // en dash, em dash, non-breaking hyphen, minus
+  });
+
+  it("does not read ordinary words and numbers as a key unless that project exists", () => {
+    // Why: only real project keys count for the loose forms, or "iOS 17" and "Windows 11" would become lookups.
+    expect(keysOf("does iOS 17 break the layout? windows 11 too")).toEqual([]);
+    expect(keysOf("how did the webpage 12 times fail")).toEqual([]); // "webpage" is not the key "web"
+    expect(keysOf("web12", [])).toEqual([]); // no known projects: only the dashed form works
+  });
+
+  it("is a loose key only when no dashed form of it is typed, and takes it out of the text left to search", () => {
+    // Why: a full "WEB-12" always counts as a key; the words of a key must not be searched as text.
+    expect(keysOf("web12 and WEB-12")).toEqual(["WEB-12"]);
+    expect(parseQuestion("what happened on web 12 last week?", ["WEB"]).text).toBe("what happened on last week?");
+  });
+
+  it("prefers the longer project key when two start alike", () => {
+    // Why: with projects WEB and WEB2, "web2 5" names WEB2-5, not WEB-25.
+    expect(keysOf("web2 5", ["WEB", "WEB2"])).toEqual(["WEB2-5 (loose)"]);
   });
 });
 

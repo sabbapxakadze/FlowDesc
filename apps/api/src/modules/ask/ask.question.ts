@@ -9,8 +9,11 @@
 export type Intent = "overdue" | "dueToday" | "dueWeek" | "assignedToMe" | "inProgress" | "overview" | "workload" | "recent" | "urgent" | "unassigned";
 
 export type ParsedQuestion = {
-  /** Issue keys named in the question, upper-cased, first five, in order ("WEB-12"). */
-  keys: { projectKey: string; number: number }[];
+  /**
+   * Issue keys named in the question, upper-cased, first five, in order ("WEB-12"). `loose` is true when the person did not type the plain dashed form
+   * ("web12", "web 12", "WEB_12", "WEB#12"): such a key was only accepted because its project exists, so a loose key that names no issue is not worth a fact.
+   */
+  keys: { projectKey: string; number: number; loose: boolean }[];
   intents: Intent[];
   /** What is left to search as text once the matched question types are taken out. */
   text: string;
@@ -19,6 +22,9 @@ export type ParsedQuestion = {
 const MAX_KEYS = 5;
 // A project key is a letter then letters or digits (at most 10, as in the projects table); the number is 1 to 9 digits (as the by-number address allows).
 const KEY = /\b([A-Za-z][A-Za-z0-9]{0,9})-(\d{1,9})\b/g;
+// The dashes a copied or auto-corrected key can carry instead of a plain hyphen: hyphen, non-breaking hyphen, figure dash, en dash, em dash, horizontal bar, minus.
+const DASHES = /[‐-―−]/g;
+const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const PATTERNS: { intent: Intent; pattern: RegExp }[] = [
   { intent: "overdue", pattern: /\b(overdue|over due|past due|behind schedule)\b/gi },
@@ -86,18 +92,37 @@ export function cleanQuestion(question: string): string {
   return question.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim();
 }
 
-export function parseQuestion(question: string): ParsedQuestion {
-  const clean = cleanQuestion(question);
+/**
+ * `knownProjectKeys` are the keys of the organization's real projects. With them, a key typed without the dash is understood too ("web12", "web 12",
+ * "WEB_12", "WEB#12", "web - 12"): the letters must be one of those keys, so "iOS 17" or "Windows 11" is never read as an issue unless such a project exists.
+ */
+export function parseQuestion(question: string, knownProjectKeys: readonly string[] = []): ParsedQuestion {
+  const clean = cleanQuestion(question).replace(DASHES, "-");
+
+  const found: { index: number; projectKey: string; number: number; loose: boolean }[] = [];
+  for (const match of clean.matchAll(KEY)) found.push({ index: match.index, projectKey: match[1]!.toUpperCase(), number: Number(match[2]), loose: false });
+
+  // Longest keys first, so "WEB2" is tried before "WEB".
+  const known = [...new Set(knownProjectKeys.map((k) => k.toUpperCase()))].sort((a, b) => b.length - a.length).map(escapeRegExp);
+  const LOOSE = known.length > 0 ? new RegExp(`\\b(${known.join("|")})\\s*[-_#]?\\s*(\\d{1,9})\\b`, "gi") : null;
+  if (LOOSE) {
+    for (const match of clean.matchAll(LOOSE)) found.push({ index: match.index, projectKey: match[1]!.toUpperCase(), number: Number(match[2]), loose: true });
+  }
 
   const keys: ParsedQuestion["keys"] = [];
-  for (const match of clean.matchAll(KEY)) {
-    const key = { projectKey: match[1]!.toUpperCase(), number: Number(match[2]) };
-    if (key.number > 0 && !keys.some((k) => k.projectKey === key.projectKey && k.number === key.number)) keys.push(key);
-    if (keys.length === MAX_KEYS) break;
+  for (const item of found.sort((a, b) => a.index - b.index)) {
+    if (item.number <= 0) continue;
+    const existing = keys.find((k) => k.projectKey === item.projectKey && k.number === item.number);
+    if (existing) {
+      if (!item.loose) existing.loose = false; // typed in full somewhere in the question: it counts as a real key
+    } else if (keys.length < MAX_KEYS) {
+      keys.push({ projectKey: item.projectKey, number: item.number, loose: item.loose });
+    }
   }
 
   const intents: Intent[] = [];
   let text = clean.replace(KEY, " ");
+  if (LOOSE) text = text.replace(LOOSE, " ");
   for (const { intent, pattern } of PATTERNS) {
     // A fresh test on a copy: the patterns are global, so `lastIndex` must not leak between questions.
     if (new RegExp(pattern.source, pattern.flags.replace("g", "")).test(clean)) {
